@@ -1,7 +1,9 @@
+require("./services/scheduler");
 const historyRoutes = require("./routes/history");
 const commandRoutes = require("./routes/command");
 const deviceRoutes = require("./routes/device");
 const geminiRoutes = require("./routes/gemini");
+const scheduleRoutes = require("./routes/schedule");
 const express = require("express");
 const cors = require("cors");
 const statusRoutes = require("./routes/status");
@@ -33,6 +35,8 @@ app.use("/api/history", historyRoutes);
 app.use("/api/status", statusRoutes);
 
 app.use("/api/gemini", geminiRoutes);
+
+app.use("/api/schedule", scheduleRoutes);
 
 // Server Port
 const PORT = 5001;
