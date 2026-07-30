@@ -1,0 +1,44 @@
+.container{
+  padding:20px;
+  font-family:Arial;
+}
+
+.card{
+  background:#ffffff;
+  padding:20px;
+  margin:20px 0;
+  border-radius:15px;
+  box-shadow:0 0 10px #ccc;
+}
+
+.offline{
+  color:red;
+  margin-left:10px;
+}
+
+.buttons button{
+  padding:15px 25px;
+  margin:10px;
+  border:none;
+  border-radius:10px;
+  font-size:18px;
+}
+
+.on{
+  background:green;
+  color:white;
+}
+
+.off{
+  background:red;
+  color:white;
+}
+.voice{
+  background:#333;
+  color:white;
+  padding:15px 25px;
+  margin:10px;
+  border:none;
+  border-radius:10px;
+  font-size:18px;
+}
