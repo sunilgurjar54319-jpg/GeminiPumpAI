@@ -1,217 +1,114 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "./App.css";
 
-const SpeechRecognition =
-  window.SpeechRecognition ||
-  window.webkitSpeechRecognition;
+const API = "https://geminipumpai.onrender.com";
 
 function App() {
 
-  const [status, setStatus] = useState("LOADING");
-  const [history, setHistory] = useState([]);
   const [voiceText, setVoiceText] = useState("");
+  const [result, setResult] = useState("");
 
-  async function loadStatus() {
-    try {
-      const res = await fetch(
-        "https://geminipumpai.onrender.com/api/status/PUMP001"
-      );
+  const SpeechRecognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
 
-      const data = await res.json();
-      setStatus(data.status || "UNKNOWN");
 
-    } catch {
-      setStatus("OFFLINE");
-    }
-  }
-
-  async function loadHistory() {
-    try {
-      const res = await fetch(
-        "https://geminipumpai.onrender.com/api/history/PUMP001"
-      );
-
-      const data = await res.json();
-      setHistory(data.reverse());
-
-    } catch (err) {
-      console.log(err);
-    }
-  }
-
-  async function sendCommand(command) {
-
-    try {
-
-      const res = await fetch(
-        "https://geminipumpai.onrender.com/api/command/send",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            deviceId: "PUMP001",
-            command: command
-          })
-        }
-      );
-
-      const data = await res.json();
-
-      await fetch(
-        "https://geminipumpai.onrender.com/api/command/complete",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            commandId: data.$id
-          })
-        }
-      );
-
-      await fetch(
-        "https://geminipumpai.onrender.com/api/status/update",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            deviceId: "PUMP001",
-            status: command
-          })
-        }
-      );
-
-      loadStatus();
-      loadHistory();
-
-    } catch (err) {
-      console.log(err);
-    }
-  }
-
-  function startVoice() {
+  async function startVoice() {
 
     if (!SpeechRecognition) {
-      alert("Voice not supported");
+      alert("Voice support nahi hai");
       return;
     }
 
     const recognition = new SpeechRecognition();
 
     recognition.lang = "hi-IN";
-    recognition.start();
+    recognition.continuous = false;
 
-    recognition.onresult = (event) => {
+
+    recognition.onstart = () => {
+      setResult("Sun raha hu...");
+    };
+
+
+    recognition.onresult = async (event) => {
 
       const text =
-        event.results[0][0].transcript.toLowerCase();
+        event.results[0][0].transcript;
 
       setVoiceText(text);
 
-      if (
-        text.includes("पंप चालू") ||
-        text.includes("मोटर चालू") ||
-        text.includes("pump on") ||
-        text.includes("pump chalu")
-      ) {
-        sendCommand("ON");
-      }
 
-      if (
-        text.includes("पंप बंद") ||
-        text.includes("मोटर बंद") ||
-        text.includes("pump off") ||
-        text.includes("pump band")
-      ) {
-        sendCommand("OFF");
+      try {
+
+        const res = await fetch(
+          `${API}/api/gemini/voice`,
+          {
+            method:"POST",
+            headers:{
+              "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+              text:text
+            })
+          }
+        );
+
+
+        const data = await res.json();
+
+        setResult(
+          data.command
+          ? "Command: " + data.command
+          : "Samajh nahi aaya"
+        );
+
+
+      } catch(error){
+
+        setResult("Server Error");
+
       }
 
     };
+
+
+    recognition.start();
+
   }
 
-  useEffect(() => {
-
-    loadStatus();
-    loadHistory();
-
-    const timer = setInterval(() => {
-      loadStatus();
-    }, 5000);
-
-    return () => clearInterval(timer);
-
-  }, []);
 
   return (
+    <div>
 
-    <div className="container">
+      <h1>Gemini Pump AI</h1>
 
-      <h1>🚜 Gemini Pump AI</h1>
 
-      <div className="card">
+      <button
+        className="voice"
+        onClick={startVoice}
+      >
+        🎤 Voice Command
+      </button>
 
-        <h2>PUMP001</h2>
 
-        <h3>
-          Status :
-          <span className="offline">
-            {status}
-          </span>
-        </h3>
+      <h3>
+        Aapne bola:
+      </h3>
 
-        <button
-          className="on"
-          onClick={() => sendCommand("ON")}
-        >
-          PUMP ON
-        </button>
+      <p>{voiceText}</p>
 
-        <button
-          className="off"
-          onClick={() => sendCommand("OFF")}
-        >
-          PUMP OFF
-        </button>
 
-        <br />
+      <h3>
+        Status:
+      </h3>
 
-        <button
-          className="voice"
-          onClick={startVoice}
-        >
-          🎤 Voice Command
-        </button>
+      <p>{result}</p>
 
-        <p>
-          Heard : {voiceText}
-        </p>
-
-      </div>
-
-      <div className="card">
-
-        <h2>History</h2>
-
-        {
-          history.map((item) => (
-
-            <p key={item.$id}>
-              {item.command} - {item.result}
-            </p>
-
-          ))
-        }
-
-      </div>
 
     </div>
-
   );
 }
+
 
 export default App;

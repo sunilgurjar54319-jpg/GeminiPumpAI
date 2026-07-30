@@ -1,6 +1,7 @@
 const historyRoutes = require("./routes/history");
 const commandRoutes = require("./routes/command");
 const deviceRoutes = require("./routes/device");
+const geminiRoutes = require("./routes/gemini");
 const express = require("express");
 const cors = require("cors");
 const statusRoutes = require("./routes/status");
@@ -30,6 +31,8 @@ app.use("/api/command", commandRoutes);
 app.use("/api/history", historyRoutes);
 
 app.use("/api/status", statusRoutes);
+
+app.use("/api/gemini", geminiRoutes);
 
 // Server Port
 const PORT = 5001;
