@@ -3,6 +3,7 @@ import { useState } from "react";
 import Header from "./components/Header";
 import StatusCard from "./components/StatusCard";
 import ManualControl from "./components/ManualControl";
+import VoiceControl from "./components/VoiceControl";
 import Schedule from "./components/Schedule";
 import HistoryCard from "./components/HistoryCard";
 import StatsCard from "./components/StatsCard";
@@ -15,7 +16,7 @@ function App() {
   const [refresh, setRefresh] = useState(false);
 
 
-  function refreshStatus(){
+  function refreshStatus() {
 
     setRefresh(!refresh);
 
@@ -34,28 +35,38 @@ function App() {
 
         <div className="card">
 
-          <StatusCard refresh={refresh}/>
+          <StatusCard
+            refresh={refresh}
+          />
 
         </div>
 
 
-
         <div className="card">
 
-          <ManualControl 
+          <ManualControl
             onCommandSent={refreshStatus}
           />
 
         </div>
 
 
-
         <div className="card">
 
-          <StatsCard refresh={refresh}/>
+          <VoiceControl
+            onCommandSent={refreshStatus}
+          />
 
         </div>
 
+
+        <div className="card">
+
+          <StatsCard
+            refresh={refresh}
+          />
+
+        </div>
 
 
         <div className="card">
@@ -65,13 +76,11 @@ function App() {
         </div>
 
 
-
         <div className="card full">
 
           <HistoryCard />
 
         </div>
-
 
 
       </div>
