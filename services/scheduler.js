@@ -2,28 +2,19 @@ const cron = require("node-cron");
 const databases = require("../config/appwrite");
 const { sendCommand } = require("./commandService");
 
-const DATABASE_ID =
-  process.env.APPWRITE_DATABASE_ID;
-
-const SCHEDULE_COLLECTION =
-  "schedules";
+const DATABASE_ID = process.env.APPWRITE_DATABASE_ID;
+const SCHEDULE_COLLECTION = "schedules";
 
 
 // =========================================
 // Execute Scheduled Command
 // =========================================
 
-async function executeCommand(
-  deviceId,
-  command
-) {
+async function executeCommand(deviceId, command) {
 
   try {
 
-    await sendCommand(
-      deviceId,
-      command
-    );
+    await sendCommand(deviceId, command);
 
     console.log(
       `📤 Scheduled Command Sent: ${command} → ${deviceId}`
@@ -42,20 +33,35 @@ async function executeCommand(
 
 
 // =========================================
-// Get India Date
+// India Time
 // =========================================
 
 function getIndiaDate() {
 
-  const now = new Date();
-
   return new Date(
-    now.toLocaleString(
+    new Date().toLocaleString(
       "en-US",
       {
         timeZone: "Asia/Kolkata"
       }
     )
+  );
+
+}
+
+
+// =========================================
+// Format Date YYYY-MM-DD
+// =========================================
+
+function getIndiaDateString(indiaDate) {
+
+  return (
+    indiaDate.getFullYear() +
+    "-" +
+    String(indiaDate.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(indiaDate.getDate()).padStart(2, "0")
   );
 
 }
@@ -69,13 +75,11 @@ async function checkSchedules() {
 
   try {
 
-    const indiaDate =
-      getIndiaDate();
+    const indiaDate = getIndiaDate();
 
-
-    // =======================================
+    // -----------------------------------------
     // Current Time
-    // =======================================
+    // -----------------------------------------
 
     const currentTime =
       indiaDate.toLocaleTimeString(
@@ -88,25 +92,17 @@ async function checkSchedules() {
       );
 
 
-    // =======================================
+    // -----------------------------------------
     // Current Date
-    // =======================================
+    // -----------------------------------------
 
     const currentDate =
-      indiaDate.getFullYear() +
-      "-" +
-      String(
-        indiaDate.getMonth() + 1
-      ).padStart(2, "0") +
-      "-" +
-      String(
-        indiaDate.getDate()
-      ).padStart(2, "0");
+      getIndiaDateString(indiaDate);
 
 
-    // =======================================
+    // -----------------------------------------
     // Current Day
-    // =======================================
+    // -----------------------------------------
 
     const dayNames = [
       "Sun",
@@ -118,11 +114,8 @@ async function checkSchedules() {
       "Sat"
     ];
 
-
     const today =
-      dayNames[
-        indiaDate.getDay()
-      ];
+      dayNames[indiaDate.getDay()];
 
 
     console.log(
@@ -133,9 +126,9 @@ async function checkSchedules() {
     );
 
 
-    // =======================================
-    // Get Schedules
-    // =======================================
+    // =========================================
+    // Get All Schedules
+    // =========================================
 
     const result =
       await databases.listDocuments(
@@ -144,86 +137,45 @@ async function checkSchedules() {
       );
 
 
-    // =======================================
-    // Process Every Schedule
-    // =======================================
+    // =========================================
+    // Process Schedules
+    // =========================================
 
-    for (
-      const schedule of result.documents
-    ) {
+    for (const schedule of result.documents) {
 
 
-      // =====================================
-      // Disabled Schedule
-      // =====================================
+      // ---------------------------------------
+      // Disabled
+      // ---------------------------------------
 
       if (!schedule.enabled) {
         continue;
       }
 
 
-      // =====================================
-      // Already Executed
-      // =====================================
-
-      const lastExecuted =
-        schedule.lastExecuted || "";
-
-
-      const executionKey =
-        `${currentDate}-${currentTime}-${schedule.$id}`;
-
-
-      if (
-        lastExecuted ===
-        executionKey
-      ) {
-
-        continue;
-
-      }
-
-
-      // =====================================
+      // =======================================
       // ONE-TIME DATE SCHEDULE
-      // =====================================
+      // =======================================
 
-      if (
-        schedule.scheduledDate
-      ) {
+      if (schedule.scheduledDate) {
 
-
-        // -----------------------------------
-        // Wrong Date
-        // -----------------------------------
-
+        // Wrong date
         if (
           schedule.scheduledDate !==
           currentDate
         ) {
-
           continue;
-
         }
 
 
-        // -----------------------------------
-        // Wrong Time
-        // -----------------------------------
-
+        // Only execute at start time
         if (
           schedule.startTime !==
           currentTime
         ) {
-
           continue;
-
         }
 
-
-        // -----------------------------------
-        // Command
-        // -----------------------------------
 
         let command =
           schedule.command;
@@ -233,15 +185,22 @@ async function checkSchedules() {
           command !== "ON" &&
           command !== "OFF"
         ) {
-
           command = "ON";
-
         }
 
 
-        // -----------------------------------
-        // Send Command
-        // -----------------------------------
+        const executionKey =
+          `${currentDate}-${currentTime}-${schedule.$id}`;
+
+
+        // Already executed
+        if (
+          schedule.lastExecuted ===
+          executionKey
+        ) {
+          continue;
+        }
+
 
         await executeCommand(
           schedule.deviceId,
@@ -249,18 +208,12 @@ async function checkSchedules() {
         );
 
 
-        // -----------------------------------
-        // Mark Schedule Executed
-        // -----------------------------------
-
         await databases.updateDocument(
           DATABASE_ID,
           SCHEDULE_COLLECTION,
           schedule.$id,
           {
-            lastExecuted:
-              executionKey,
-
+            lastExecuted: executionKey,
             enabled: false
           }
         );
@@ -269,136 +222,122 @@ async function checkSchedules() {
         console.log(
           `✅ One-Time Scheduled ${command}:`,
           schedule.deviceId,
-          schedule.scheduledDate
+          currentDate
         );
 
 
         continue;
-
       }
 
 
-      // =====================================
-      // RECURRING / NORMAL SCHEDULE
-      // =====================================
+      // =======================================
+      // RECURRING SCHEDULE
+      // =======================================
 
       if (
         !schedule.days ||
         !schedule.days
           .split(",")
+          .map(day => day.trim())
           .includes(today)
       ) {
-
         continue;
-
       }
 
 
-      let command = null;
-
-
-      // =====================================
-      // Explicit ON Command
-      // =====================================
+      // =======================================
+      // START / ON
+      // =======================================
 
       if (
-        schedule.command === "ON" &&
         schedule.startTime ===
         currentTime
       ) {
 
-        command = "ON";
+        const executionKey =
+          `${currentDate}-${currentTime}-START-${schedule.$id}`;
 
+
+        if (
+          schedule.lastExecuted ===
+          executionKey
+        ) {
+          continue;
+        }
+
+
+        await executeCommand(
+          schedule.deviceId,
+          "ON"
+        );
+
+
+        await databases.updateDocument(
+          DATABASE_ID,
+          SCHEDULE_COLLECTION,
+          schedule.$id,
+          {
+            lastExecuted: executionKey
+          }
+        );
+
+
+        console.log(
+          `✅ Scheduled ON: ${schedule.deviceId} ${currentDate} ${currentTime}`
+        );
+
+
+        continue;
       }
 
 
-      // =====================================
-      // Explicit OFF Command
-      // =====================================
+      // =======================================
+      // END / OFF
+      // =======================================
 
-      else if (
-        schedule.command === "OFF" &&
-        schedule.startTime ===
-        currentTime
-      ) {
-
-        command = "OFF";
-
-      }
-
-
-      // =====================================
-      // Normal Start Schedule
-      // =====================================
-
-      else if (
-        !schedule.command &&
-        schedule.startTime ===
-        currentTime
-      ) {
-
-        command = "ON";
-
-      }
-
-
-      // =====================================
-      // Normal End Schedule
-      // =====================================
-
-      else if (
-        !schedule.command &&
+      if (
+        schedule.endTime &&
         schedule.endTime ===
         currentTime &&
         schedule.endTime !==
         schedule.startTime
       ) {
 
-        command = "OFF";
+        const executionKey =
+          `${currentDate}-${currentTime}-END-${schedule.$id}`;
 
-      }
+
+        if (
+          schedule.lastExecuted ===
+          executionKey
+        ) {
+          continue;
+        }
 
 
-      // =====================================
-      // Nothing To Execute
-      // =====================================
+        await executeCommand(
+          schedule.deviceId,
+          "OFF"
+        );
 
-      if (!command) {
+
+        await databases.updateDocument(
+          DATABASE_ID,
+          SCHEDULE_COLLECTION,
+          schedule.$id,
+          {
+            lastExecuted: executionKey
+          }
+        );
+
+
+        console.log(
+          `✅ Scheduled OFF: ${schedule.deviceId} ${currentDate} ${currentTime}`
+        );
+
 
         continue;
-
       }
-
-
-      // =====================================
-      // Send Scheduled Command
-      // =====================================
-
-      await executeCommand(
-        schedule.deviceId,
-        command
-      );
-
-
-      // =====================================
-      // Save Execution Key
-      // =====================================
-
-      await databases.updateDocument(
-        DATABASE_ID,
-        SCHEDULE_COLLECTION,
-        schedule.$id,
-        {
-          lastExecuted:
-            executionKey
-        }
-      );
-
-
-      console.log(
-        `✅ Scheduled ${command}:`,
-        schedule.deviceId
-      );
 
     }
 
@@ -406,7 +345,7 @@ async function checkSchedules() {
   } catch (error) {
 
     console.log(
-      "Scheduler Error:",
+      "❌ Scheduler Error:",
       error.message
     );
 
@@ -423,8 +362,7 @@ cron.schedule(
   "* * * * *",
   checkSchedules,
   {
-    timezone:
-      "Asia/Kolkata"
+    timezone: "Asia/Kolkata"
   }
 );
 
