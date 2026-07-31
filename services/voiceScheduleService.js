@@ -30,7 +30,65 @@ function parseVoiceSchedule(text) {
     action = "OFF";
   }
 
+  // No ON/OFF command
   if (!action) {
+    return null;
+  }
+
+
+  // =========================================
+  // IMMEDIATE COMMAND
+  // =========================================
+  // Example:
+  // pump on karo
+  // pump off karo
+  // motor chalu karo
+  // motor band karo
+  //
+  // Agar time/day/date nahi hai,
+  // ise schedule mat samjho.
+  // Gemini route immediate command handle karega.
+
+  const hasTime =
+    /(\d{1,2})(?::(\d{2}))?\s*(?:बजे|baje)?/.test(command);
+
+  const hasDay =
+    command.includes("आज") ||
+    command.includes("aaj") ||
+    command.includes("today") ||
+    command.includes("कल") ||
+    command.includes("kal") ||
+    command.includes("tomorrow") ||
+    command.includes("हर दिन") ||
+    command.includes("हर रोज") ||
+    command.includes("har din") ||
+    command.includes("har roj") ||
+    command.includes("daily") ||
+    command.includes("रविवार") ||
+    command.includes("सोमवार") ||
+    command.includes("मंगलवार") ||
+    command.includes("बुधवार") ||
+    command.includes("गुरुवार") ||
+    command.includes("शुक्रवार") ||
+    command.includes("शनिवार") ||
+    command.includes("ravivar") ||
+    command.includes("somvar") ||
+    command.includes("mangalvar") ||
+    command.includes("budhvar") ||
+    command.includes("guruvaar") ||
+    command.includes("guruvar") ||
+    command.includes("shukravar") ||
+    command.includes("shanivar");
+
+  const hasScheduleWord =
+    command.includes("schedule") ||
+    command.includes("शेड्यूल") ||
+    command.includes("समय") ||
+    command.includes("time") ||
+    command.includes("बजे") ||
+    command.includes("baje");
+
+  if (!hasTime && !hasDay && !hasScheduleWord) {
     return null;
   }
 
@@ -47,11 +105,13 @@ function parseVoiceSchedule(text) {
   );
 
   if (!timeMatch) {
+
     return {
       type: "SCHEDULE",
       action,
       error: "Time not found"
     };
+
   }
 
   hour = Number(timeMatch[1]);
@@ -102,6 +162,10 @@ function parseVoiceSchedule(text) {
 
   }
 
+
+  // =========================================
+  // Validate Time
+  // =========================================
 
   if (
     hour > 23 ||
@@ -170,7 +234,7 @@ function parseVoiceSchedule(text) {
 
 
   // =========================================
-  // Recurring — हर दिन
+  // हर दिन / Daily
   // =========================================
 
   if (
@@ -331,7 +395,10 @@ function parseVoiceSchedule(text) {
       action,
 
       scheduledAt:
-        `${scheduledDate}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00+05:30`,
+        `${scheduledDate}T${String(date.getHours()).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00+05:30`.replace(
+          `${String(date.getHours()).padStart(2, "0")}:${String(minute).padStart(2, "0")}`,
+          `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`
+        ),
 
       scheduledDate,
 
@@ -357,9 +424,7 @@ function parseVoiceSchedule(text) {
       indiaDate.getDay();
 
     const targetDay =
-      dayNames.indexOf(
-        selectedDay
-      );
+      dayNames.indexOf(selectedDay);
 
 
     let difference =
