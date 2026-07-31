@@ -1,4 +1,5 @@
-require("./services/scheduler");
+require("dns").setDefaultResultOrder("ipv4first");
+require("./services/scheduler");// require("./services/scheduler");
 const historyRoutes = require("./routes/history");
 const commandRoutes = require("./routes/command");
 const deviceRoutes = require("./routes/device");
@@ -7,6 +8,8 @@ const scheduleRoutes = require("./routes/schedule");
 const express = require("express");
 const cors = require("cors");
 const statusRoutes = require("./routes/status");
+const statsRoutes = require("./routes/stats");
+
 
 const app = express();
 
@@ -33,6 +36,8 @@ app.use("/api/command", commandRoutes);
 app.use("/api/history", historyRoutes);
 
 app.use("/api/status", statusRoutes);
+
+app.use("/api/stats", statsRoutes);
 
 app.use("/api/gemini", geminiRoutes);
 

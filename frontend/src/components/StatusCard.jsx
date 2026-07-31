@@ -1,54 +1,90 @@
 import { useEffect, useState } from "react";
-import { getStatus } from "../api";
 
-function StatusCard() {
-  const [status, setStatus] = useState("Loading...");
-  const [lastUpdated, setLastUpdated] = useState("");
+function StatusCard({ refresh }) {
+
+  const [status, setStatus] = useState("OFF");
+  const [updated, setUpdated] = useState("");
 
   async function loadStatus() {
-    try {
-      const data = await getStatus("PUMP001");
 
-      if (data.success) {
-        setStatus(data.status || "Unknown");
-      } else {
-        setStatus("Offline");
+    try {
+
+      const res = await fetch(
+        "http://localhost:5001/api/status/PUMP001"
+      );
+
+      const data = await res.json();
+
+      if (data.status) {
+        setStatus(data.status);
       }
 
-      setLastUpdated(new Date().toLocaleTimeString());
-    } catch (err) {
-      setStatus("Server Offline");
+      if (data.updatedAt) {
+        setUpdated(
+          new Date(data.updatedAt).toLocaleString("en-IN")
+        );
+      }
+
+    } catch (error) {
+
+      console.log(error);
+
     }
+
   }
 
   useEffect(() => {
+
     loadStatus();
 
-    const timer = setInterval(loadStatus, 5000);
+    const timer = setInterval(() => {
+      loadStatus();
+    }, 3000);
 
     return () => clearInterval(timer);
-  }, []);
+
+  }, [refresh]);
 
   return (
-    <div
-      style={{
-        border: "1px solid #ddd",
-        borderRadius: "10px",
-        padding: "15px",
-        marginBottom: "20px",
-      }}
-    >
+
+    <div className="status-card">
+
       <h2>📡 Pump Status</h2>
 
-      <h3>{status}</h3>
+      <div
+        className={
+          status === "ON"
+            ? "status-on"
+            : "status-off"
+        }
+      >
 
-      <p>Last Updated: {lastUpdated}</p>
+        {
+          status === "ON"
+            ? "🟢 Pump Running"
+            : "🔴 Pump Stopped"
+        }
+
+      </div>
+
+      <p>
+
+        Last Updated:
+
+        <br />
+
+        {updated || "Waiting..."}
+
+      </p>
 
       <button onClick={loadStatus}>
         🔄 Refresh
       </button>
+
     </div>
+
   );
+
 }
 
 export default StatusCard;

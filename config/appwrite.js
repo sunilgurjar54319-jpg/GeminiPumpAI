@@ -1,5 +1,12 @@
 const { Client, Databases } = require("node-appwrite");
+
 require("dotenv").config();
+
+// Force IPv4 (Termux workaround)
+process.env.NODE_OPTIONS = "--dns-result-order=ipv4first";
+
+const dns = require("dns");
+dns.setDefaultResultOrder("ipv4first");
 
 const client = new Client();
 

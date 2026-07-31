@@ -1,27 +1,54 @@
 const express = require("express");
 const router = express.Router();
 
-const { getHistory } = require("../services/historyService");
+const {
+  getHistory,
+  clearHistory
+} = require("../services/historyService");
 
 
+// Get History
 router.get("/:deviceId", async (req, res) => {
 
-    try {
+  try {
 
-        const result = await getHistory(
-            req.params.deviceId
-        );
+    const result = await getHistory(
+      req.params.deviceId
+    );
 
-        res.json(result);
+    res.json(result);
 
-    } catch (err) {
+  } catch (err) {
 
-        res.status(500).json({
-            success:false,
-            error:err.message
-        });
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
 
-    }
+  }
+
+});
+
+
+// Clear History
+router.delete("/:deviceId", async (req, res) => {
+
+  try {
+
+    const result = await clearHistory(
+      req.params.deviceId
+    );
+
+    res.json(result);
+
+  } catch (err) {
+
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+
+  }
 
 });
 

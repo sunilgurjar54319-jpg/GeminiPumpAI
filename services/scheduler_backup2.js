@@ -1,19 +1,9 @@
 const cron = require("node-cron");
 const databases = require("../config/appwrite");
-const { sendCommand, completeCommand } = require("./commandService");
+const { sendCommand } = require("./commandService");
 
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID;
 const SCHEDULE_COLLECTION = "schedules";
-
-async function executeCommand(deviceId, command) {
-
-  const cmd = await sendCommand(deviceId, command);
-
-  if (cmd && cmd.$id && !cmd.executed) {
-    await completeCommand(cmd.$id);
-  }
-
-}
 
 async function checkSchedules() {
 
@@ -33,7 +23,17 @@ async function checkSchedules() {
       hour12: false
     });
 
-    const today = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][indiaDate.getDay()];
+    const dayNames = [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ];
+
+    const today = dayNames[indiaDate.getDay()];
 
     console.log("Scheduler:", today, currentTime);
 
@@ -50,7 +50,7 @@ async function checkSchedules() {
 
       if (schedule.startTime === currentTime) {
 
-        await executeCommand(schedule.deviceId, "ON");
+        await sendCommand(schedule.deviceId, "ON");
 
         console.log("✅ Scheduled ON:", schedule.deviceId);
 
@@ -58,7 +58,7 @@ async function checkSchedules() {
 
       if (schedule.endTime === currentTime) {
 
-        await executeCommand(schedule.deviceId, "OFF");
+        await sendCommand(schedule.deviceId, "OFF");
 
         console.log("✅ Scheduled OFF:", schedule.deviceId);
 
@@ -68,14 +68,32 @@ async function checkSchedules() {
 
   } catch (error) {
 
-    console.log("Scheduler Error:", error.message);
+    console.error("\n========== Scheduler Error ==========");
+    console.error(error);
+    console.error("Message:", error.message);
+
+    if (error.cause) {
+      console.error("Cause:", error.cause);
+    }
+
+    if (error.stack) {
+      console.error(error.stack);
+    }
+
+    console.error("====================================\n");
 
   }
 
 }
 
-cron.schedule("* * * * *", checkSchedules, {
-  timezone: "Asia/Kolkata"
-});
+cron.schedule(
+  "* * * * *",
+  checkSchedules,
+  {
+    timezone: "Asia/Kolkata"
+  }
+);
 
-module.exports = { checkSchedules };
+module.exports = {
+  checkSchedules
+};
