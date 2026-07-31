@@ -2,6 +2,10 @@ function understandCommand(text) {
 
   const command = text.toLowerCase();
 
+  // =========================
+  // ON Command
+  // =========================
+
   if (
     command.includes("chalu") ||
     command.includes("start") ||
@@ -10,6 +14,10 @@ function understandCommand(text) {
   ) {
     return "ON";
   }
+
+  // =========================
+  // OFF Command
+  // =========================
 
   if (
     command.includes("band") ||
@@ -22,6 +30,7 @@ function understandCommand(text) {
 
   return null;
 }
+
 
 module.exports = {
   understandCommand

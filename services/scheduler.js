@@ -1,81 +1,391 @@
 const cron = require("node-cron");
 const databases = require("../config/appwrite");
-const { sendCommand, completeCommand } = require("./commandService");
+const {
+  sendCommand,
+  completeCommand
+} = require("./commandService");
 
-const DATABASE_ID = process.env.APPWRITE_DATABASE_ID;
-const SCHEDULE_COLLECTION = "schedules";
+const DATABASE_ID =
+  process.env.APPWRITE_DATABASE_ID;
 
-async function executeCommand(deviceId, command) {
+const SCHEDULE_COLLECTION =
+  "schedules";
 
-  const cmd = await sendCommand(deviceId, command);
 
-  if (cmd && cmd.$id && !cmd.executed) {
-    await completeCommand(cmd.$id);
+// =========================================
+// Execute Command
+// =========================================
+
+async function executeCommand(
+  deviceId,
+  command
+) {
+
+  const cmd =
+    await sendCommand(
+      deviceId,
+      command
+    );
+
+  if (
+    cmd &&
+    cmd.$id &&
+    !cmd.executed
+  ) {
+
+    await completeCommand(
+      cmd.$id
+    );
+
   }
 
 }
+
+
+// =========================================
+// Get India Date
+// =========================================
+
+function getIndiaDate() {
+
+  const now = new Date();
+
+  return new Date(
+    now.toLocaleString(
+      "en-US",
+      {
+        timeZone:
+          "Asia/Kolkata"
+      }
+    )
+  );
+
+}
+
+
+// =========================================
+// Check Schedules
+// =========================================
 
 async function checkSchedules() {
 
   try {
 
-    const now = new Date();
+    const indiaDate =
+      getIndiaDate();
 
-    const indiaDate = new Date(
-      now.toLocaleString("en-US", {
-        timeZone: "Asia/Kolkata"
-      })
+
+    // Current time
+    const currentTime =
+      indiaDate.toLocaleTimeString(
+        "en-IN",
+        {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false
+        }
+      );
+
+
+    // Current date
+    const currentDate =
+      indiaDate.getFullYear() +
+      "-" +
+      String(
+        indiaDate.getMonth() + 1
+      ).padStart(2, "0") +
+      "-" +
+      String(
+        indiaDate.getDate()
+      ).padStart(2, "0");
+
+
+    // Current day
+    const dayNames = [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ];
+
+
+    const today =
+      dayNames[
+        indiaDate.getDay()
+      ];
+
+
+    console.log(
+      "Scheduler:",
+      currentDate,
+      today,
+      currentTime
     );
 
-    const currentTime = indiaDate.toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false
-    });
 
-    const today = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][indiaDate.getDay()];
+    // =========================================
+    // Get Schedules
+    // =========================================
 
-    console.log("Scheduler:", today, currentTime);
+    const result =
+      await databases.listDocuments(
+        DATABASE_ID,
+        SCHEDULE_COLLECTION
+      );
 
-    const result = await databases.listDocuments(
-      DATABASE_ID,
-      SCHEDULE_COLLECTION
-    );
 
-    for (const schedule of result.documents) {
+    for (
+      const schedule of result.documents
+    ) {
 
-      if (!schedule.enabled) continue;
 
-      if (!schedule.days.includes(today)) continue;
+      // =======================================
+      // Disabled Schedule
+      // =======================================
 
-      if (schedule.startTime === currentTime) {
+      if (!schedule.enabled) {
+        continue;
+      }
 
-        await executeCommand(schedule.deviceId, "ON");
 
-        console.log("✅ Scheduled ON:", schedule.deviceId);
+      // =======================================
+      // Already Executed
+      // =======================================
+
+      const lastExecuted =
+        schedule.lastExecuted || "";
+
+
+      const executionKey =
+        `${currentDate}-${currentTime}-${schedule.$id}`;
+
+
+      if (
+        lastExecuted ===
+        executionKey
+      ) {
+
+        continue;
 
       }
 
-      if (schedule.endTime === currentTime) {
 
-        await executeCommand(schedule.deviceId, "OFF");
+      // =======================================
+      // ONE-TIME DATE SCHEDULE
+      // =======================================
 
-        console.log("✅ Scheduled OFF:", schedule.deviceId);
+      if (
+        schedule.scheduledDate
+      ) {
+
+
+        // Wrong date
+        if (
+          schedule.scheduledDate !==
+          currentDate
+        ) {
+
+          continue;
+
+        }
+
+
+        // Wrong time
+        if (
+          schedule.startTime !==
+          currentTime
+        ) {
+
+          continue;
+
+        }
+
+
+        // =====================================
+        // Execute explicit command
+        // =====================================
+
+        let command =
+          schedule.command;
+
+
+        if (
+          command !== "ON" &&
+          command !== "OFF"
+        ) {
+
+          command = "ON";
+
+        }
+
+
+        await executeCommand(
+          schedule.deviceId,
+          command
+        );
+
+
+        await databases.updateDocument(
+          DATABASE_ID,
+          SCHEDULE_COLLECTION,
+          schedule.$id,
+          {
+            lastExecuted:
+              executionKey,
+
+            enabled: false
+          }
+        );
+
+
+        console.log(
+          `✅ One-Time Scheduled ${command}:`,
+          schedule.deviceId,
+          schedule.scheduledDate
+        );
+
+
+        continue;
 
       }
+
+
+      // =======================================
+      // RECURRING / NORMAL SCHEDULE
+      // =======================================
+
+      if (
+        !schedule.days
+          .split(",")
+          .includes(today)
+      ) {
+
+        continue;
+
+      }
+
+
+      let command = null;
+
+
+      // =======================================
+      // Explicit Voice Command
+      // =======================================
+
+      if (
+        schedule.command === "ON" &&
+        schedule.startTime ===
+          currentTime
+      ) {
+
+        command = "ON";
+
+      }
+
+
+      else if (
+        schedule.command === "OFF" &&
+        schedule.startTime ===
+          currentTime
+      ) {
+
+        command = "OFF";
+
+      }
+
+
+      // =======================================
+      // Normal Start/End Schedule
+      // =======================================
+
+      else if (
+        !schedule.command &&
+        schedule.startTime ===
+          currentTime
+      ) {
+
+        command = "ON";
+
+      }
+
+
+      else if (
+        !schedule.command &&
+        schedule.endTime ===
+          currentTime &&
+        schedule.endTime !==
+          schedule.startTime
+      ) {
+
+        command = "OFF";
+
+      }
+
+
+      // Nothing to execute
+      if (!command) {
+        continue;
+      }
+
+
+      // =======================================
+      // Execute
+      // =======================================
+
+      await executeCommand(
+        schedule.deviceId,
+        command
+      );
+
+
+      await databases.updateDocument(
+        DATABASE_ID,
+        SCHEDULE_COLLECTION,
+        schedule.$id,
+        {
+          lastExecuted:
+            executionKey
+        }
+      );
+
+
+      console.log(
+        `✅ Scheduled ${command}:`,
+        schedule.deviceId
+      );
 
     }
 
+
   } catch (error) {
 
-    console.log("Scheduler Error:", error.message);
+    console.log(
+      "Scheduler Error:",
+      error.message
+    );
 
   }
 
 }
 
-cron.schedule("* * * * *", checkSchedules, {
-  timezone: "Asia/Kolkata"
-});
 
-module.exports = { checkSchedules };
+// =========================================
+// Run Every Minute
+// =========================================
+
+cron.schedule(
+  "* * * * *",
+  checkSchedules,
+  {
+    timezone:
+      "Asia/Kolkata"
+  }
+);
+
+
+module.exports = {
+  checkSchedules
+};
