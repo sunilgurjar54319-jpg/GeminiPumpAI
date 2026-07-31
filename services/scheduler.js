@@ -1,9 +1,6 @@
 const cron = require("node-cron");
 const databases = require("../config/appwrite");
-const {
-  sendCommand,
-  completeCommand
-} = require("./commandService");
+const { sendCommand } = require("./commandService");
 
 const DATABASE_ID =
   process.env.APPWRITE_DATABASE_ID;
@@ -13,7 +10,7 @@ const SCHEDULE_COLLECTION =
 
 
 // =========================================
-// Execute Command
+// Execute Scheduled Command
 // =========================================
 
 async function executeCommand(
@@ -21,20 +18,22 @@ async function executeCommand(
   command
 ) {
 
-  const cmd =
+  try {
+
     await sendCommand(
       deviceId,
       command
     );
 
-  if (
-    cmd &&
-    cmd.$id &&
-    !cmd.executed
-  ) {
+    console.log(
+      `📤 Scheduled Command Sent: ${command} → ${deviceId}`
+    );
 
-    await completeCommand(
-      cmd.$id
+  } catch (error) {
+
+    console.log(
+      "❌ Scheduled Command Error:",
+      error.message
     );
 
   }
@@ -54,8 +53,7 @@ function getIndiaDate() {
     now.toLocaleString(
       "en-US",
       {
-        timeZone:
-          "Asia/Kolkata"
+        timeZone: "Asia/Kolkata"
       }
     )
   );
@@ -75,7 +73,10 @@ async function checkSchedules() {
       getIndiaDate();
 
 
-    // Current time
+    // =======================================
+    // Current Time
+    // =======================================
+
     const currentTime =
       indiaDate.toLocaleTimeString(
         "en-IN",
@@ -87,7 +88,10 @@ async function checkSchedules() {
       );
 
 
-    // Current date
+    // =======================================
+    // Current Date
+    // =======================================
+
     const currentDate =
       indiaDate.getFullYear() +
       "-" +
@@ -100,7 +104,10 @@ async function checkSchedules() {
       ).padStart(2, "0");
 
 
-    // Current day
+    // =======================================
+    // Current Day
+    // =======================================
+
     const dayNames = [
       "Sun",
       "Mon",
@@ -126,9 +133,9 @@ async function checkSchedules() {
     );
 
 
-    // =========================================
+    // =======================================
     // Get Schedules
-    // =========================================
+    // =======================================
 
     const result =
       await databases.listDocuments(
@@ -137,23 +144,27 @@ async function checkSchedules() {
       );
 
 
+    // =======================================
+    // Process Every Schedule
+    // =======================================
+
     for (
       const schedule of result.documents
     ) {
 
 
-      // =======================================
+      // =====================================
       // Disabled Schedule
-      // =======================================
+      // =====================================
 
       if (!schedule.enabled) {
         continue;
       }
 
 
-      // =======================================
+      // =====================================
       // Already Executed
-      // =======================================
+      // =====================================
 
       const lastExecuted =
         schedule.lastExecuted || "";
@@ -173,16 +184,19 @@ async function checkSchedules() {
       }
 
 
-      // =======================================
+      // =====================================
       // ONE-TIME DATE SCHEDULE
-      // =======================================
+      // =====================================
 
       if (
         schedule.scheduledDate
       ) {
 
 
-        // Wrong date
+        // -----------------------------------
+        // Wrong Date
+        // -----------------------------------
+
         if (
           schedule.scheduledDate !==
           currentDate
@@ -193,7 +207,10 @@ async function checkSchedules() {
         }
 
 
-        // Wrong time
+        // -----------------------------------
+        // Wrong Time
+        // -----------------------------------
+
         if (
           schedule.startTime !==
           currentTime
@@ -204,9 +221,9 @@ async function checkSchedules() {
         }
 
 
-        // =====================================
-        // Execute explicit command
-        // =====================================
+        // -----------------------------------
+        // Command
+        // -----------------------------------
 
         let command =
           schedule.command;
@@ -222,11 +239,19 @@ async function checkSchedules() {
         }
 
 
+        // -----------------------------------
+        // Send Command
+        // -----------------------------------
+
         await executeCommand(
           schedule.deviceId,
           command
         );
 
+
+        // -----------------------------------
+        // Mark Schedule Executed
+        // -----------------------------------
 
         await databases.updateDocument(
           DATABASE_ID,
@@ -253,11 +278,12 @@ async function checkSchedules() {
       }
 
 
-      // =======================================
+      // =====================================
       // RECURRING / NORMAL SCHEDULE
-      // =======================================
+      // =====================================
 
       if (
+        !schedule.days ||
         !schedule.days
           .split(",")
           .includes(today)
@@ -271,25 +297,29 @@ async function checkSchedules() {
       let command = null;
 
 
-      // =======================================
-      // Explicit Voice Command
-      // =======================================
+      // =====================================
+      // Explicit ON Command
+      // =====================================
 
       if (
         schedule.command === "ON" &&
         schedule.startTime ===
-          currentTime
+        currentTime
       ) {
 
         command = "ON";
 
       }
 
+
+      // =====================================
+      // Explicit OFF Command
+      // =====================================
 
       else if (
         schedule.command === "OFF" &&
         schedule.startTime ===
-          currentTime
+        currentTime
       ) {
 
         command = "OFF";
@@ -297,14 +327,14 @@ async function checkSchedules() {
       }
 
 
-      // =======================================
-      // Normal Start/End Schedule
-      // =======================================
+      // =====================================
+      // Normal Start Schedule
+      // =====================================
 
       else if (
         !schedule.command &&
         schedule.startTime ===
-          currentTime
+        currentTime
       ) {
 
         command = "ON";
@@ -312,12 +342,16 @@ async function checkSchedules() {
       }
 
 
+      // =====================================
+      // Normal End Schedule
+      // =====================================
+
       else if (
         !schedule.command &&
         schedule.endTime ===
-          currentTime &&
+        currentTime &&
         schedule.endTime !==
-          schedule.startTime
+        schedule.startTime
       ) {
 
         command = "OFF";
@@ -325,21 +359,30 @@ async function checkSchedules() {
       }
 
 
-      // Nothing to execute
+      // =====================================
+      // Nothing To Execute
+      // =====================================
+
       if (!command) {
+
         continue;
+
       }
 
 
-      // =======================================
-      // Execute
-      // =======================================
+      // =====================================
+      // Send Scheduled Command
+      // =====================================
 
       await executeCommand(
         schedule.deviceId,
         command
       );
 
+
+      // =====================================
+      // Save Execution Key
+      // =====================================
 
       await databases.updateDocument(
         DATABASE_ID,
@@ -385,6 +428,10 @@ cron.schedule(
   }
 );
 
+
+// =========================================
+// Export
+// =========================================
 
 module.exports = {
   checkSchedules

@@ -20,8 +20,17 @@ router.post("/", async (req, res) => {
       startTime,
       endTime,
       days,
-      enabled
+      enabled,
+      command,
+      scheduledDate
     } = req.body;
+
+    if (!deviceId || !startTime || !endTime) {
+      return res.status(400).json({
+        success: false,
+        error: "deviceId, startTime and endTime are required"
+      });
+    }
 
     const result = await databases.createDocument(
       DATABASE_ID,
@@ -31,8 +40,10 @@ router.post("/", async (req, res) => {
         deviceId,
         startTime,
         endTime,
-        days,
-        enabled
+        days: days || "Mon,Tue,Wed,Thu,Fri,Sat,Sun",
+        enabled: enabled !== false,
+        command: command || "",
+        scheduledDate: scheduledDate || null
       }
     );
 
@@ -56,7 +67,7 @@ router.post("/", async (req, res) => {
 
 
 // =====================
-// Get Schedule
+// Get Schedules
 // =====================
 router.get("/:deviceId", async (req, res) => {
 
@@ -101,7 +112,9 @@ router.put("/:id", async (req, res) => {
       startTime,
       endTime,
       days,
-      enabled
+      enabled,
+      command,
+      scheduledDate
     } = req.body;
 
     const result = await databases.updateDocument(
@@ -112,7 +125,9 @@ router.put("/:id", async (req, res) => {
         startTime,
         endTime,
         days,
-        enabled
+        enabled,
+        command: command || "",
+        scheduledDate: scheduledDate || null
       }
     );
 
@@ -165,5 +180,6 @@ router.delete("/:id", async (req, res) => {
   }
 
 });
+
 
 module.exports = router;
