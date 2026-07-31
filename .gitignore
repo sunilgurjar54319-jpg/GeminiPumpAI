@@ -2,3 +2,6 @@ node_modules
 .env
 frontend/node_modules
 frontend/dist
+frontend/src/App_backup.css
+frontend/src/components/HistoryCard_backup2.jsx
+frontend/src/components/StatusCard_backup2.jsx
