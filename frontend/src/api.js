@@ -1,4 +1,4 @@
-const API = "http://localhost:5001";
+const API = "https://geminipumpai.onrender.com";
 
 
 // Gemini Voice Command
@@ -88,7 +88,7 @@ export async function clearHistory(deviceId) {
 export async function getStats(deviceId){
 
 const res = await fetch(
-`http://localhost:5001/api/stats/${deviceId}`
+`${API}/api/stats/${deviceId}`
 );
 
 

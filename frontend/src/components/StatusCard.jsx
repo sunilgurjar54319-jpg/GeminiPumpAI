@@ -10,7 +10,7 @@ function StatusCard({ refresh }) {
     try {
 
       const res = await fetch(
-        "http://localhost:5001/api/status/PUMP001"
+        "https://geminipumpai.onrender.com/api/status/PUMP001"
       );
 
       const data = await res.json();

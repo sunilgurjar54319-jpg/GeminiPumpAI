@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const API = "http://localhost:5001";
+const API = "https://geminipumpai.onrender.com";
 
 function ManualControl({ onCommandSent }) {
 
