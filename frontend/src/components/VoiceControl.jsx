@@ -2,12 +2,10 @@ import { useState } from "react";
 import { sendVoice } from "../api";
 
 function VoiceControl({ onCommandSent }) {
-
   const [listening, setListening] = useState(false);
   const [message, setMessage] = useState("");
 
   function startListening() {
-
     const SpeechRecognition =
       window.SpeechRecognition ||
       window.webkitSpeechRecognition;
@@ -27,45 +25,116 @@ function VoiceControl({ onCommandSent }) {
     setMessage("🎙️ सुन रहा हूँ...");
 
     recognition.onresult = async (event) => {
-
-      const text =
-        event.results[0][0].transcript;
+      const text = event.results[0][0].transcript;
 
       setMessage(`🗣️ आपने कहा: ${text}`);
 
       try {
-
         const data = await sendVoice(text);
 
-        if (data.success) {
+        console.log("Voice API:", data);
+
+        if (!data.success) {
+          setMessage(
+            `❌ ${data.message || "Command समझ नहीं आया"}`
+          );
+          return;
+        }
+
+        // =========================
+        // IMMEDIATE COMMAND
+        // =========================
+
+        if (data.type === "IMMEDIATE") {
+          if (data.command === "ON") {
+            setMessage("✅ Pump ON Command Sent");
+          } else if (data.command === "OFF") {
+            setMessage("✅ Pump OFF Command Sent");
+          }
+
+          if (onCommandSent) {
+            onCommandSent();
+          }
+
+          return;
+        }
+
+        // =========================
+        // ONE-TIME SCHEDULE
+        // =========================
+
+        if (data.type === "SCHEDULE") {
+          const commandText =
+            data.command === "ON"
+              ? "मोटर चालू"
+              : "मोटर बंद";
+
+          const dateText =
+            data.scheduledDate || "";
+
+          const timeText =
+            `${String(data.hour).padStart(2, "0")}:${String(
+              data.minute
+            ).padStart(2, "0")}`;
 
           setMessage(
-            data.command === "ON"
-              ? "✅ Pump ON Command Sent"
-              : "✅ Pump OFF Command Sent"
+            `✅ Schedule Set: ${dateText} ${timeText} → ${commandText}`
           );
 
           if (onCommandSent) {
             onCommandSent();
           }
 
-        } else {
+          return;
+        }
 
-          setMessage("❌ Command समझ नहीं आया");
+        // =========================
+        // RECURRING SCHEDULE
+        // =========================
 
+        if (data.type === "RECURRING") {
+          const commandText =
+            data.command === "ON"
+              ? "मोटर चालू"
+              : "मोटर बंद";
+
+          const timeText =
+            `${String(data.hour).padStart(2, "0")}:${String(
+              data.minute
+            ).padStart(2, "0")}`;
+
+          setMessage(
+            `🔄 Recurring Schedule Set: रोज़ ${timeText} → ${commandText}`
+          );
+
+          if (onCommandSent) {
+            onCommandSent();
+          }
+
+          return;
+        }
+
+        // =========================
+        // UNKNOWN RESPONSE
+        // =========================
+
+        setMessage("✅ Command received");
+
+        if (onCommandSent) {
+          onCommandSent();
         }
 
       } catch (error) {
-
-        console.log(error);
+        console.log("Voice Error:", error);
         setMessage("❌ Server Error");
-
       }
-
     };
 
-    recognition.onerror = () => {
+    recognition.onerror = (event) => {
+      console.log("Speech Error:", event);
+
       setMessage("❌ Voice recognition error");
+      setListening(false);
     };
 
     recognition.onend = () => {
@@ -76,7 +145,6 @@ function VoiceControl({ onCommandSent }) {
   }
 
   return (
-
     <div
       style={{
         border: "1px solid #ddd",
@@ -86,7 +154,6 @@ function VoiceControl({ onCommandSent }) {
         textAlign: "center"
       }}
     >
-
       <h2>🎙️ Gemini Voice Control</h2>
 
       <button
@@ -97,27 +164,24 @@ function VoiceControl({ onCommandSent }) {
           borderRadius: "30px",
           padding: "15px 35px",
           fontSize: "18px",
-          cursor: "pointer"
+          cursor: listening ? "not-allowed" : "pointer"
         }}
       >
-
         {listening
           ? "🎙️ सुन रहा हूँ..."
           : "🎙️ बोलकर Pump Control करें"}
-
       </button>
 
       <p
         style={{
           fontWeight: "bold",
-          fontSize: "16px"
+          fontSize: "16px",
+          minHeight: "24px"
         }}
       >
         {message}
       </p>
-
     </div>
-
   );
 }
 
