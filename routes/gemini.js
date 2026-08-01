@@ -55,15 +55,34 @@ router.post("/voice", async (req, res) => {
 
     const lowerText = text.toLowerCase();
 
+    const isScheduleWord =
+  lowerText.includes("schedule") ||
+  lowerText.includes("शेड्यूल") ||
+  lowerText.includes("शेडूल") ||
+  lowerText.includes("शिड्यूल");
+
+const isShowWord =
+  lowerText.includes("show") ||
+  lowerText.includes("list") ||
+  lowerText.includes("dikhao") ||
+  lowerText.includes("batao") ||
+  lowerText.includes("दिखाओ") ||
+  lowerText.includes("बताओ");
+
+const isCancelWord =
+  lowerText.includes("cancel") ||
+  lowerText.includes("delete") ||
+  lowerText.includes("hatao") ||
+  lowerText.includes("hatado") ||
+  lowerText.includes("कैंसिल") ||
+  lowerText.includes("हटाओ") ||
+  lowerText.includes("हटा दो") ||
+  lowerText.includes("रद्द");
+
     if (
-      lowerText.includes("schedule") &&
-      (
-        lowerText.includes("show") ||
-        lowerText.includes("list") ||
-        lowerText.includes("dikhao") ||
-        lowerText.includes("batao")
-      )
-    ) {
+  isScheduleWord &&
+  isShowWord
+) {
 
       const schedules =
         await databases.listDocuments(
@@ -85,20 +104,9 @@ router.post("/voice", async (req, res) => {
     // =========================================
 
     if (
-      (
-        lowerText.includes("cancel") ||
-        lowerText.includes("cancle") ||
-        lowerText.includes("delete") ||
-        lowerText.includes("hatao") ||
-        lowerText.includes("hatado") ||
-        lowerText.includes("band karo")
-      ) &&
-      (
-        lowerText.includes("schedule") ||
-        lowerText.includes("wala schedule") ||
-        lowerText.includes("wali schedule")
-      )
-    ) {
+  isCancelWord &&
+  isScheduleWord
+) {
 
       const timeMatch = lowerText.match(
         /(\d{1,2})\s*(?::|\.|\s)\s*(\d{2})/
