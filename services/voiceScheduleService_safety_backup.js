@@ -63,15 +63,6 @@ if (durationMatch && action === "ON") {
     durationMinutes = value * 60;
   }
 
- // Maximum pump runtime safety limit
-const MAX_RUNTIME_MINUTES = 240;
-
-if (durationMinutes > MAX_RUNTIME_MINUTES) {
-  return {
-    error: "Maximum pump runtime is 4 hours"
-  };
-}
-
   return {
     type: "DURATION",
     action: "ON",
