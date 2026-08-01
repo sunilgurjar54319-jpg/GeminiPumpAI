@@ -1,61 +1,248 @@
-.status-card{
-
- text-align:center;
- padding:25px;
-
+* {
+  box-sizing: border-box;
 }
 
-
-.status-card h2{
-
- font-size:28px;
-
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f7fb;
+  color: #172033;
 }
 
+button,
+input {
+  font-family: inherit;
+}
 
+.dashboard {
+  width: 100%;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.grid {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #e4e9f0;
+  border-radius: 20px;
+  padding: 4px;
+  box-shadow: 0 8px 25px rgba(20, 40, 70, 0.07);
+  overflow: hidden;
+}
+
+.card.full {
+  grid-column: 1 / -1;
+}
+
+/* Status */
+
+.status-card {
+  text-align: center;
+  padding: 28px 20px;
+}
+
+.status-card h2 {
+  margin: 0 0 15px;
+  font-size: 24px;
+}
 
 .status-on,
-.status-off{
+.status-off {
+  font-size: 30px;
+  font-weight: 800;
+  margin: 18px 0;
+  padding: 18px;
+  border-radius: 16px;
+}
 
- font-size:38px;
- font-weight:bold;
- margin:20px 0;
- line-height:1.3;
+.status-on {
+  color: #176b35;
+  background: #eaf8ef;
+}
+
+.status-off {
+  color: #b42318;
+  background: #fff0ef;
+}
+
+.status-card p {
+  font-size: 15px;
+  color: #667085;
+}
+
+/* Mobile */
+
+@media (max-width: 760px) {
+  .dashboard {
+    padding: 12px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .card.full {
+    grid-column: auto;
+  }
+}
+
+/* Small phones */
+
+@media (max-width: 420px) {
+  .dashboard {
+    padding: 8px;
+  }
+
+  .grid {
+    gap: 10px;
+  }
+
+  .card {
+    border-radius: 16px;
+  }
+
+  .status-card {
+    padding: 22px 14px;
+  }
+
+  .status-on,
+  .status-off {
+    font-size: 25px;
+  }
+}
+
+/* =========================
+   Premium Header
+========================= */
+
+.app-header {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto 20px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #1264d6, #2489ee);
+  color: white;
+  box-shadow: 0 12px 30px rgba(18, 100, 214, 0.22);
+  overflow: hidden;
+}
+
+.header-inner {
+  min-height: 100px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.brand-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 31px;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 27px;
+  line-height: 1.2;
+}
+
+.brand p {
+  margin: 5px 0 0;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.connection-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 13px;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.connection-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #8cffad;
+  box-shadow: 0 0 10px rgba(140, 255, 173, 0.8);
+}
+
+@media (max-width: 600px) {
+
+  .app-header {
+    margin-bottom: 14px;
+    border-radius: 18px;
+  }
+
+  .header-inner {
+    min-height: auto;
+    padding: 17px;
+  }
+
+  .brand-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    font-size: 25px;
+  }
+
+  .brand h1 {
+    font-size: 21px;
+  }
+
+  .brand p {
+    font-size: 12px;
+  }
+
+  .connection-badge {
+    padding: 7px 9px;
+    font-size: 11px;
+  }
 
 }
 
+@media (max-width: 430px) {
 
+  .header-inner {
+    align-items: flex-start;
+  }
 
-.status-on{
+  .connection-badge {
+    margin-top: 2px;
+  }
 
- color:green;
+  .brand {
+    gap: 10px;
+  }
 
-}
-
-
-
-.status-off{
-
- color:red;
-
-}
-
-
-
-.status-card p{
-
- font-size:18px;
- color:#555;
-
-}
-
-
-
-.status-card button{
-
- background:white;
- padding:12px 25px;
- border-radius:25px;
- font-size:18px;
+  .brand-icon {
+    flex-shrink: 0;
+  }
 
 }
