@@ -1,4 +1,3 @@
-
 const express = require("express");
 const router = express.Router();
 
@@ -399,79 +398,5 @@ router.post("/voice", async (req, res) => {
 
 });
 
-// =========================================
-// GET SCHEDULE LIST
-// =========================================
-
-router.get("/schedule/list", async (req, res) => {
-
-  try {
-
-    const schedules =
-      await databases.listDocuments(
-        DATABASE_ID,
-        SCHEDULE_COLLECTION
-      );
-
-
-    return res.json({
-      success: true,
-      schedules: schedules.documents
-    });
-
-
-  } catch (error) {
-
-    console.error(
-      "Schedule List Error:",
-      error
-    );
-
-    return res.status(500).json({
-      success:false,
-      error:error.message
-    });
-
-  }
-
-});
-
-// =========================================
-// DELETE SCHEDULE
-// =========================================
-
-router.delete("/schedule/:id", async (req, res) => {
-
-  try {
-
-    await databases.deleteDocument(
-      DATABASE_ID,
-      SCHEDULE_COLLECTION,
-      req.params.id
-    );
-
-
-    return res.json({
-      success:true,
-      message:"Schedule deleted"
-    });
-
-
-  } catch(error) {
-
-    console.error(
-      "Schedule Delete Error:",
-      error
-    );
-
-
-    return res.status(500).json({
-      success:false,
-      error:error.message
-    });
-
-  }
-
-});
 
 module.exports = router;
