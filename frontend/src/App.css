@@ -246,3 +246,48 @@ input {
   }
 
 }
+
+/* =========================
+   Card Text Visibility Fix
+   ========================= */
+
+.card h1,
+.card h2,
+.card h3,
+.card h4,
+.card p,
+.card label {
+  color: #172033;
+}
+
+
+/* ===== FINAL TEXT VISIBILITY FIX ===== */
+
+.card,
+.card div,
+.card p,
+.card h1,
+.card h2,
+.card h3,
+.card h4,
+.card label,
+.card span,
+.card b,
+.card strong {
+  color: #172033 !important;
+}
+
+/* Status colors वापस सही रखें */
+.card .status-on {
+  color: #176b35 !important;
+}
+
+.card .status-off {
+  color: #b42318 !important;
+}
+
+/* Buttons के अपने colors को न छेड़ें */
+.card button {
+  color: inherit;
+}
+
