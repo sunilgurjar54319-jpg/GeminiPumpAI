@@ -30,11 +30,45 @@ function parseVoiceSchedule(text) {
     action = "OFF";
   }
 
-  // No ON/OFF command
-  if (!action) {
-    return null;
+// No ON/OFF command
+if (!action) {
+  return null;
+}
+// =========================================
+// DURATION MODE
+// Example:
+// pump 10 minute ke liye on karo
+// motor 5 minute ke liye chalu karo
+// pump 2 ghante ke liye on karo
+// =========================================
+
+const durationMatch = command.match(
+  /(\d+)\s*(minute|minutes|min|मिनट|hour|hours|hr|ghanta|ghante|घंटा|घंटे)/i
+);
+
+if (durationMatch && action === "ON") {
+
+  let value = Number(durationMatch[1]);
+  let unit = durationMatch[2].toLowerCase();
+
+  let durationMinutes = value;
+
+  if (
+    unit.includes("hour") ||
+    unit.includes("hr") ||
+    unit.includes("ghanta") ||
+    unit.includes("ghante") ||
+    unit.includes("घंट")
+  ) {
+    durationMinutes = value * 60;
   }
 
+  return {
+    type: "DURATION",
+    action: "ON",
+    durationMinutes
+  };
+}
 
   // =========================================
   // IMMEDIATE COMMAND

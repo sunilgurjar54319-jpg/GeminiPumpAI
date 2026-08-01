@@ -4,9 +4,9 @@ function parseVoiceSchedule(text) {
 
   let action = null;
 
-  // =========================
+  // =========================================
   // ON
-  // =========================
+  // =========================================
 
   if (
     command.includes("चालू") ||
@@ -17,9 +17,9 @@ function parseVoiceSchedule(text) {
     action = "ON";
   }
 
-  // =========================
+  // =========================================
   // OFF
-  // =========================
+  // =========================================
 
   if (
     command.includes("बंद") ||
@@ -30,94 +30,74 @@ function parseVoiceSchedule(text) {
     action = "OFF";
   }
 
-  if (!action) {
+  // No ON/OFF command
+    return null;
+}  return null;
+}if (!action) {
     return null;
   }
 
-  // =========================
-  // DAY NAMES
-  // =========================
 
-  const dayMap = {
+  // =========================================
+  // IMMEDIATE COMMAND
+  // =========================================
+  // Example:
+  // pump on karo
+  // pump off karo
+  // motor chalu karo
+  // motor band karo
+  //
+  // Agar time/day/date nahi hai,
+  // ise schedule mat samjho.
+  // Gemini route immediate command handle karega.
 
-    "रविवार": "Sun",
-    "ravivar": "Sun",
-    "sunday": "Sun",
+  const hasTime =
+    /(\d{1,2})(?::(\d{2}))?\s*(?:बजे|baje)?/.test(command);
 
-    "सोमवार": "Mon",
-    "somvar": "Mon",
-    "somwaar": "Mon",
-    "monday": "Mon",
-
-    "मंगलवार": "Tue",
-    "mangalvar": "Tue",
-    "mangalwaar": "Tue",
-    "tuesday": "Tue",
-
-    "बुधवार": "Wed",
-    "budhvar": "Wed",
-    "budhwaar": "Wed",
-    "wednesday": "Wed",
-
-    "गुरुवार": "Thu",
-    "guruwar": "Thu",
-    "guruvaar": "Thu",
-    "thursday": "Thu",
-
-    "शुक्रवार": "Fri",
-    "shukravar": "Fri",
-    "shukravaar": "Fri",
-    "friday": "Fri",
-
-    "शनिवार": "Sat",
-    "shanivar": "Sat",
-    "shanivaar": "Sat",
-    "saturday": "Sat"
-  };
-
-  let selectedDay = null;
-
-  for (const name in dayMap) {
-
-    if (command.includes(name)) {
-      selectedDay = dayMap[name];
-      break;
-    }
-
-  }
-
-  // =========================
-  // TODAY / TOMORROW / DAY AFTER
-  // =========================
-
-  const isToday =
+  const hasDay =
     command.includes("आज") ||
     command.includes("aaj") ||
-    command.includes("today");
-
-  const isTomorrow =
+    command.includes("today") ||
     command.includes("कल") ||
     command.includes("kal") ||
-    command.includes("tomorrow");
-
-  const isDayAfterTomorrow =
-    command.includes("परसों") ||
-    command.includes("parso") ||
-    command.includes("day after tomorrow");
-
-  // =========================
-  // EVERY DAY
-  // =========================
-
-  const everyDay =
+    command.includes("tomorrow") ||
     command.includes("हर दिन") ||
+    command.includes("हर रोज") ||
     command.includes("har din") ||
+    command.includes("har roj") ||
     command.includes("daily") ||
-    command.includes("every day");
+    command.includes("रविवार") ||
+    command.includes("सोमवार") ||
+    command.includes("मंगलवार") ||
+    command.includes("बुधवार") ||
+    command.includes("गुरुवार") ||
+    command.includes("शुक्रवार") ||
+    command.includes("शनिवार") ||
+    command.includes("ravivar") ||
+    command.includes("somvar") ||
+    command.includes("mangalvar") ||
+    command.includes("budhvar") ||
+    command.includes("guruvaar") ||
+    command.includes("guruvar") ||
+    command.includes("shukravar") ||
+    command.includes("shanivar");
 
-  // =========================
-  // TIME
-  // =========================
+  const hasScheduleWord =
+    command.includes("schedule") ||
+    command.includes("शेड्यूल") ||
+    command.includes("समय") ||
+    command.includes("time") ||
+    command.includes("बजे") ||
+    command.includes("baje");
+
+  if (!hasTime && !hasDay && !hasScheduleWord) {
+    return null;
+  }
+
+
+  // =========================================
+  // Time
+  // =========================================
 
   let hour = null;
   let minute = 0;
@@ -142,9 +122,10 @@ function parseVoiceSchedule(text) {
     minute = Number(timeMatch[2]);
   }
 
-  // =========================
+
+  // =========================================
   // AM / PM
-  // =========================
+  // =========================================
 
   if (
     command.includes("शाम") ||
@@ -158,23 +139,10 @@ function parseVoiceSchedule(text) {
 
   }
 
-  if (
-    command.includes("सुबह") ||
-    command.includes("subah") ||
-    command.includes("morning") ||
-    command.includes("am")
-  ) {
-
-    if (hour === 12) {
-      hour = 0;
-    }
-
-  }
 
   if (
     command.includes("दोपहर") ||
-    command.includes("dopahar") ||
-    command.includes("afternoon")
+    command.includes("dopahar")
   ) {
 
     if (hour < 12) {
@@ -183,14 +151,26 @@ function parseVoiceSchedule(text) {
 
   }
 
-  // =========================
-  // VALIDATE TIME
-  // =========================
 
   if (
-    hour < 0 ||
+    command.includes("सुबह") ||
+    command.includes("subah") ||
+    command.includes("morning")
+  ) {
+
+    if (hour === 12) {
+      hour = 0;
+    }
+
+  }
+
+
+  // =========================================
+  // Validate Time
+  // =========================================
+
+  if (
     hour > 23 ||
-    minute < 0 ||
     minute > 59
   ) {
 
@@ -202,195 +182,25 @@ function parseVoiceSchedule(text) {
 
   }
 
-  // =========================
-  // CURRENT INDIA DATE
-  // =========================
+
+  // =========================================
+  // Current India Date
+  // =========================================
 
   const now = new Date();
 
-  const indiaString = now.toLocaleString("en-US", {
-    timeZone: "Asia/Kolkata"
-  });
+  const indiaString =
+    now.toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata"
+    });
 
-  const indiaDate = new Date(indiaString);
+  const indiaDate =
+    new Date(indiaString);
 
-  // =========================
-  // EVERY DAY
-  // =========================
 
-  if (everyDay) {
-
-    return {
-
-      type: "RECURRING",
-
-      action,
-
-      hour,
-
-      minute,
-
-      days: "Sun,Mon,Tue,Wed,Thu,Fri,Sat"
-
-    };
-
-  }
-
-  // =========================
-  // SPECIFIC WEEKDAY
-  // =========================
-
-  if (selectedDay) {
-
-    const dayNames = [
-      "Sun",
-      "Mon",
-      "Tue",
-      "Wed",
-      "Thu",
-      "Fri",
-      "Sat"
-    ];
-
-    const targetIndex = dayNames.indexOf(selectedDay);
-    const currentIndex = indiaDate.getDay();
-
-    let daysAhead =
-      (targetIndex - currentIndex + 7) % 7;
-
-    // अगर वही दिन है लेकिन समय निकल चुका है,
-    // तो अगले सप्ताह का वही दिन लें।
-
-    if (daysAhead === 0) {
-
-      const targetTime = new Date(indiaDate);
-
-      targetTime.setHours(hour);
-      targetTime.setMinutes(minute);
-      targetTime.setSeconds(0);
-      targetTime.setMilliseconds(0);
-
-      if (targetTime <= indiaDate) {
-        daysAhead = 7;
-      }
-
-    }
-
-    const date = new Date(indiaDate);
-
-    date.setDate(
-      date.getDate() + daysAhead
-    );
-
-    date.setHours(hour);
-    date.setMinutes(minute);
-    date.setSeconds(0);
-    date.setMilliseconds(0);
-
-    const scheduledAt = new Date(
-      Date.UTC(
-        date.getFullYear(),
-        date.getMonth(),
-        date.getDate(),
-        date.getHours() - 5,
-        date.getMinutes() - 30,
-        0,
-        0
-      )
-    ).toISOString();
-
-    return {
-
-      type: "SCHEDULE",
-
-      action,
-
-      scheduledAt,
-
-      hour,
-
-      minute,
-
-      day: selectedDay
-
-    };
-
-  }
-
-  // =========================
-  // TODAY / TOMORROW / DAY AFTER
-  // =========================
-
-  const date = new Date(indiaDate);
-
-  if (isTomorrow) {
-
-    date.setDate(
-      date.getDate() + 1
-    );
-
-  }
-
-  if (isDayAfterTomorrow) {
-
-    date.setDate(
-      date.getDate() + 2
-    );
-
-  }
-
-  date.setHours(hour);
-  date.setMinutes(minute);
-  date.setSeconds(0);
-  date.setMilliseconds(0);
-
-  // =========================
-  // TODAY PAST TIME
-  // =========================
-
-  if (isToday && date <= indiaDate) {
-
-    return {
-
-      type: "SCHEDULE",
-
-      action,
-
-      error: "Time has already passed today"
-
-    };
-
-  }
-
-  // =========================
-  // DEFAULT
-  // =========================
-
-  // अगर कोई दिन नहीं बताया गया और
-  // आज/कल/परसों भी नहीं है,
-  // तो इसे immediate command न बनाएं।
-
-  if (
-    !isToday &&
-    !isTomorrow &&
-    !isDayAfterTomorrow
-  ) {
-
-    return {
-
-      type: "SCHEDULE",
-
-      action,
-
-      error: "Day not specified"
-
-    };
-
-  }
-
-  // =========================
-  // DAY
-  // =========================
+  // =========================================
+  // Day Names
+  // =========================================
 
   const dayNames = [
     "Sun",
@@ -402,29 +212,274 @@ function parseVoiceSchedule(text) {
     "Sat"
   ];
 
-  const day = dayNames[
-    date.getDay()
-  ];
 
-  // =========================
-  // ISO TIME
-  // =========================
+  const hindiDays = {
 
-  const scheduledAt = new Date(
-    Date.UTC(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate(),
-      date.getHours() - 5,
-      date.getMinutes() - 30,
-      0,
-      0
-    )
-  ).toISOString();
+    "रविवार": "Sun",
+    "सोमवार": "Mon",
+    "मंगलवार": "Tue",
+    "बुधवार": "Wed",
+    "गुरुवार": "Thu",
+    "शुक्रवार": "Fri",
+    "शनिवार": "Sat",
 
-  // =========================
-  // RESULT
-  // =========================
+    "ravivar": "Sun",
+    "somvar": "Mon",
+    "mangalvar": "Tue",
+    "budhvar": "Wed",
+    "guruvaar": "Thu",
+    "guruvar": "Thu",
+    "shukravar": "Fri",
+    "shanivar": "Sat"
+
+  };
+
+
+  // =========================================
+  // हर दिन / Daily
+  // =========================================
+
+  if (
+    command.includes("हर दिन") ||
+    command.includes("हर रोज") ||
+    command.includes("har din") ||
+    command.includes("har roj") ||
+    command.includes("daily")
+  ) {
+
+    return {
+
+      type: "RECURRING",
+
+      action,
+
+      hour,
+
+      minute,
+
+      days:
+        "Sun,Mon,Tue,Wed,Thu,Fri,Sat"
+
+    };
+
+  }
+
+
+  // =========================================
+  // Specific Weekday
+  // =========================================
+
+  let selectedDay = null;
+
+  for (
+    const key of Object.keys(hindiDays)
+  ) {
+
+    if (command.includes(key)) {
+
+      selectedDay = hindiDays[key];
+
+      break;
+
+    }
+
+  }
+
+
+  // =========================================
+  // Today
+  // =========================================
+
+  if (
+    command.includes("आज") ||
+    command.includes("aaj") ||
+    command.includes("today")
+  ) {
+
+    const currentHour =
+      indiaDate.getHours();
+
+    const currentMinute =
+      indiaDate.getMinutes();
+
+
+    if (
+      hour < currentHour ||
+      (
+        hour === currentHour &&
+        minute <= currentMinute
+      )
+    ) {
+
+      return {
+
+        type: "SCHEDULE",
+
+        action,
+
+        error:
+          "Time has already passed today"
+
+      };
+
+    }
+
+
+    const scheduledDate =
+      indiaDate.getFullYear() +
+      "-" +
+      String(
+        indiaDate.getMonth() + 1
+      ).padStart(2, "0") +
+      "-" +
+      String(
+        indiaDate.getDate()
+      ).padStart(2, "0");
+
+
+    return {
+
+      type: "SCHEDULE",
+
+      action,
+
+      scheduledAt:
+        `${scheduledDate}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00+05:30`,
+
+      scheduledDate,
+
+      hour,
+
+      minute,
+
+      day:
+        dayNames[indiaDate.getDay()]
+
+    };
+
+  }
+
+
+  // =========================================
+  // Tomorrow
+  // =========================================
+
+  if (
+    command.includes("कल") ||
+    command.includes("kal") ||
+    command.includes("tomorrow")
+  ) {
+
+    const date =
+      new Date(indiaDate);
+
+    date.setDate(
+      date.getDate() + 1
+    );
+
+
+    const scheduledDate =
+      date.getFullYear() +
+      "-" +
+      String(
+        date.getMonth() + 1
+      ).padStart(2, "0") +
+      "-" +
+      String(
+        date.getDate()
+      ).padStart(2, "0");
+
+
+    return {
+
+      type: "SCHEDULE",
+
+      action,
+
+      scheduledAt:
+        `${scheduledDate}T${String(date.getHours()).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00+05:30`.replace(
+          `${String(date.getHours()).padStart(2, "0")}:${String(minute).padStart(2, "0")}`,
+          `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`
+        ),
+
+      scheduledDate,
+
+      hour,
+
+      minute,
+
+      day:
+        dayNames[date.getDay()]
+
+    };
+
+  }
+
+
+  // =========================================
+  // Specific Weekday
+  // =========================================
+
+  if (selectedDay) {
+
+    const currentDay =
+      indiaDate.getDay();
+
+    const targetDay =
+      dayNames.indexOf(selectedDay);
+
+
+    let difference =
+      targetDay - currentDay;
+
+
+    if (difference <= 0) {
+      difference += 7;
+    }
+
+
+    const date =
+      new Date(indiaDate);
+
+    date.setDate(
+      date.getDate() + difference
+    );
+
+
+    const scheduledDate =
+      date.getFullYear() +
+      "-" +
+      String(
+        date.getMonth() + 1
+      ).padStart(2, "0") +
+      "-" +
+      String(
+        date.getDate()
+      ).padStart(2, "0");
+
+
+    return {
+
+      type: "RECURRING",
+
+      action,
+
+      hour,
+
+      minute,
+
+      days: selectedDay,
+
+      scheduledDate
+
+    };
+
+  }
+
+
+  // =========================================
+  // No day specified
+  // =========================================
 
   return {
 
@@ -432,13 +487,8 @@ function parseVoiceSchedule(text) {
 
     action,
 
-    scheduledAt,
-
-    hour,
-
-    minute,
-
-    day
+    error:
+      "Date or day not found"
 
   };
 
