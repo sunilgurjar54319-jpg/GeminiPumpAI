@@ -27,6 +27,8 @@ async function executeCommand(deviceId, command) {
       error.message
     );
 
+    throw error;
+
   }
 
 }
