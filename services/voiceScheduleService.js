@@ -271,7 +271,15 @@ if (durationMinutes > MAX_RUNTIME_MINUTES) {
     "guruvaar": "Thu",
     "guruvar": "Thu",
     "shukravar": "Fri",
-    "shanivar": "Sat"
+    "shanivar": "Sat",
+
+    "monday": "Mon",
+    "tuesday": "Tue",
+    "wednesday": "Wed",
+    "thursday": "Thu",
+    "friday": "Fri",
+    "saturday": "Sat",
+    "sunday": "Sun"
 
   };
 
