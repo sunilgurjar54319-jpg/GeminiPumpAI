@@ -1,16 +1,26 @@
 function Header() {
   return (
-    <div style={{
-      background: "#1976d2",
-      color: "white",
-      padding: "15px",
-      borderRadius: "10px",
-      marginBottom: "20px",
-      textAlign: "center"
-    }}>
-      <h1>🚰 Gemini Pump AI</h1>
-      <p>Smart Water Pump Controller</p>
-    </div>
+    <header className="app-header">
+      <div className="header-inner">
+
+        <div className="brand">
+          <div className="brand-icon">
+            🚰
+          </div>
+
+          <div>
+            <h1>Gemini Pump AI</h1>
+            <p>Smart Water Pump Controller</p>
+          </div>
+        </div>
+
+        <div className="connection-badge">
+          <span className="connection-dot"></span>
+          System Online
+        </div>
+
+      </div>
+    </header>
   );
 }
 
