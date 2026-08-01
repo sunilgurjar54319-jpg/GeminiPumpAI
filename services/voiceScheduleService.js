@@ -5,28 +5,54 @@ function parseVoiceSchedule(text) {
   let action = null;
 
   // =========================================
-  // ON
+  // ON / OFF ACTION
   // =========================================
 
-  if (
-    command.includes("चालू") ||
-    command.includes("chalu") ||
-    command.includes("start") ||
-    command.includes("on")
-  ) {
-    action = "ON";
+  const onWords = [
+    "चालू",
+    "chalu",
+    "start",
+    "on"
+  ];
+
+  const offWords = [
+    "बंद",
+    "band",
+    "stop",
+    "off"
+  ];
+
+  let onPosition = -1;
+  let offPosition = -1;
+
+  for (const word of onWords) {
+    const position = command.indexOf(word);
+
+    if (position !== -1) {
+      if (onPosition === -1 || position < onPosition) {
+        onPosition = position;
+      }
+    }
   }
 
-  // =========================================
-  // OFF
-  // =========================================
+  for (const word of offWords) {
+    const position = command.indexOf(word);
 
-  if (
-    command.includes("बंद") ||
-    command.includes("band") ||
-    command.includes("stop") ||
-    command.includes("off")
-  ) {
+    if (position !== -1) {
+      if (offPosition === -1 || position < offPosition) {
+        offPosition = position;
+      }
+    }
+  }
+
+  if (onPosition !== -1 && offPosition !== -1) {
+    action =
+      onPosition < offPosition
+        ? "ON"
+        : "OFF";
+  } else if (onPosition !== -1) {
+    action = "ON";
+  } else if (offPosition !== -1) {
     action = "OFF";
   }
 
@@ -46,7 +72,14 @@ const durationMatch = command.match(
   /(\d+)\s*(minute|minutes|min|मिनट|hour|hours|hr|ghanta|ghante|घंटा|घंटे)/i
 );
 
-if (durationMatch && action === "ON") {
+const hasBajkarEndTime =
+  /(\d{1,2})\s*(?:बजकर|bajkar)\s*(\d{1,2})\s*(?:मिनट|minute)/i.test(command);
+
+if (
+  durationMatch &&
+  action === "ON" &&
+  !hasBajkarEndTime
+) {
 
   let value = Number(durationMatch[1]);
   let unit = durationMatch[2].toLowerCase();
@@ -144,11 +177,18 @@ if (durationMinutes > MAX_RUNTIME_MINUTES) {
   let minute = 0;
 
   // Find all times in the voice command.
-  // Example:
-  // Monday ko 6 baje ON karo aur 8 baje OFF karo
+  // Supports:
+  // 7 baje ... 8 baje
+  // 7:00 ... 8:00
+  // 7 bajkar 2 minute ... 8 bajkar 5 minute
+  //
+  // IMPORTANT:
+  // "bajkar" time is treated as ONE complete time.
+  // Example: 19 bajkar 16 minute => 19:16
+
   const timeMatches = [
     ...command.matchAll(
-      /(\d{1,2})(?::(\d{2}))?\s*(?:बजे|baje)?/g
+      /(\d{1,2})\s*(?:बजकर|bajkar)\s*(\d{1,2})\s*(?:मिनट|minute)\b|(\d{1,2})(?::(\d{2}))?\s*(?:बजे|baje)?/gi
     )
   ];
 
@@ -162,25 +202,40 @@ if (durationMinutes > MAX_RUNTIME_MINUTES) {
 
   }
 
-  hour = Number(timeMatches[0][1]);
+  const parsedTimes = timeMatches.map(match => {
 
-  if (timeMatches[0][2]) {
-    minute = Number(timeMatches[0][2]);
-  }
+    // X bajkar Y minute
+    if (match[1] !== undefined) {
+
+      return {
+        hour: Number(match[1]),
+        minute: Number(match[2])
+      };
+
+    }
+
+    // X baje / X:YY
+    return {
+      hour: Number(match[3]),
+      minute: match[4]
+        ? Number(match[4])
+        : 0
+    };
+
+  });
+
+  hour = parsedTimes[0].hour;
+  minute = parsedTimes[0].minute;
 
   let secondHour = null;
   let secondMinute = 0;
 
-  if (timeMatches.length >= 2) {
+  if (parsedTimes.length >= 2) {
 
-    secondHour = Number(timeMatches[1][1]);
-
-    if (timeMatches[1][2]) {
-      secondMinute = Number(timeMatches[1][2]);
-    }
+    secondHour = parsedTimes[1].hour;
+    secondMinute = parsedTimes[1].minute;
 
   }
-
 
   // =========================================
   // AM / PM
@@ -219,6 +274,55 @@ if (durationMinutes > MAX_RUNTIME_MINUTES) {
 
     if (hour === 12) {
       hour = 0;
+    }
+
+  }
+
+  // Apply AM/PM context to second time too.
+  // Example:
+  // आज शाम 7 बजे ON करो और 8 बजे OFF करो
+  // => 19:00 -> 20:00
+
+  if (
+    secondHour !== null &&
+    (
+      command.includes("शाम") ||
+      command.includes("shaam") ||
+      command.includes("pm")
+    )
+  ) {
+
+    if (secondHour < 12) {
+      secondHour += 12;
+    }
+
+  }
+
+  if (
+    secondHour !== null &&
+    (
+      command.includes("दोपहर") ||
+      command.includes("dopahar")
+    )
+  ) {
+
+    if (secondHour < 12) {
+      secondHour += 12;
+    }
+
+  }
+
+  if (
+    secondHour !== null &&
+    (
+      command.includes("सुबह") ||
+      command.includes("subah") ||
+      command.includes("morning")
+    )
+  ) {
+
+    if (secondHour === 12) {
+      secondHour = 0;
     }
 
   }
@@ -402,6 +506,54 @@ if (durationMinutes > MAX_RUNTIME_MINUTES) {
       String(
         indiaDate.getDate()
       ).padStart(2, "0");
+
+    // =========================================
+    // TWO-TIME TODAY SCHEDULE
+    // Example:
+    // आज शाम 7 बजे ON करो और 8 बजे OFF करो
+    // =========================================
+
+    if (secondHour !== null) {
+
+      if (
+        secondHour > 23 ||
+        secondMinute > 59
+      ) {
+
+        return {
+
+          type: "SCHEDULE",
+
+          action,
+
+          error: "Invalid end time"
+
+        };
+
+      }
+
+      return {
+
+        type: "TWO_TIME_TODAY",
+
+        action: "ON",
+
+        hour,
+
+        minute,
+
+        endHour: secondHour,
+
+        endMinute: secondMinute,
+
+        day:
+          dayNames[indiaDate.getDay()],
+
+        scheduledDate
+
+      };
+
+    }
 
 
     return {

@@ -26,10 +26,18 @@ function VoiceControl({ onCommandSent }) {
     setMessage("🎙️ सुन रहा हूँ...");
 
     recognition.onresult = async (event) => {
-      const text = event.results[0][0].transcript;
+      const rawText = event.results[0][0].transcript;
 
-      setMessage(`🗣️ आपने कहा: ${text}`);
-      console.log("🎤 ACTUAL TRANSCRIPT:", text);
+      // Hindi speech recognition की सामान्य गलतियों को ठीक करें
+      const text = rawText
+        .toLowerCase()
+        .replace(/मदर/g, "मोटर")
+        .replace(/मोटर्र/g, "मोटर")
+        .replace(/मोटर/g, "मोटर");
+
+      setMessage(`🗣️ आपने कहा: ${rawText}`);
+      console.log("🎤 ACTUAL TRANSCRIPT:", rawText);
+      console.log("🛠️ NORMALIZED TEXT:", text);
 
       try {
         const data = await sendVoice(text);
@@ -52,6 +60,27 @@ function VoiceControl({ onCommandSent }) {
             setMessage("✅ Pump ON Command Sent");
           } else if (data.command === "OFF") {
             setMessage("✅ Pump OFF Command Sent");
+          }
+
+          if (onCommandSent) {
+            onCommandSent();
+          }
+
+          return;
+        }
+
+        // =========================
+        // MOTOR STATUS
+        // =========================
+
+        if (data.type === "STATUS") {
+
+          if (data.status === "ON") {
+            setMessage("🟢 Motor ON है");
+          } else if (data.status === "OFF") {
+            setMessage("🔴 Motor OFF है");
+          } else {
+            setMessage("⚠️ Motor status उपलब्ध नहीं है");
           }
 
           if (onCommandSent) {

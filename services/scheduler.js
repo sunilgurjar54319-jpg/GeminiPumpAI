@@ -1,6 +1,7 @@
 const cron = require("node-cron");
 const databases = require("../config/appwrite");
 const { sendCommand } = require("./commandService");
+const { getStatus } = require("./statusService");
 
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID;
 const SCHEDULE_COLLECTION = "schedules";
@@ -14,16 +15,82 @@ async function executeCommand(deviceId, command) {
 
   try {
 
-    await sendCommand(deviceId, command);
+    const result = await sendCommand(deviceId, command);
 
+    // -----------------------------------------
+    // Already in requested state
+    // -----------------------------------------
+    if (result && result.ignored === true) {
+
+      console.log(
+        `ℹ️ Command Ignored: Pump already ${result.status}`
+      );
+
+      console.log(
+        `${result.status === "ON" ? "🟢" : "🔴"} ${deviceId} STATUS: ${result.status}`
+      );
+
+      return result;
+    }
+
+    // -----------------------------------------
+    // Command created OR existing pending command
+    // -----------------------------------------
     console.log(
       `📤 Scheduled Command Sent: ${command} → ${deviceId}`
     );
 
+    console.log(
+      `⏳ Waiting for device to complete: ${command} → ${deviceId}`
+    );
+
+    // Device simulator may take a few seconds
+    for (let i = 0; i < 15; i++) {
+
+      await new Promise(resolve =>
+        setTimeout(resolve, 1000)
+      );
+
+      try {
+
+        const status = await getStatus(deviceId);
+
+        if (status && status.status) {
+
+          console.log(
+            `${status.status === "ON" ? "🟢" : "🔴"} ${deviceId} STATUS: ${status.status}`
+          );
+
+          if (status.status === command) {
+
+            console.log(
+              `✅ Scheduled ${command} confirmed: ${deviceId}`
+            );
+
+            return status;
+          }
+        }
+
+      } catch (statusError) {
+
+        console.log(
+          `⚠️ Status check failed: ${statusError.message}`
+        );
+
+      }
+
+    }
+
+    console.log(
+      `⚠️ Scheduled ${command} confirmation timeout: ${deviceId}`
+    );
+
+    return result;
+
   } catch (error) {
 
     console.log(
-      "❌ Scheduled Command Error:",
+      `❌ Scheduled ${command} Error:`,
       error.message
     );
 
@@ -32,7 +99,6 @@ async function executeCommand(deviceId, command) {
   }
 
 }
-
 
 // =========================================
 // India Time
@@ -65,6 +131,80 @@ function getIndiaDateString(indiaDate) {
     "-" +
     String(indiaDate.getDate()).padStart(2, "0")
   );
+
+}
+
+
+// =========================================
+// Cleanup Old Completed One-Time Schedules
+// =========================================
+// Keeps completed one-time schedules for 24 hours,
+// then removes them from Appwrite.
+// Recurring schedules are never removed.
+// =========================================
+
+async function cleanupOldOneTimeSchedules() {
+
+  try {
+
+    const result =
+      await databases.listDocuments(
+        DATABASE_ID,
+        SCHEDULE_COLLECTION
+      );
+
+    const now = Date.now();
+
+    const CLEANUP_AFTER_MS =
+      24 * 60 * 60 * 1000;
+
+    for (const schedule of result.documents) {
+
+      // Only cleanup completed one-time schedules.
+      if (
+        schedule.enabled !== false ||
+        !schedule.scheduledDate
+      ) {
+        continue;
+      }
+
+      // Recurring schedules have scheduledDate = null,
+      // so they are automatically protected above.
+
+      if (!schedule.$updatedAt) {
+        continue;
+      }
+
+      const updatedAt =
+        new Date(schedule.$updatedAt).getTime();
+
+      if (
+        Number.isNaN(updatedAt) ||
+        now - updatedAt < CLEANUP_AFTER_MS
+      ) {
+        continue;
+      }
+
+      await databases.deleteDocument(
+        DATABASE_ID,
+        SCHEDULE_COLLECTION,
+        schedule.$id
+      );
+
+      console.log(
+        `🧹 Old One-Time Schedule Deleted: ${schedule.$id}`
+      );
+
+    }
+
+  } catch (error) {
+
+    console.log(
+      "❌ Schedule Cleanup Error:",
+      error.message
+    );
+
+  }
 
 }
 
@@ -436,6 +576,20 @@ async function checkSchedules() {
 cron.schedule(
   "* * * * *",
   checkSchedules,
+  {
+    timezone: "Asia/Kolkata"
+  }
+);
+
+
+// =========================================
+// Cleanup Old One-Time Schedules
+// Run once every hour
+// =========================================
+
+cron.schedule(
+  "0 * * * *",
+  cleanupOldOneTimeSchedules,
   {
     timezone: "Asia/Kolkata"
   }

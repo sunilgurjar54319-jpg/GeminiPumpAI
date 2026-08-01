@@ -17,6 +17,10 @@ const {
   sendCommand
 } = require("../services/commandService");
 
+const {
+  getStatus
+} = require("../services/statusService");
+
 
 const DATABASE_ID =
   process.env.APPWRITE_DATABASE_ID;
@@ -54,6 +58,59 @@ router.post("/voice", async (req, res) => {
     // =========================================
 
     const lowerText = text.toLowerCase();
+
+
+    // =========================================
+    // MOTOR STATUS
+    // =========================================
+
+    const isStatusWord =
+      lowerText.includes("status") ||
+      lowerText.includes("स्टेटस") ||
+      lowerText.includes("chal raha") ||
+      lowerText.includes("chalu hai") ||
+      lowerText.includes("band hai") ||
+      lowerText.includes("motor ka haal") ||
+      lowerText.includes("motor ki sthiti") ||
+      lowerText.includes("motor ki स्थिति");
+
+    const isMotorWord =
+      lowerText.includes("motor") ||
+      lowerText.includes("pump") ||
+      lowerText.includes("मोटर") ||
+      lowerText.includes("पंप");
+
+    if (isStatusWord && isMotorWord) {
+
+      const statusResult =
+        await getStatus("PUMP001");
+
+      const status =
+        statusResult &&
+        statusResult.status
+          ? statusResult.status
+          : "UNKNOWN";
+
+      return res.json({
+
+        success: true,
+
+        type: "STATUS",
+
+        deviceId: "PUMP001",
+
+        status: status,
+
+        message:
+          status === "ON"
+            ? "Motor ON hai"
+            : status === "OFF"
+              ? "Motor OFF hai"
+              : "Motor ka status available nahi hai"
+
+      });
+
+    }
 
     const isScheduleWord =
   lowerText.includes("schedule") ||
@@ -329,6 +386,84 @@ const cancelTime =
           endTime,
 
           days: parsed.days,
+
+          schedule: result
+
+        });
+
+      }
+
+
+      // =========================================
+      // TWO-TIME TODAY SCHEDULE
+      // Example:
+      // आज शाम 7 बजे ON करो और 8 बजे OFF करो
+      // =========================================
+
+      if (
+        parsed.type === "TWO_TIME_TODAY"
+      ) {
+
+        const startTime =
+          String(parsed.hour)
+            .padStart(2, "0")
+          + ":" +
+          String(parsed.minute)
+            .padStart(2, "0");
+
+        const endTime =
+          String(parsed.endHour)
+            .padStart(2, "0")
+          + ":" +
+          String(parsed.endMinute)
+            .padStart(2, "0");
+
+        const result =
+          await databases.createDocument(
+
+            DATABASE_ID,
+
+            SCHEDULE_COLLECTION,
+
+            ID.unique(),
+
+            {
+
+              deviceId: "PUMP001",
+
+              startTime: startTime,
+
+              endTime: endTime,
+
+              days: parsed.day,
+
+              enabled: true,
+
+              command: "ON",
+
+              scheduledDate:
+                parsed.scheduledDate
+
+            }
+
+          );
+
+        return res.json({
+
+          success: true,
+
+          type: "TWO_TIME_TODAY",
+
+          command: "ON",
+
+          startTime,
+
+          endTime,
+
+          day: parsed.day,
+
+          scheduledDate:
+            parsed.scheduledDate,
 
           schedule: result
 
