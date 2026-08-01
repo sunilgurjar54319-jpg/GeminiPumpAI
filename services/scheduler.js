@@ -170,62 +170,135 @@ async function checkSchedules() {
         }
 
 
-        // Only execute at start time
+        // =====================================
+        // START / ON or one-time command
+        // =====================================
+
         if (
-          schedule.startTime !==
+          schedule.startTime ===
           currentTime
         ) {
-          continue;
-        }
+
+          const executionKey =
+            `${currentDate}-${currentTime}-START-${schedule.$id}`;
 
 
-        let command =
-          schedule.command;
+          if (
+            schedule.lastExecuted !==
+            executionKey
+          ) {
+
+            let command =
+              schedule.command;
+
+            if (
+              command !== "ON" &&
+              command !== "OFF"
+            ) {
+              command = "ON";
+            }
 
 
-        if (
-          command !== "ON" &&
-          command !== "OFF"
-        ) {
-          command = "ON";
-        }
+            await executeCommand(
+              schedule.deviceId,
+              command
+            );
 
 
-        const executionKey =
-          `${currentDate}-${currentTime}-${schedule.$id}`;
+            // If start and end are the same,
+            // this is a true one-time schedule.
+            if (
+              !schedule.endTime ||
+              schedule.endTime ===
+              schedule.startTime
+            ) {
+
+              await databases.updateDocument(
+                DATABASE_ID,
+                SCHEDULE_COLLECTION,
+                schedule.$id,
+                {
+                  lastExecuted: executionKey,
+                  enabled: false
+                }
+              );
+
+            } else {
+
+              // Keep enabled until OFF time.
+              await databases.updateDocument(
+                DATABASE_ID,
+                SCHEDULE_COLLECTION,
+                schedule.$id,
+                {
+                  lastExecuted: executionKey
+                }
+              );
+
+            }
 
 
-        // Already executed
-        if (
-          schedule.lastExecuted ===
-          executionKey
-        ) {
-          continue;
-        }
+            console.log(
+              `✅ One-Time Scheduled ${command}:`,
+              schedule.deviceId,
+              currentDate,
+              currentTime
+            );
 
-
-        await executeCommand(
-          schedule.deviceId,
-          command
-        );
-
-
-        await databases.updateDocument(
-          DATABASE_ID,
-          SCHEDULE_COLLECTION,
-          schedule.$id,
-          {
-            lastExecuted: executionKey,
-            enabled: false
           }
-        );
+
+          continue;
+        }
 
 
-        console.log(
-          `✅ One-Time Scheduled ${command}:`,
-          schedule.deviceId,
-          currentDate
-        );
+        // =====================================
+        // END / OFF
+        // =====================================
+
+        if (
+          schedule.endTime &&
+          schedule.endTime ===
+          currentTime &&
+          schedule.endTime !==
+          schedule.startTime
+        ) {
+
+          const executionKey =
+            `${currentDate}-${currentTime}-END-${schedule.$id}`;
+
+
+          if (
+            schedule.lastExecuted ===
+            executionKey
+          ) {
+            continue;
+          }
+
+
+          await executeCommand(
+            schedule.deviceId,
+            "OFF"
+          );
+
+
+          await databases.updateDocument(
+            DATABASE_ID,
+            SCHEDULE_COLLECTION,
+            schedule.$id,
+            {
+              lastExecuted: executionKey,
+              enabled: false
+            }
+          );
+
+
+          console.log(
+            `✅ One-Time Scheduled OFF: ${schedule.deviceId} ${currentDate} ${currentTime}`
+          );
+
+
+          continue;
+        }
 
 
         continue;
