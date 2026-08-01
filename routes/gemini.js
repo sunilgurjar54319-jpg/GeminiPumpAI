@@ -90,11 +90,21 @@ const isCancelWord =
           SCHEDULE_COLLECTION
         );
 
-      return res.json({
-        success: true,
-        type: "SCHEDULE_LIST",
-        schedules: schedules.documents
-      });
+      const scheduleList = schedules.documents.map((s, index) => ({
+  number: index + 1,
+  time: s.startTime,
+  command: s.command || "ON",
+  days: s.days || "हर दिन",
+  date: s.scheduledDate || null,
+  enabled: s.enabled
+}));
+
+return res.json({
+  success: true,
+  type: "SCHEDULE_LIST",
+  count: scheduleList.length,
+  schedules: scheduleList
+});
 
     }
 
