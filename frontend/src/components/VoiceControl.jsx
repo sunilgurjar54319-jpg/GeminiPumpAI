@@ -4,6 +4,7 @@ import { sendVoice } from "../api";
 function VoiceControl({ onCommandSent }) {
   const [listening, setListening] = useState(false);
   const [message, setMessage] = useState("");
+  const [schedules, setSchedules] = useState([]);
 
   function startListening() {
     const SpeechRecognition =
@@ -28,6 +29,7 @@ function VoiceControl({ onCommandSent }) {
       const text = event.results[0][0].transcript;
 
       setMessage(`🗣️ आपने कहा: ${text}`);
+      console.log("🎤 ACTUAL TRANSCRIPT:", text);
 
       try {
         const data = await sendVoice(text);
@@ -55,6 +57,20 @@ function VoiceControl({ onCommandSent }) {
           if (onCommandSent) {
             onCommandSent();
           }
+
+          return;
+        }
+
+        // =========================
+        // SCHEDULE LIST
+        // =========================
+
+        if (data.type === "SCHEDULE_LIST") {
+          setSchedules(data.schedules || []);
+
+          setMessage(
+            `📋 कुल ${data.count ?? (data.schedules || []).length} schedule मिले`
+          );
 
           return;
         }
@@ -181,6 +197,55 @@ function VoiceControl({ onCommandSent }) {
       >
         {message}
       </p>
+
+      {schedules.length > 0 && (
+        <div
+          style={{
+            marginTop: "20px",
+            textAlign: "left"
+          }}
+        >
+          <h3>📋 Saved Schedules</h3>
+
+          {schedules.map((schedule, index) => (
+            <div
+              key={schedule.$id || index}
+              style={{
+                border: "1px solid #ddd",
+                borderRadius: "10px",
+                padding: "12px",
+                marginTop: "10px"
+              }}
+            >
+              <b>
+                {index + 1}. ⏰ {schedule.time || schedule.startTime}
+              </b>
+
+              <br />
+
+              ⚡ Command:{" "}
+              {schedule.command === "ON"
+                ? "🟢 Pump ON"
+                : "🔴 Pump OFF"}
+
+              <br />
+
+              📅 Days: {schedule.days || "हर दिन"}
+
+              <br />
+
+              📆 Date: {schedule.date || schedule.scheduledDate || "-"}
+
+              <br />
+
+              Status:{" "}
+              {schedule.enabled
+                ? "🟢 Enabled"
+                : "⚪ Disabled"}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

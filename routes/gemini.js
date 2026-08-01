@@ -59,7 +59,9 @@ router.post("/voice", async (req, res) => {
   lowerText.includes("schedule") ||
   lowerText.includes("शेड्यूल") ||
   lowerText.includes("शेडूल") ||
-  lowerText.includes("शिड्यूल");
+  lowerText.includes("शिड्यूल") ||
+  lowerText.includes("शेड्चूल") ||
+  lowerText.includes("शेडचूल");
 
 const isShowWord =
   lowerText.includes("show") ||
@@ -75,6 +77,8 @@ const isCancelWord =
   lowerText.includes("hatao") ||
   lowerText.includes("hatado") ||
   lowerText.includes("कैंसिल") ||
+  lowerText.includes("कैसिल") ||
+  lowerText.includes("केसिल") ||
   lowerText.includes("हटाओ") ||
   lowerText.includes("हटा दो") ||
   lowerText.includes("रद्द");
@@ -130,14 +134,28 @@ return res.json({
         });
       }
 
-      const cancelHour =
-        String(Number(timeMatch[1])).padStart(2, "0");
+      let cancelHour = Number(timeMatch[1]);
 
-      const cancelMinute =
-        String(Number(timeMatch[2])).padStart(2, "0");
+const cancelMinute =
+  String(Number(timeMatch[2])).padStart(2, "0");
 
-      const cancelTime =
-        `${cancelHour}:${cancelMinute}`;
+// शाम / दोपहर / रात को 24-hour format में बदलें
+if (
+  lowerText.includes("शाम") ||
+  lowerText.includes("दोपहर") ||
+  lowerText.includes("शाम को") ||
+  lowerText.includes("दोपहर को")
+) {
+  if (cancelHour >= 1 && cancelHour <= 11) {
+    cancelHour += 12;
+  }
+}
+
+cancelHour =
+  String(cancelHour).padStart(2, "0");
+
+const cancelTime =
+  `${cancelHour}:${cancelMinute}`;
 
       const result =
         await databases.listDocuments(
