@@ -9,3 +9,12 @@ frontend/src/components/StatusCard_backup2.jsx
 # Local backup files
 routes/*_backup.js
 services/*_backup.js
+
+# Local working/backup files
+*.WORKING
+*.backup
+*.before_status
+*.STATUS_BACKUP
+*.UI_BACKUP
+*.LIVE_BACKUP
+*.PREMIUM_BACKUP
