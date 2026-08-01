@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getStatus } from "../api";
 
 function StatusCard({ refresh }) {
   const [status, setStatus] = useState("OFF");
@@ -11,18 +12,7 @@ function StatusCard({ refresh }) {
       setLoading(true);
       setError("");
 
-      const res = await fetch(
-        "https://geminipumpai.onrender.com/api/status/PUMP001",
-        {
-          cache: "no-store"
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-
-      const data = await res.json();
+      const data = await getStatus("PUMP001");
 
       console.log("Status API:", data);
 
@@ -58,25 +48,28 @@ function StatusCard({ refresh }) {
     return () => clearInterval(timer);
   }, [refresh]);
 
+  const isOn = status === "ON";
+
   return (
     <div className="status-card">
 
       <h2>📡 Pump Status</h2>
 
       <div
-        className={
-          status === "ON"
-            ? "status-on"
-            : "status-off"
-        }
+        className={isOn ? "status-on" : "status-off"}
       >
-        {status === "ON"
+        {isOn
           ? "🟢 Pump Running"
           : "🔴 Pump Stopped"}
       </div>
 
       <p>
-        Last Updated:
+        <strong>Device:</strong> PUMP001
+        <br />
+        <strong>Status:</strong>{" "}
+        {isOn ? "ON" : "OFF"}
+        <br />
+        <strong>Last Updated:</strong>
         <br />
         {updated || "Waiting..."}
       </p>
