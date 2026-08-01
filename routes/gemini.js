@@ -264,6 +264,80 @@ const cancelTime =
 
 
       // =========================================
+      // TWO-TIME RECURRING SCHEDULE
+      // Example:
+      // Monday ko 6 baje ON karo aur 8 baje OFF karo
+      // =========================================
+
+      if (
+        parsed.type === "TWO_TIME_RECURRING"
+      ) {
+
+        const startTime =
+          String(parsed.hour)
+            .padStart(2, "0")
+          + ":" +
+          String(parsed.minute)
+            .padStart(2, "0");
+
+        const endTime =
+          String(parsed.endHour)
+            .padStart(2, "0")
+          + ":" +
+          String(parsed.endMinute)
+            .padStart(2, "0");
+
+
+        const result =
+          await databases.createDocument(
+
+            DATABASE_ID,
+
+            SCHEDULE_COLLECTION,
+
+            ID.unique(),
+
+            {
+
+              deviceId: "PUMP001",
+
+              startTime: startTime,
+
+              endTime: endTime,
+
+              days: parsed.days,
+
+              enabled: true,
+
+              command: "ON"
+
+            }
+
+          );
+
+
+        return res.json({
+
+          success: true,
+
+          type: "TWO_TIME_RECURRING",
+
+          command: "ON",
+
+          startTime,
+
+          endTime,
+
+          days: parsed.days,
+
+          schedule: result
+
+        });
+
+      }
+
+
+      // =========================================
       // RECURRING
       // =========================================
 

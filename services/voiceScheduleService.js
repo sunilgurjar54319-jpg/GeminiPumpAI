@@ -143,11 +143,16 @@ if (durationMinutes > MAX_RUNTIME_MINUTES) {
   let hour = null;
   let minute = 0;
 
-  const timeMatch = command.match(
-    /(\d{1,2})(?::(\d{2}))?\s*(?:बजे|baje)?/
-  );
+  // Find all times in the voice command.
+  // Example:
+  // Monday ko 6 baje ON karo aur 8 baje OFF karo
+  const timeMatches = [
+    ...command.matchAll(
+      /(\d{1,2})(?::(\d{2}))?\s*(?:बजे|baje)?/g
+    )
+  ];
 
-  if (!timeMatch) {
+  if (timeMatches.length === 0) {
 
     return {
       type: "SCHEDULE",
@@ -157,10 +162,23 @@ if (durationMinutes > MAX_RUNTIME_MINUTES) {
 
   }
 
-  hour = Number(timeMatch[1]);
+  hour = Number(timeMatches[0][1]);
 
-  if (timeMatch[2]) {
-    minute = Number(timeMatch[2]);
+  if (timeMatches[0][2]) {
+    minute = Number(timeMatches[0][2]);
+  }
+
+  let secondHour = null;
+  let secondMinute = 0;
+
+  if (timeMatches.length >= 2) {
+
+    secondHour = Number(timeMatches[1][1]);
+
+    if (timeMatches[1][2]) {
+      secondMinute = Number(timeMatches[1][2]);
+    }
+
   }
 
 
@@ -506,6 +524,48 @@ if (durationMinutes > MAX_RUNTIME_MINUTES) {
         date.getDate()
       ).padStart(2, "0");
 
+
+    // Two-time recurring schedule:
+    // Example:
+    // Monday ko 6 baje ON karo aur 8 baje OFF karo
+    if (secondHour !== null) {
+
+      if (
+        hour > 23 ||
+        minute > 59 ||
+        secondHour > 23 ||
+        secondMinute > 59
+      ) {
+
+        return {
+          type: "SCHEDULE",
+          action,
+          error: "Invalid time"
+        };
+
+      }
+
+      return {
+
+        type: "TWO_TIME_RECURRING",
+
+        action: "ON",
+
+        hour,
+
+        minute,
+
+        endHour: secondHour,
+
+        endMinute: secondMinute,
+
+        days: selectedDay,
+
+        scheduledDate
+
+      };
+
+    }
 
     return {
 
