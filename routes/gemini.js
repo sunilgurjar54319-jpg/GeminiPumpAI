@@ -83,6 +83,45 @@ const isCancelWord =
   lowerText.includes("हटा दो") ||
   lowerText.includes("रद्द");
 
+const dayMap = {
+  "monday": "Mon",
+  "mon": "Mon",
+  "सोमवार": "Mon",
+
+  "tuesday": "Tue",
+  "tue": "Tue",
+  "मंगलवार": "Tue",
+
+  "wednesday": "Wed",
+  "wed": "Wed",
+  "बुधवार": "Wed",
+
+  "thursday": "Thu",
+  "thu": "Thu",
+  "गुरुवार": "Thu",
+
+  "friday": "Fri",
+  "fri": "Fri",
+  "शुक्रवार": "Fri",
+
+  "saturday": "Sat",
+  "sat": "Sat",
+  "शनिवार": "Sat",
+
+  "sunday": "Sun",
+  "sun": "Sun",
+  "रविवार": "Sun"
+};
+
+let cancelDay = null;
+
+for (const [word, day] of Object.entries(dayMap)) {
+  if (lowerText.includes(word)) {
+    cancelDay = day;
+    break;
+  }
+}
+
     if (
   isScheduleWord &&
   isShowWord
@@ -141,14 +180,11 @@ const cancelMinute =
 
 // शाम / दोपहर / रात को 24-hour format में बदलें
 if (
-  lowerText.includes("शाम") ||
-  lowerText.includes("दोपहर") ||
-  lowerText.includes("शाम को") ||
-  lowerText.includes("दोपहर को")
+  cancelDay &&
+  cancelHour >= 1 &&
+  cancelHour <= 11
 ) {
-  if (cancelHour >= 1 && cancelHour <= 11) {
-    cancelHour += 12;
-  }
+  cancelHour += 12;
 }
 
 cancelHour =
@@ -163,7 +199,8 @@ const cancelTime =
           SCHEDULE_COLLECTION,
           [
             Query.equal("startTime", cancelTime),
-            Query.equal("enabled", true)
+            Query.equal("enabled", true),
+            ...(cancelDay ? [Query.equal("days", cancelDay)] : [])
           ]
         );
 
