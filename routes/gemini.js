@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 
 const databases = require("../config/appwrite");
-const { ID } = require("node-appwrite");
+const { ID, Query } = require("node-appwrite");
 
 const {
   understandCommand
@@ -44,6 +44,115 @@ router.post("/voice", async (req, res) => {
 
         message: "Voice text missing"
 
+      });
+
+    }
+
+
+    // =========================================
+    // VOICE SCHEDULE LIST
+    // =========================================
+
+    const lowerText = text.toLowerCase();
+
+    if (
+      lowerText.includes("schedule") &&
+      (
+        lowerText.includes("show") ||
+        lowerText.includes("list") ||
+        lowerText.includes("dikhao") ||
+        lowerText.includes("batao")
+      )
+    ) {
+
+      const schedules =
+        await databases.listDocuments(
+          DATABASE_ID,
+          SCHEDULE_COLLECTION
+        );
+
+      return res.json({
+        success: true,
+        type: "SCHEDULE_LIST",
+        schedules: schedules.documents
+      });
+
+    }
+
+
+    // =========================================
+    // VOICE SCHEDULE CANCEL
+    // =========================================
+
+    if (
+      (
+        lowerText.includes("cancel") ||
+        lowerText.includes("cancle") ||
+        lowerText.includes("delete") ||
+        lowerText.includes("hatao") ||
+        lowerText.includes("hatado") ||
+        lowerText.includes("band karo")
+      ) &&
+      (
+        lowerText.includes("schedule") ||
+        lowerText.includes("wala schedule") ||
+        lowerText.includes("wali schedule")
+      )
+    ) {
+
+      const timeMatch = lowerText.match(
+        /(\d{1,2})\s*(?::|\.|\s)\s*(\d{2})/
+      );
+
+      if (!timeMatch) {
+        return res.json({
+          success: false,
+          type: "SCHEDULE_CANCEL",
+          message: "Schedule ka time batao, jaise 12:40 wala schedule cancel karo"
+        });
+      }
+
+      const cancelHour =
+        String(Number(timeMatch[1])).padStart(2, "0");
+
+      const cancelMinute =
+        String(Number(timeMatch[2])).padStart(2, "0");
+
+      const cancelTime =
+        `${cancelHour}:${cancelMinute}`;
+
+      const result =
+        await databases.listDocuments(
+          DATABASE_ID,
+          SCHEDULE_COLLECTION,
+          [
+            Query.equal("startTime", cancelTime),
+            Query.equal("enabled", true)
+          ]
+        );
+
+      if (result.documents.length === 0) {
+        return res.json({
+          success: false,
+          type: "SCHEDULE_CANCEL",
+          message: `${cancelTime} par koi active schedule nahi mila`
+        });
+      }
+
+      const schedule = result.documents[0];
+
+      await databases.deleteDocument(
+        DATABASE_ID,
+        SCHEDULE_COLLECTION,
+        schedule.$id
+      );
+
+      return res.json({
+        success: true,
+        type: "SCHEDULE_CANCEL",
+        message: `Schedule ${cancelTime} cancel kar diya`,
+        scheduleId: schedule.$id,
+        cancelledSchedule: schedule
       });
 
     }
