@@ -2,12 +2,32 @@ const databases = require("../config/appwrite");
 const { ID, Query } = require("node-appwrite");
 const { addHistory } = require("./historyService");
 const { updateStatus } = require("./statusService");
+const { getStatus } = require("./statusService");
 
 
 // Send New Command
-async function sendCommand(deviceId, command) {
+
+  async function sendCommand(deviceId, command) {
 
   try {
+
+    // Check current pump status
+    const currentStatus =
+      await getStatus(deviceId);
+
+
+    // Ignore duplicate command
+    if (
+      currentStatus.status === command
+    ) {
+
+      return {
+        ignored: true,
+        message: "Pump already " + command,
+        status: currentStatus.status
+      };
+
+    }
 
     // Check existing pending command
     const pending = await databases.listDocuments(
