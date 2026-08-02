@@ -188,7 +188,7 @@ if (durationMinutes > MAX_RUNTIME_MINUTES) {
 
   const timeMatches = [
     ...command.matchAll(
-      /(\d{1,2})\s*(?:बजकर|bajkar)\s*(\d{1,2})\s*(?:मिनट|minute)\b|(\d{1,2})(?::(\d{2}))?\s*(?:बजे|baje)?/gi
+      /(\d{1,2})\s*(?:बजकर|bajkar)\s*(\d{1,2})\s*(?:मिनट|minute)\b|(\d{1,2})(?::|\.)(\d{2})\s*(?:बजे|baje)?|(\d{1,2})\s*(?:बजे|baje)/gi
     )
   ];
 
@@ -206,20 +206,24 @@ if (durationMinutes > MAX_RUNTIME_MINUTES) {
 
     // X bajkar Y minute
     if (match[1] !== undefined) {
-
       return {
         hour: Number(match[1]),
         minute: Number(match[2])
       };
-
     }
 
-    // X baje / X:YY
+    // X:YY or X.YY
+    if (match[3] !== undefined) {
+      return {
+        hour: Number(match[3]),
+        minute: Number(match[4])
+      };
+    }
+
+    // X baje
     return {
-      hour: Number(match[3]),
-      minute: match[4]
-        ? Number(match[4])
-        : 0
+      hour: Number(match[5]),
+      minute: 0
     };
 
   });
@@ -236,6 +240,9 @@ if (durationMinutes > MAX_RUNTIME_MINUTES) {
     secondMinute = parsedTimes[1].minute;
 
   }
+
+  console.log("DEBUG parsedTimes:", JSON.stringify(parsedTimes));
+  console.log("DEBUG secondHour:", secondHour, "secondMinute:", secondMinute);
 
   // =========================================
   // AM / PM
@@ -418,19 +425,34 @@ if (durationMinutes > MAX_RUNTIME_MINUTES) {
     command.includes("daily")
   ) {
 
+    const allDays =
+      "Sun,Mon,Tue,Wed,Thu,Fri,Sat";
+
+    // हर दिन दो समय:
+    // 10:00 ON और 11:00 OFF
+    if (secondHour !== null) {
+
+      return {
+        type: "TWO_TIME_RECURRING",
+        action: "ON",
+        hour,
+        minute,
+        endHour: secondHour,
+        endMinute: secondMinute,
+        days: allDays,
+        scheduledDate: null
+      };
+
+    }
+
+    // केवल एक समय:
+    // हर दिन 10:00 बजे मोटर चालू करो
     return {
-
       type: "RECURRING",
-
       action,
-
       hour,
-
       minute,
-
-      days:
-        "Sun,Mon,Tue,Wed,Thu,Fri,Sat"
-
+      days: allDays
     };
 
   }
@@ -607,6 +629,33 @@ if (durationMinutes > MAX_RUNTIME_MINUTES) {
       String(
         date.getDate()
       ).padStart(2, "0");
+
+    // Two-time recurring schedule:
+    // Example:
+    // हर सोमवार 10:00 बजे ON और 11:00 बजे OFF
+    if (secondHour !== null) {
+
+      return {
+
+        type: "TWO_TIME_RECURRING",
+
+        action: "ON",
+
+        hour,
+
+        minute,
+
+        endHour: secondHour,
+
+        endMinute: secondMinute,
+
+        days: selectedDay,
+
+        scheduledDate
+
+      };
+
+    }
 
 
     return {
