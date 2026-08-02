@@ -666,138 +666,128 @@ function Schedule({ refresh }) {
 
       <h3>📋 Saved Schedules</h3>
 
-
       {schedules.length === 0 ? (
 
-        <p>No Schedule Found</p>
+        <p>📭 अभी कोई Schedule सेव नहीं है</p>
 
       ) : (
 
-        schedules.map((item) => (
+        schedules.map((item, index) => {
 
-          <div
+          const commandText =
+            item.command === "OFF"
+              ? "🔴 मोटर बंद"
+              : "🟢 मोटर चालू";
 
-            key={item.$id}
+          const timeText =
+            item.endTime &&
+            item.endTime !== item.startTime
+              ? `${item.startTime} → ${item.endTime}`
+              : item.startTime;
 
-            style={{
-              border: "1px solid #ccc",
-              borderRadius: "10px",
-              padding: "15px",
-              marginBottom: "12px"
-            }}
+          const dayText =
+            item.days === "Sun,Mon,Tue,Wed,Thu,Fri,Sat"
+              ? "हर दिन"
+              : (item.days || "दिन निर्धारित नहीं");
 
-          >
-
+          return (
             <div
+              key={item.$id}
               style={{
-                fontSize: "18px",
-                fontWeight: "bold"
+                border: "1px solid #ccc",
+                borderRadius: "12px",
+                padding: "15px",
+                marginBottom: "12px",
+                background: "#fafafa"
               }}
             >
 
-              {item.command === "OFF"
-                ? "🔴 OFF"
-                : "🟢 ON"}
+              <div
+                style={{
+                  fontSize: "17px",
+                  fontWeight: "bold",
+                  marginBottom: "8px"
+                }}
+              >
+                #{index + 1} &nbsp; {commandText}
+              </div>
 
-              {"  "}
-
-              {item.startTime}
-
-              {item.endTime !== item.startTime
-                ? ` → ${item.endTime}`
-                : ""}
-
-            </div>
-
-
-            <p>
-
-              📅{" "}
-
-              {item.days || "No days"}
-
-            </p>
-
-
-            <p>
-
-              Status:{" "}
-
-              {item.enabled
-                ? "🟢 Enabled"
-                : "⏸️ Disabled"}
-
-            </p>
-
-
-            {item.scheduledDate && (
-
-              <p>
-
-                📆 Date: {item.scheduledDate}
-
+              <p style={{ margin: "7px 0" }}>
+                ⏰ <b>समय:</b> {timeText}
               </p>
 
-            )}
+              <p style={{ margin: "7px 0" }}>
+                📅 <b>दिन:</b> {dayText}
+              </p>
 
+              {item.scheduledDate && (
+                <p style={{ margin: "7px 0" }}>
+                  📆 <b>तारीख:</b> {item.scheduledDate}
+                </p>
+              )}
 
-            <button
+              <p style={{ margin: "7px 0" }}>
+                <b>स्थिति:</b>{" "}
+                {item.enabled
+                  ? "🟢 चालू है"
+                  : "⏸️ बंद है"}
+              </p>
 
-              onClick={() =>
-                toggleSchedule(item)
-              }
+              <div style={{ marginTop: "12px" }}>
 
-              style={{
-                marginRight: "8px",
-                padding: "8px 12px"
-              }}
+                <button
+                  onClick={() => toggleSchedule(item)}
+                  style={{
+                    marginRight: "8px",
+                    padding: "8px 12px",
+                    borderRadius: "7px",
+                    border: "1px solid #aaa"
+                  }}
+                >
+                  {item.enabled
+                    ? "⏸️ Schedule बंद करें"
+                    : "▶️ Schedule चालू करें"}
+                </button>
 
-            >
+                <button
+                  onClick={() => editSchedule(item)}
+                  style={{
+                    marginRight: "8px",
+                    padding: "8px 12px",
+                    borderRadius: "7px",
+                    border: "1px solid #aaa"
+                  }}
+                >
+                  ✏️ बदलें
+                </button>
 
-              {item.enabled
-                ? "⏸️ Disable"
-                : "▶️ Enable"}
+                <button
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        `क्या Schedule #${index + 1} को Delete करना है?`
+                      )
+                    ) {
+                      removeSchedule(item.$id);
+                    }
+                  }}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: "7px",
+                    border: "1px solid #d32f2f",
+                    color: "#d32f2f",
+                    background: "white"
+                  }}
+                >
+                  🗑️ Delete करें
+                </button>
 
-            </button>
+              </div>
 
+            </div>
+          );
 
-            <button
-
-              onClick={() =>
-                editSchedule(item)
-              }
-
-              style={{
-                marginRight: "8px",
-                padding: "8px 12px"
-              }}
-
-            >
-
-              ✏️ Edit
-
-            </button>
-
-
-            <button
-
-              onClick={() =>
-                removeSchedule(item.$id)
-              }
-
-              style={{
-                padding: "8px 12px"
-              }}
-
-            >
-
-              🗑️ Delete
-
-            </button>
-
-          </div>
-
-        ))
+        })
 
       )}
 

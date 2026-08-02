@@ -112,7 +112,29 @@ router.post("/voice", async (req, res) => {
 
     }
 
-    const isScheduleWord =
+    // ===== VOICE CANCEL NORMALIZATION =====
+lowerText = lowerText
+  .replace(/शेड्यूल|शेडुल|शिड्यूल/g, "schedule")
+  .replace(/कैंसिल|कैंसल|कैसिल|केसिल/g, "cancel")
+  .replace(/हटा दो|हटाओ/g, "delete")
+  .replace(/एक\s+नंबर\s*(?:वाला|वाली|का|की)?/g, "schedule number 1")
+  .replace(/दो\s+नंबर\s*(?:वाला|वाली|का|की)?/g, "schedule number 2")
+  .replace(/तीन\s+नंबर\s*(?:वाला|वाली|का|की)?/g, "schedule number 3")
+  .replace(/चार\s+नंबर\s*(?:वाला|वाली|का|की)?/g, "schedule number 4")
+  .replace(/पांच\s+नंबर\s*(?:वाला|वाली|का|की)?/g, "schedule number 5")
+  .replace(/पाँच\s+नंबर\s*(?:वाला|वाली|का|की)?/g, "schedule number 5")
+  .replace(/पहला\s*(?:schedule)?/g, "schedule number 1")
+  .replace(/दूसरा\s*(?:schedule)?/g, "schedule number 2")
+  .replace(/दूसरी\s*(?:schedule)?/g, "schedule number 2")
+  .replace(/तीसरा\s*(?:schedule)?/g, "schedule number 3")
+  .replace(/तीसरी\s*(?:schedule)?/g, "schedule number 3")
+  .replace(/चौथा\s*(?:schedule)?/g, "schedule number 4")
+  .replace(/चौथी\s*(?:schedule)?/g, "schedule number 4")
+  .trim();
+
+// ===== END VOICE CANCEL NORMALIZATION =====
+
+const isScheduleWord =
   lowerText.includes("schedule") ||
   lowerText.includes("शेड्यूल") ||
   lowerText.includes("शेडूल") ||
@@ -212,54 +234,254 @@ return res.json({
 
 
     // =========================================
-    // VOICE SCHEDULE CANCEL
+    // =========================================
+    // FINAL VOICE SCHEDULE CANCEL
+    // =========================================
+    // Supports:
+    // "schedule number 2 cancel करो"
+    // "एक नंबर वाला schedule cancel करो"
+    // "पहला schedule cancel करो"
+    // "तीसरा schedule delete करो"
+    // "12:40 वाला schedule cancel करो"
+    // "06:55 वाला schedule cancel करो"
+    //
+    // IMPORTANT:
+    // Disabled schedules भी number/time से cancel होंगे.
     // =========================================
 
-    if (
-  isCancelWord &&
-  isScheduleWord
-) {
+    if (isCancelWord && isScheduleWord) {
 
-      const timeMatch = lowerText.match(
-        /(\d{1,2})\s*(?::|\.|\s)\s*(\d{2})/
+      let cancelText = String(lowerText || "")
+        .toLowerCase()
+        .trim();
+
+      // -----------------------------------------
+      // Hindi digits -> English digits
+      // -----------------------------------------
+
+      cancelText = cancelText.replace(
+        /[०-९]/g,
+        d => "०१२३४५६७८९".indexOf(d)
+      );
+
+      // -----------------------------------------
+      // SCHEDULE NUMBER
+      // -----------------------------------------
+
+      let scheduleNumber = null;
+
+      // English:
+      // schedule number 2
+      // schedule no 2
+      // schedule #2
+      // number 2
+      // #2
+
+      const englishNumberMatch = cancelText.match(
+        /(?:schedule\s*(?:number|no\.?|#)?\s*|number\s+|no\.?\s*|#)\s*(\d+)/i
+      );
+
+      if (englishNumberMatch) {
+        scheduleNumber = Number(englishNumberMatch[1]);
+      }
+
+      // -----------------------------------------
+      // Hindi ordinal numbers
+      // -----------------------------------------
+
+      const ordinalMap = {
+        "पहला": 1,
+        "पहली": 1,
+        "दूसरा": 2,
+        "दूसरी": 2,
+        "तीसरा": 3,
+        "तीसरी": 3,
+        "चौथा": 4,
+        "चौथी": 4,
+        "पांचवा": 5,
+        "पाँचवा": 5,
+        "पांचवां": 5,
+        "पाँचवाँ": 5,
+        "छठा": 6,
+        "छठी": 6,
+        "सातवां": 7,
+        "सातवाँ": 7,
+        "आठवां": 8,
+        "आठवाँ": 8,
+        "नौवां": 9,
+        "नौवाँ": 9,
+        "दसवां": 10,
+        "दसवाँ": 10
+      };
+
+      if (scheduleNumber === null) {
+        for (const [word, num] of Object.entries(ordinalMap)) {
+          if (cancelText.includes(word)) {
+            scheduleNumber = num;
+            break;
+          }
+        }
+      }
+
+      // -----------------------------------------
+      // Hindi "एक नंबर वाला"
+      // -----------------------------------------
+
+      const hindiNumberMap = {
+        "एक": 1,
+        "दो": 2,
+        "तीन": 3,
+        "चार": 4,
+        "पांच": 5,
+        "पाँच": 5,
+        "छह": 6,
+        "छः": 6,
+        "सात": 7,
+        "आठ": 8,
+        "नौ": 9,
+        "दस": 10
+      };
+
+      if (scheduleNumber === null) {
+        for (const [word, num] of Object.entries(hindiNumberMap)) {
+
+          const pattern = new RegExp(
+            word +
+            "\\s*(?:नंबर|नम्बर)" +
+            "\\s*(?:वाला|वाली|वाले|का|की)?",
+            "i"
+          );
+
+          if (pattern.test(cancelText)) {
+            scheduleNumber = num;
+            break;
+          }
+        }
+      }
+
+      // -----------------------------------------
+      // Cancel by NUMBER
+      // -----------------------------------------
+
+      if (scheduleNumber !== null) {
+
+        // IMPORTANT:
+        // यहां enabled=true नहीं लगाना है.
+        // Schedule list की पूरी numbering use होगी.
+        const schedules =
+          await databases.listDocuments(
+            DATABASE_ID,
+            SCHEDULE_COLLECTION
+          );
+
+        if (
+          scheduleNumber < 1 ||
+          scheduleNumber > schedules.documents.length
+        ) {
+          return res.json({
+            success: false,
+            type: "SCHEDULE_CANCEL",
+            message:
+              `Schedule number ${scheduleNumber} नहीं मिला`
+          });
+        }
+
+        const schedule =
+          schedules.documents[scheduleNumber - 1];
+
+        await databases.deleteDocument(
+          DATABASE_ID,
+          SCHEDULE_COLLECTION,
+          schedule.$id
+        );
+
+        return res.json({
+          success: true,
+          type: "SCHEDULE_CANCEL",
+          message:
+            `Schedule number ${scheduleNumber} cancel कर दिया`,
+          scheduleId: schedule.$id,
+          cancelledSchedule: schedule
+        });
+      }
+
+      // -----------------------------------------
+      // Cancel by TIME
+      // -----------------------------------------
+      // 12:40
+      // 12.40
+      // 12 40
+      // 12 बजे
+      // 12 baje
+
+      const timeMatch = cancelText.match(
+        /(\d{1,2})\s*(?::|\.|\s)\s*(\d{2})|(\d{1,2})\s*(?:बजे|baje)\b/i
       );
 
       if (!timeMatch) {
         return res.json({
           success: false,
           type: "SCHEDULE_CANCEL",
-          message: "Schedule ka time batao, jaise 12:40 wala schedule cancel karo"
+          message:
+            "Schedule number या time बताइए, जैसे 'एक नंबर वाला schedule cancel करो' या '12:40 वाला schedule cancel करो'"
         });
       }
 
-      let cancelHour = Number(timeMatch[1]);
+      let cancelHour = Number(
+        timeMatch[1] !== undefined
+          ? timeMatch[1]
+          : timeMatch[3]
+      );
 
-const cancelMinute =
-  String(Number(timeMatch[2])).padStart(2, "0");
+      const cancelMinute =
+        timeMatch[2] !== undefined
+          ? String(Number(timeMatch[2])).padStart(2, "0")
+          : "00";
 
-// शाम / दोपहर / रात को 24-hour format में बदलें
-if (
-  cancelDay &&
-  cancelHour >= 1 &&
-  cancelHour <= 11
-) {
-  cancelHour += 12;
-}
+      // शाम / रात / PM
+      const isPM =
+        cancelText.includes("pm") ||
+        cancelText.includes("शाम") ||
+        cancelText.includes("shaam") ||
+        cancelText.includes("रात") ||
+        cancelText.includes("raat") ||
+        cancelText.includes("दोपहर") ||
+        cancelText.includes("dopahar");
 
-cancelHour =
-  String(cancelHour).padStart(2, "0");
+      if (
+        isPM &&
+        cancelHour >= 1 &&
+        cancelHour <= 11
+      ) {
+        cancelHour += 12;
+      }
 
-const cancelTime =
-  `${cancelHour}:${cancelMinute}`;
+      if (
+        cancelHour < 0 ||
+        cancelHour > 23 ||
+        Number(cancelMinute) < 0 ||
+        Number(cancelMinute) > 59
+      ) {
+        return res.json({
+          success: false,
+          type: "SCHEDULE_CANCEL",
+          message: "सही schedule time बताइए"
+        });
+      }
+
+      const cancelTime =
+        `${String(cancelHour).padStart(2, "0")}:${cancelMinute}`;
+
+      // IMPORTANT:
+      // enabled=true नहीं लगाना है.
+      // Disabled schedule भी time से delete होगा.
 
       const result =
         await databases.listDocuments(
           DATABASE_ID,
           SCHEDULE_COLLECTION,
           [
-            Query.equal("startTime", cancelTime),
-            Query.equal("enabled", true),
-            ...(cancelDay ? [Query.equal("days", cancelDay)] : [])
+            Query.equal("startTime", cancelTime)
           ]
         );
 
@@ -267,11 +489,13 @@ const cancelTime =
         return res.json({
           success: false,
           type: "SCHEDULE_CANCEL",
-          message: `${cancelTime} par koi active schedule nahi mila`
+          message:
+            `${cancelTime} वाला कोई schedule नहीं मिला`
         });
       }
 
-      const schedule = result.documents[0];
+      const schedule =
+        result.documents[0];
 
       await databases.deleteDocument(
         DATABASE_ID,
@@ -282,15 +506,14 @@ const cancelTime =
       return res.json({
         success: true,
         type: "SCHEDULE_CANCEL",
-        message: `Schedule ${cancelTime} cancel kar diya`,
+        message:
+          `${cancelTime} वाला schedule cancel कर दिया`,
         scheduleId: schedule.$id,
         cancelledSchedule: schedule
       });
-
     }
 
 
-    // =========================================
     // Parse Voice
     // =========================================
 

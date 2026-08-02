@@ -28,12 +28,85 @@ function VoiceControl({ onCommandSent }) {
     recognition.onresult = async (event) => {
       const rawText = event.results[0][0].transcript;
 
-      // Hindi speech recognition की सामान्य गलतियों को ठीक करें
+      // =========================================
+      // VOICE TEXT NORMALIZATION
+      // Hindi speech recognition की common गलतियों को normalize करें
+      // =========================================
+
+      // =========================================
+      // FINAL VOICE NORMALIZATION
+      // =========================================
       const text = rawText
         .toLowerCase()
+        .replace(/[०-९]/g, d => "०१२३४५६७८९".indexOf(d))
+
+        // Hindi command words
+        .replace(/शेड्यूल|शेडुल|शिड्यूल|शेड्चूल|शेडचूल/g, "schedule")
+        .replace(/कैंसल|कैंसिल|केन्सल|कैसिल|केसिल/g, "cancel")
+        .replace(/डिलीट|डिलिट/g, "delete")
+        .replace(/हटा दो|हटाओ|हटा\s*दो/g, "delete")
+
+        // "एक नंबर वाला schedule"
+        .replace(/एक\s*(?:नंबर|नम्बर)\s*(?:वाला|वाली|का|की)?/g, "schedule number 1")
+        .replace(/दो\s*(?:नंबर|नम्बर)\s*(?:वाला|वाली|का|की)?/g, "schedule number 2")
+        .replace(/तीन\s*(?:नंबर|नम्बर)\s*(?:वाला|वाली|का|की)?/g, "schedule number 3")
+        .replace(/चार\s*(?:नंबर|नम्बर)\s*(?:वाला|वाली|का|की)?/g, "schedule number 4")
+        .replace(/पांच\s*(?:नंबर|नम्बर)\s*(?:वाला|वाली|का|की)?/g, "schedule number 5")
+        .replace(/पाँच\s*(?:नंबर|नम्बर)\s*(?:वाला|वाली|का|की)?/g, "schedule number 5")
+
+        // "पहला/दूसरा/तीसरा schedule"
+        .replace(/पहला\s*(?:नंबर|नम्बर)?\s*(?:वाला|वाली|का|की)?/g, "schedule number 1")
+        .replace(/पहली\s*(?:नंबर|नम्बर)?\s*(?:वाला|वाली|का|की)?/g, "schedule number 1")
+        .replace(/दूसरा\s*(?:नंबर|नम्बर)?\s*(?:वाला|वाली|का|की)?/g, "schedule number 2")
+        .replace(/दूसरी\s*(?:नंबर|नम्बर)?\s*(?:वाला|वाली|का|की)?/g, "schedule number 2")
+        .replace(/तीसरा\s*(?:नंबर|नम्बर)?\s*(?:वाला|वाली|का|की)?/g, "schedule number 3")
+        .replace(/तीसरी\s*(?:नंबर|नम्बर)?\s*(?:वाला|वाली|का|की)?/g, "schedule number 3")
+        .replace(/चौथा\s*(?:नंबर|नम्बर)?\s*(?:वाला|वाली|का|की)?/g, "schedule number 4")
+        .replace(/चौथी\s*(?:नंबर|नम्बर)?\s*(?:वाला|वाली|का|की)?/g, "schedule number 4")
+        .replace(/पांचवा\s*(?:नंबर|नम्बर)?\s*(?:वाला|वाली|का|की)?/g, "schedule number 5")
+        .replace(/पांचवीं\s*(?:नंबर|नम्बर)?\s*(?:वाला|वाली|का|की)?/g, "schedule number 5")
+        .replace(/पाँचवा\s*(?:नंबर|नम्बर)?\s*(?:वाला|वाली|का|की)?/g, "schedule number 5")
+
+        // English speech numbers
+        .replace(/\bschedule\s+one\b/g, "schedule number 1")
+        .replace(/\bschedule\s+two\b/g, "schedule number 2")
+        .replace(/\bschedule\s+three\b/g, "schedule number 3")
+        .replace(/\bschedule\s+four\b/g, "schedule number 4")
+        .replace(/\bschedule\s+five\b/g, "schedule number 5")
+
+        // Hindi number after schedule
+        .replace(/schedule\s+एक\b/g, "schedule number 1")
+        .replace(/schedule\s+दो\b/g, "schedule number 2")
+        .replace(/schedule\s+तीन\b/g, "schedule number 3")
+        .replace(/schedule\s+चार\b/g, "schedule number 4")
+        .replace(/schedule\s+पांच\b/g, "schedule number 5")
+        .replace(/schedule\s+पाँच\b/g, "schedule number 5")
+
+        // Hindi number words → digits
+        .replace(/एक/g, "1")
+        .replace(/दो/g, "2")
+        .replace(/तीन/g, "3")
+        .replace(/चार/g, "4")
+        .replace(/पांच|पाँच/g, "5")
+
+        // Hindi number words for ordinal commands
+        .replace(/पहला|पहली/g, "schedule number 1")
+        .replace(/दूसरा|दूसरी/g, "schedule number 2")
+        .replace(/तीसरा|तीसरी/g, "schedule number 3")
+        .replace(/चौथा|चौथी/g, "schedule number 4")
+        .replace(/पांचवा|पांचवीं|पाँचवा/g, "schedule number 5")
+
+        .replace(/नंबर|नम्बर/g, "number")
+
+        // Motor recognition mistakes
         .replace(/मदर/g, "मोटर")
         .replace(/मोटर्र/g, "मोटर")
-        .replace(/मोटर/g, "मोटर");
+
+        .replace(/\s+/g, " ")
+        .trim();
+
+      console.log("🎤 ACTUAL TRANSCRIPT:", rawText);
+      console.log("🛠️ NORMALIZED TEXT:", text);
 
       setMessage(`🗣️ आपने कहा: ${rawText}`);
       console.log("🎤 ACTUAL TRANSCRIPT:", rawText);
@@ -306,55 +379,6 @@ function VoiceControl({ onCommandSent }) {
         {message}
       </p>
 
-      {schedules.length > 0 && (
-        <div
-          style={{
-            marginTop: "20px",
-            textAlign: "left"
-          }}
-        >
-          <h3>📋 Saved Schedules</h3>
-
-          {schedules.map((schedule, index) => (
-            <div
-              key={schedule.$id || index}
-              style={{
-                border: "1px solid #ddd",
-                borderRadius: "10px",
-                padding: "12px",
-                marginTop: "10px"
-              }}
-            >
-              <b>
-                {index + 1}. ⏰ {schedule.startTime || schedule.time}
-              </b>
-
-              <br />
-
-              🟢 ON: <strong>{schedule.startTime || schedule.time || "-"}</strong>
-
-              <br />
-
-              🔴 OFF: <strong>{schedule.endTime || "-"}</strong>
-
-              <br />
-
-              📅 Days: {schedule.days || "हर दिन"}
-
-              <br />
-
-              📆 Date: {schedule.date || schedule.scheduledDate || "-"}
-
-              <br />
-
-              Status:{" "}
-              {schedule.enabled
-                ? "🟢 Enabled"
-                : "⚪ Disabled"}
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
