@@ -71,7 +71,7 @@ function App() {
 
         <div className="card">
 
-          <Schedule />
+          <Schedule refresh={refresh} />
 
         </div>
 

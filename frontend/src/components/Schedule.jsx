@@ -16,7 +16,7 @@ const DAYS = [
   ["Sun", "Sun"]
 ];
 
-function Schedule() {
+function Schedule({ refresh }) {
 
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -385,7 +385,7 @@ function Schedule() {
 
     loadSchedules();
 
-  }, []);
+  }, [refresh]);
 
 
   // =========================

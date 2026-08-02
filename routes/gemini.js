@@ -193,6 +193,8 @@ for (const [word, day] of Object.entries(dayMap)) {
       const scheduleList = schedules.documents.map((s, index) => ({
   number: index + 1,
   time: s.startTime,
+  startTime: s.startTime,
+  endTime: s.endTime || null,
   command: s.command || "ON",
   days: s.days || "हर दिन",
   date: s.scheduledDate || null,

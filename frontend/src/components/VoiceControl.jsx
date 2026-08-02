@@ -105,6 +105,46 @@ function VoiceControl({ onCommandSent }) {
         }
 
         // =========================
+        // TWO-TIME SCHEDULE
+        // =========================
+
+        if (
+          data.type === "TWO_TIME_TODAY" ||
+          data.type === "TWO_TIME_RECURRING"
+        ) {
+          const startTime = data.startTime || "--:--";
+          const endTime = data.endTime || "--:--";
+
+          setMessage(
+            `✅ Schedule Set: ${startTime} → ${endTime}`
+          );
+
+          if (onCommandSent) {
+            onCommandSent();
+          }
+
+          return;
+        }
+
+        // =========================
+        // SCHEDULE CANCEL
+        // =========================
+
+        if (data.type === "SCHEDULE_CANCEL") {
+          setMessage(
+            data.success
+              ? `🗑️ ${data.message || "Schedule delete कर दिया"}`
+              : `❌ ${data.message || "Schedule delete नहीं हुआ"}`
+          );
+
+          if (data.success && onCommandSent) {
+            onCommandSent();
+          }
+
+          return;
+        }
+
+        // =========================
         // ONE-TIME SCHEDULE
         // =========================
 
@@ -150,6 +190,45 @@ function VoiceControl({ onCommandSent }) {
 
           setMessage(
             `🔄 Recurring Schedule Set: रोज़ ${timeText} → ${commandText}`
+          );
+
+          if (onCommandSent) {
+            onCommandSent();
+          }
+
+          return;
+        }
+
+        // =========================
+        // TWO-TIME RECURRING SCHEDULE
+        // =========================
+
+        if (data.type === "TWO_TIME_RECURRING") {
+          const startTime = data.startTime || "";
+          const endTime = data.endTime || "";
+
+          setMessage(
+            `✅ रोज़ का Schedule Set: ${startTime} → ON, ${endTime} → OFF`
+          );
+
+          // Schedule list को तुरंत refresh करवाएँ
+          if (onCommandSent) {
+            onCommandSent();
+          }
+
+          return;
+        }
+
+        // =========================
+        // TWO-TIME TODAY SCHEDULE
+        // =========================
+
+        if (data.type === "TWO_TIME_TODAY") {
+          const startTime = data.startTime || "";
+          const endTime = data.endTime || "";
+
+          setMessage(
+            `✅ आज का Schedule Set: ${startTime} → ON, ${endTime} → OFF`
           );
 
           if (onCommandSent) {
@@ -247,15 +326,16 @@ function VoiceControl({ onCommandSent }) {
               }}
             >
               <b>
-                {index + 1}. ⏰ {schedule.time || schedule.startTime}
+                {index + 1}. ⏰ {schedule.startTime || schedule.time}
               </b>
 
               <br />
 
-              ⚡ Command:{" "}
-              {schedule.command === "ON"
-                ? "🟢 Pump ON"
-                : "🔴 Pump OFF"}
+              🟢 ON: <strong>{schedule.startTime || schedule.time || "-"}</strong>
+
+              <br />
+
+              🔴 OFF: <strong>{schedule.endTime || "-"}</strong>
 
               <br />
 
