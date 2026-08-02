@@ -57,7 +57,7 @@ router.post("/voice", async (req, res) => {
     // VOICE SCHEDULE LIST
     // =========================================
 
-    const lowerText = text.toLowerCase();
+    let lowerText = text.toLowerCase();
 
 
     // =========================================
