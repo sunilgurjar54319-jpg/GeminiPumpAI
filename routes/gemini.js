@@ -415,7 +415,7 @@ return res.json({
       // 12 baje
 
       const timeMatch = cancelText.match(
-        /(\d{1,2})\s*(?::|\.|\s)\s*(\d{2})|(\d{1,2})\s*(?:बजे|baje)\b/i
+        /(\d{1,2})\s*(?::|\.|\s)\s*(\d{2})|(\d{1,2})\s*(?:बजे|बजे का|baje)\s*/i
       );
 
       if (!timeMatch) {
