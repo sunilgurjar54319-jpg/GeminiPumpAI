@@ -8,7 +8,7 @@ const { updateStatus, getStatus } = require("./statusService");
 // Send New Command
 // =========================================
 
-async function sendCommand(deviceId, command) {
+async function sendCommand(deviceId, command, source = "MANUAL") {
 
   try {
 
@@ -35,12 +35,74 @@ async function sendCommand(deviceId, command) {
       );
 
 
+    // =======================================
+    // STALE SCHEDULED ON PROTECTION
+    // =======================================
+    // A missed scheduled ON must never be reused
+    // after its scheduled window has already started.
+    // Recovery logic will create a fresh ON command.
+    // =======================================
+
+    // Pending ON command 20 seconds से पुरानी हो जाए
+// तो Recovery नया ON बना सके.
+const STALE_AFTER_MS = 5 * 60 * 1000;
+
+    for (const pendingCommand of [...pending.documents]) {
+
+      if (
+        pendingCommand.source === "SCHEDULED" &&
+        pendingCommand.command === "ON" &&
+        pendingCommand.createdAt
+      ) {
+
+        const createdAt =
+          new Date(pendingCommand.createdAt).getTime();
+
+        if (
+          !Number.isNaN(createdAt) &&
+          Date.now() - createdAt >= STALE_AFTER_MS
+        ) {
+
+          await databases.updateDocument(
+            process.env.APPWRITE_DATABASE_ID,
+            "commands",
+            pendingCommand.$id,
+            {
+              executed: true
+            }
+          );
+
+          console.log(
+            `⏭️ Expired stale SCHEDULED ON before new command: ${pendingCommand.$id}`
+          );
+
+        }
+
+      }
+
+    }
+
+
+    // Re-read pending commands after stale cleanup
+
+    const freshPending =
+      await databases.listDocuments(
+        process.env.APPWRITE_DATABASE_ID,
+        "commands",
+        [
+          Query.equal("deviceId", deviceId),
+          Query.equal("executed", false),
+          Query.orderAsc("$createdAt")
+        ]
+      );
+
+
     // ---------------------------------------
     // Same command already pending
     // ---------------------------------------
 
     const samePending =
-      pending.documents.find(
+      freshPending.documents.find(
         doc => doc.command === command
       );
 
@@ -69,7 +131,9 @@ async function sendCommand(deviceId, command) {
     // ---------------------------------------
 
     if (
-      pending.documents.length === 0 &&
+      freshPending.documents.length === 0 &&
+      (currentStatus.status === "ON" ||
+       currentStatus.status === "OFF") &&
       currentStatus.status === command
     ) {
 
@@ -94,10 +158,10 @@ async function sendCommand(deviceId, command) {
     // then OFF.
     // =======================================
 
-    if (pending.documents.length > 0) {
+    if (freshPending.documents.length > 0) {
 
       console.log(
-        `📋 Pending ${pending.documents.length} command(s) found. Adding ${command} to queue.`
+        `📋 Pending ${freshPending.documents.length} command(s) found. Adding ${command} to queue.`
       );
 
     }
@@ -116,6 +180,7 @@ async function sendCommand(deviceId, command) {
           deviceId,
           command,
           executed: false,
+          source,
           createdAt: new Date().toISOString()
         }
       );
@@ -177,7 +242,69 @@ async function getCommand(deviceId) {
     }
 
 
-    return result.documents[0];
+    // =========================================
+    // STALE SCHEDULED COMMAND PROTECTION
+    // =========================================
+    // If device/simulator was offline when a
+    // scheduled ON was created, do NOT execute
+    // that old ON after the scheduled minute has
+    // already passed.
+    //
+    // Scheduled OFF is intentionally NOT skipped.
+    // If the pump is already ON, an old OFF command
+    // should still be allowed to turn it OFF.
+    //
+    // MANUAL commands are never affected.
+    // =========================================
+
+    const STALE_AFTER_MS = 5 * 60 * 1000;
+
+    for (const pendingCommand of result.documents) {
+
+      if (
+        pendingCommand.source === "SCHEDULED" &&
+        pendingCommand.command === "ON" &&
+        pendingCommand.createdAt
+      ) {
+
+        const createdAt =
+          new Date(pendingCommand.createdAt).getTime();
+
+        if (
+          !Number.isNaN(createdAt) &&
+          Date.now() - createdAt >= STALE_AFTER_MS
+        ) {
+
+          await databases.updateDocument(
+            process.env.APPWRITE_DATABASE_ID,
+            "commands",
+            pendingCommand.$id,
+            {
+              executed: true
+            }
+          );
+
+          await addHistory(
+            pendingCommand.deviceId,
+            pendingCommand.command,
+            "Expired"
+          );
+
+          console.log(
+            `⏭️ Expired stale SCHEDULED ON: ${pendingCommand.deviceId} → ${pendingCommand.$id}`
+          );
+
+          continue;
+        }
+      }
+
+      return pendingCommand;
+    }
+
+
+    return {
+      command: "NONE"
+    };
 
 
   } catch (err) {

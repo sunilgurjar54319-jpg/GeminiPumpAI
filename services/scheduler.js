@@ -2,6 +2,7 @@ const cron = require("node-cron");
 const databases = require("../config/appwrite");
 const { sendCommand } = require("./commandService");
 const { getStatus } = require("./statusService");
+const { Query } = require("node-appwrite");
 
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID;
 const SCHEDULE_COLLECTION = "schedules";
@@ -15,20 +16,35 @@ async function executeCommand(deviceId, command) {
 
   try {
 
-    const result = await sendCommand(deviceId, command);
+    const result = await sendCommand(deviceId, command, "SCHEDULED");
 
     // -----------------------------------------
     // Already in requested state
     // -----------------------------------------
     if (result && result.ignored === true) {
 
-      console.log(
-        `ℹ️ Command Ignored: Pump already ${result.status}`
-      );
+      const ignoredStatus =
+        result.status === "ON" || result.status === "OFF"
+          ? result.status
+          : null;
 
-      console.log(
-        `${result.status === "ON" ? "🟢" : "🔴"} ${deviceId} STATUS: ${result.status}`
-      );
+      if (ignoredStatus) {
+
+        console.log(
+          `ℹ️ Command Ignored: Pump already ${ignoredStatus}`
+        );
+
+        console.log(
+          `${ignoredStatus === "ON" ? "🟢" : "🔴"} ${deviceId} STATUS: ${ignoredStatus}`
+        );
+
+      } else {
+
+        console.log(
+          `ℹ️ Command Ignored: ${result.message || "command already handled"}`
+        );
+
+      }
 
       return result;
     }
@@ -150,7 +166,10 @@ async function cleanupOldOneTimeSchedules() {
     const result =
       await databases.listDocuments(
         DATABASE_ID,
-        SCHEDULE_COLLECTION
+        SCHEDULE_COLLECTION,
+        [
+          Query.limit(1000)
+        ]
       );
 
     const now = Date.now();
@@ -206,6 +225,102 @@ async function cleanupOldOneTimeSchedules() {
 
   }
 
+}
+
+
+// =========================================
+// Check whether another schedule is currently active
+// for the same device.
+// Used to prevent one schedule's OFF from stopping
+// another overlapping schedule.
+// =========================================
+
+async function hasOtherActiveSchedule(
+  deviceId,
+  currentScheduleId,
+  currentDate,
+  currentTime,
+  today
+) {
+
+  try {
+
+    const result = await databases.listDocuments(
+      DATABASE_ID,
+      SCHEDULE_COLLECTION
+    );
+
+    for (const other of result.documents) {
+
+      if (other.$id === currentScheduleId) {
+        continue;
+      }
+
+      if (
+        other.deviceId !== deviceId ||
+        other.enabled !== true ||
+        !other.startTime ||
+        !other.endTime
+      ) {
+        continue;
+      }
+
+      // -----------------------------------------
+      // One-time schedule
+      // -----------------------------------------
+
+      if (other.scheduledDate) {
+
+        if (
+          other.scheduledDate === currentDate &&
+          currentTime >= other.startTime &&
+          currentTime < other.endTime
+        ) {
+          return true;
+        }
+
+        continue;
+      }
+
+      // -----------------------------------------
+      // Recurring schedule
+      // -----------------------------------------
+
+      if (!other.days) {
+        continue;
+      }
+
+      const days = other.days
+        .split(",")
+        .map(day => day.trim());
+
+      if (!days.includes(today)) {
+        continue;
+      }
+
+      if (
+        currentTime >= other.startTime &&
+        currentTime < other.endTime
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+
+  } catch (error) {
+
+    console.log(
+      "⚠️ Overlap check failed:",
+      error.message
+    );
+
+    // Safety-first:
+    // If overlap check fails, block OFF.
+    // Never turn the pump OFF when active-schedule
+    // information cannot be verified.
+    return true;
+  }
 }
 
 
@@ -275,7 +390,10 @@ async function checkSchedules() {
     const result =
       await databases.listDocuments(
         DATABASE_ID,
-        SCHEDULE_COLLECTION
+        SCHEDULE_COLLECTION,
+        [
+          Query.limit(1000)
+        ]
       );
 
 
@@ -294,6 +412,10 @@ async function checkSchedules() {
         continue;
       }
 
+      console.log(
+        `🔎 CHECK SCHEDULE: ${schedule.deviceId} | start=${schedule.startTime} | end=${schedule.endTime} | days=${schedule.days} | today=${today} | now=${currentTime} | command=${schedule.command} | last=${schedule.lastExecuted}`
+      );
+
 
       // =======================================
       // ONE-TIME DATE SCHEDULE
@@ -309,6 +431,92 @@ async function checkSchedules() {
           continue;
         }
 
+
+        // =====================================
+        // POWER-CUT RECOVERY
+        // =====================================
+        //
+        // Recover ON only once for this schedule
+        // during the current date.
+        //
+        // IMPORTANT:
+        // Do NOT expire every pending SCHEDULED ON.
+        // Other schedules may belong to the same device.
+        // =====================================
+
+        if (
+          schedule.command === "ON" &&
+          schedule.startTime &&
+          schedule.endTime &&
+          currentTime >= schedule.startTime &&
+          currentTime < schedule.endTime
+        ) {
+
+          const recoveryKey =
+            `${currentDate}-RECOVERY-${schedule.$id}`;
+
+          // Already recovered this schedule today.
+          if (
+            schedule.lastExecuted !== recoveryKey
+          ) {
+
+            const currentStatus =
+              await getStatus(schedule.deviceId);
+
+            if (
+              currentStatus &&
+              currentStatus.status === "OFF"
+            ) {
+
+              console.log(
+                `🔄 Power-Cut Recovery: ${schedule.deviceId} → ON`
+              );
+
+              const recoveryResult =
+                await executeCommand(
+                  schedule.deviceId,
+                  "ON"
+                );
+
+              // Lock only after recovery command was
+              // accepted/queued. If it was ignored because
+              // another ON is already pending, do not lock.
+              if (
+                !recoveryResult ||
+                recoveryResult.ignored !== true
+              ) {
+
+                await databases.updateDocument(
+                  DATABASE_ID,
+                  SCHEDULE_COLLECTION,
+                  schedule.$id,
+                  {
+                    lastExecuted: recoveryKey
+                  }
+                );
+
+                console.log(
+                  `✅ Recovery ON locked: ` +
+                  `${schedule.deviceId} ` +
+                  `${currentDate}`
+                );
+
+              } else {
+
+                console.log(
+                  `ℹ️ Recovery ON not locked: ${
+                    recoveryResult.message ||
+                    "command already pending"
+                  }`
+                );
+
+              }
+
+            }
+
+          }
+
+        }
 
         // =====================================
         // START / ON or one-time command
@@ -415,10 +623,29 @@ async function checkSchedules() {
           }
 
 
-          await executeCommand(
-            schedule.deviceId,
-            "OFF"
-          );
+          const anotherScheduleActive =
+            await hasOtherActiveSchedule(
+              schedule.deviceId,
+              schedule.$id,
+              currentDate,
+              currentTime,
+              today
+            );
+
+          if (anotherScheduleActive) {
+
+            console.log(
+              `⏸️ Scheduled OFF skipped: ${schedule.deviceId} still covered by another active schedule`
+            );
+
+          } else {
+
+            await executeCommand(
+              schedule.deviceId,
+              "OFF"
+            );
+
+          }
 
 
           await databases.updateDocument(
@@ -530,10 +757,29 @@ async function checkSchedules() {
         }
 
 
-        await executeCommand(
-          schedule.deviceId,
-          "OFF"
-        );
+        const anotherScheduleActive =
+          await hasOtherActiveSchedule(
+            schedule.deviceId,
+            schedule.$id,
+            currentDate,
+            currentTime,
+            today
+          );
+
+        if (anotherScheduleActive) {
+
+          console.log(
+            `⏸️ Scheduled OFF skipped: ${schedule.deviceId} still covered by another active schedule`
+          );
+
+        } else {
+
+          await executeCommand(
+            schedule.deviceId,
+            "OFF"
+          );
+
+        }
 
 
         await databases.updateDocument(
