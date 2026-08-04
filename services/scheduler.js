@@ -605,8 +605,7 @@ async function checkSchedules() {
 
         if (
           schedule.endTime &&
-          schedule.endTime ===
-          currentTime &&
+          currentTime >= schedule.endTime &&
           schedule.endTime !==
           schedule.startTime
         ) {
