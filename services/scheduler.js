@@ -168,7 +168,8 @@ async function cleanupOldOneTimeSchedules() {
         DATABASE_ID,
         SCHEDULE_COLLECTION,
         [
-          Query.limit(1000)
+          Query.equal("enabled", false),
+          Query.limit(100)
         ]
       );
 
@@ -247,7 +248,12 @@ async function hasOtherActiveSchedule(
 
     const result = await databases.listDocuments(
       DATABASE_ID,
-      SCHEDULE_COLLECTION
+      SCHEDULE_COLLECTION,
+      [
+        Query.equal("deviceId", deviceId),
+        Query.equal("enabled", true),
+        Query.limit(100)
+      ]
     );
 
     for (const other of result.documents) {
@@ -392,7 +398,8 @@ async function checkSchedules() {
         DATABASE_ID,
         SCHEDULE_COLLECTION,
         [
-          Query.limit(1000)
+          Query.equal("enabled", true),
+          Query.limit(100)
         ]
       );
 

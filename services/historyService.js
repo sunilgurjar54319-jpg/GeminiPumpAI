@@ -25,7 +25,9 @@ async function getHistory(deviceId) {
     process.env.APPWRITE_DATABASE_ID,
     "history",
     [
-      Query.equal("deviceId", deviceId)
+      Query.equal("deviceId", deviceId),
+      Query.orderDesc("$createdAt"),
+      Query.limit(100)
     ]
   );
 

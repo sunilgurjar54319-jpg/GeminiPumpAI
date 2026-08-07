@@ -14,49 +14,24 @@ async function updateStatus(deviceId, status) {
         throw new Error("Invalid status: " + status);
     }
 
-    const RETRIES = 4;
-    const RETRY_DELAY = 2000;
+    try {
 
-    let lastError;
+        const result = await databases.listDocuments(
+            process.env.APPWRITE_DATABASE_ID,
+            "status",
+            [
+                Query.equal("deviceId", deviceId),
+                Query.limit(1)
+            ]
+        );
 
-    for (let attempt = 1; attempt <= RETRIES; attempt++) {
+        if (result.documents.length > 0) {
 
-        try {
-
-            const result = await databases.listDocuments(
+            const updated = await databases.updateDocument(
                 process.env.APPWRITE_DATABASE_ID,
                 "status",
-                [
-                    Query.equal("deviceId", deviceId),
-                    Query.limit(1)
-                ]
-            );
-
-            if (result.documents.length > 0) {
-
-                const updated = await databases.updateDocument(
-                    process.env.APPWRITE_DATABASE_ID,
-                    "status",
-                    result.documents[0].$id,
-                    {
-                        status,
-                        updatedAt: new Date().toISOString()
-                    }
-                );
-
-                console.log(
-                    `📡 Device Status Synced: ${deviceId} → ${status}`
-                );
-
-                return updated;
-            }
-
-            const created = await databases.createDocument(
-                process.env.APPWRITE_DATABASE_ID,
-                "status",
-                ID.unique(),
+                result.documents[0].$id,
                 {
-                    deviceId,
                     status,
                     updatedAt: new Date().toISOString()
                 }
@@ -66,30 +41,34 @@ async function updateStatus(deviceId, status) {
                 `📡 Device Status Synced: ${deviceId} → ${status}`
             );
 
-            return created;
-
-        } catch (err) {
-
-            lastError = err;
-
-            console.log(
-                `⚠️ Status update attempt ${attempt}/${RETRIES}: ${err.message}`
-            );
-
-            if (attempt < RETRIES) {
-                await new Promise(resolve =>
-                    setTimeout(resolve, RETRY_DELAY)
-                );
-            }
+            return updated;
         }
+
+        const created = await databases.createDocument(
+            process.env.APPWRITE_DATABASE_ID,
+            "status",
+            ID.unique(),
+            {
+                deviceId,
+                status,
+                updatedAt: new Date().toISOString()
+            }
+        );
+
+        console.log(
+            `📡 Device Status Synced: ${deviceId} → ${status}`
+        );
+
+        return created;
+
+    } catch (err) {
+
+        console.error(
+            `❌ updateStatus failed: ${err.message}`
+        );
+
+        throw err;
     }
-
-    console.error(
-        `❌ updateStatus failed after ${RETRIES} attempts:`,
-        lastError?.message
-    );
-
-    throw lastError;
 }
 
 
@@ -99,74 +78,54 @@ async function updateStatus(deviceId, status) {
 
 async function getStatus(deviceId) {
 
-    const RETRIES = 4;
-    const RETRY_DELAY = 2000;
+    try {
 
-    let lastError;
+        const result = await databases.listDocuments(
+            process.env.APPWRITE_DATABASE_ID,
+            "status",
+            [
+                Query.equal("deviceId", deviceId),
+                Query.limit(1)
+            ]
+        );
 
-    for (let attempt = 1; attempt <= RETRIES; attempt++) {
+        if (result.documents.length === 0) {
 
-        try {
-
-            const result = await databases.listDocuments(
-                process.env.APPWRITE_DATABASE_ID,
-                "status",
-                [
-                    Query.equal("deviceId", deviceId),
-                    Query.limit(1)
-                ]
-            );
-
-            if (result.documents.length === 0) {
-
-                return {
-                    deviceId,
-                    status: "UNKNOWN"
-                };
-            }
-
-            const doc = result.documents[0];
-
-            if (
-                doc.status !== "ON" &&
-                doc.status !== "OFF"
-            ) {
-
-                return {
-                    ...doc,
-                    status: "UNKNOWN"
-                };
-            }
-
-            return doc;
-
-        } catch (err) {
-
-            lastError = err;
-
-            console.log(
-                `⚠️ Status read attempt ${attempt}/${RETRIES}: ${err.message}`
-            );
-
-            if (attempt < RETRIES) {
-                await new Promise(resolve =>
-                    setTimeout(resolve, RETRY_DELAY)
-                );
-            }
+            return {
+                deviceId,
+                status: "UNKNOWN"
+            };
         }
+
+        const doc = result.documents[0];
+
+        if (
+            doc.status !== "ON" &&
+            doc.status !== "OFF"
+        ) {
+
+            return {
+                ...doc,
+                status: "UNKNOWN"
+            };
+        }
+
+        return doc;
+
+    } catch (err) {
+
+        console.error(
+            `❌ getStatus failed: ${err.message}`
+        );
+
+        return {
+            deviceId,
+            status: "UNKNOWN",
+            error: err.message
+        };
     }
-
-    console.error(
-        `❌ getStatus failed after ${RETRIES} attempts:`,
-        lastError?.message
-    );
-
-    return {
-        deviceId,
-        status: "UNKNOWN",
-        error: lastError?.message
-    };
 }
+
 
 
 module.exports = {

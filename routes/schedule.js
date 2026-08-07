@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const databases = require("../config/appwrite");
+const { Query } = require("node-appwrite");
 const { ID } = require("node-appwrite");
 
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID;
@@ -75,12 +76,14 @@ router.get("/:deviceId", async (req, res) => {
 
     const result = await databases.listDocuments(
       DATABASE_ID,
-      COLLECTION_ID
+      COLLECTION_ID,
+      [
+        Query.equal("deviceId", req.params.deviceId),
+        Query.limit(100)
+      ]
     );
 
-    const schedules = result.documents.filter(
-      item => item.deviceId === req.params.deviceId
-    );
+    const schedules = result.documents;
 
     res.json({
       success: true,

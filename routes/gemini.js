@@ -209,7 +209,11 @@ for (const [word, day] of Object.entries(dayMap)) {
       const schedules =
         await databases.listDocuments(
           DATABASE_ID,
-          SCHEDULE_COLLECTION
+          SCHEDULE_COLLECTION,
+          [
+            Query.equal("deviceId", "PUMP001"),
+            Query.limit(100)
+          ]
         );
 
       const scheduleList = schedules.documents.map((s, index) => ({
@@ -371,7 +375,11 @@ return res.json({
         const schedules =
           await databases.listDocuments(
             DATABASE_ID,
-            SCHEDULE_COLLECTION
+            SCHEDULE_COLLECTION,
+            [
+              Query.equal("deviceId", "PUMP001"),
+              Query.limit(100)
+            ]
           );
 
         if (
@@ -481,7 +489,9 @@ return res.json({
           DATABASE_ID,
           SCHEDULE_COLLECTION,
           [
-            Query.equal("startTime", cancelTime)
+            Query.equal("deviceId", "PUMP001"),
+            Query.equal("startTime", cancelTime),
+            Query.limit(100)
           ]
         );
 
@@ -1026,7 +1036,11 @@ router.get("/schedule/list", async (req, res) => {
     const schedules =
       await databases.listDocuments(
         DATABASE_ID,
-        SCHEDULE_COLLECTION
+        SCHEDULE_COLLECTION,
+        [
+          Query.equal("deviceId", "PUMP001"),
+          Query.limit(100)
+        ]
       );
 
 
