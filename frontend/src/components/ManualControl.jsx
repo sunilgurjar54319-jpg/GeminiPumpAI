@@ -1,20 +1,99 @@
 import { useEffect, useState } from "react";
 
 const API = "https://geminipumpai.onrender.com";
+const DEVICE_ID = "PUMP001";
 
 function ManualControl({ onCommandSent }) {
 
   const [isOn, setIsOn] = useState(false);
+  const [deviceOnline, setDeviceOnline] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Current pump status
-  async function loadStatus() {
+  // =========================================
+  // Check ESP32 connection
+  // =========================================
+
+  async function loadDeviceStatus() {
 
     try {
 
       const res = await fetch(
-        `${API}/api/status/PUMP001`
+        `${API}/api/device/${DEVICE_ID}`,
+        { cache: "no-store" }
+      );
+
+      if (!res.ok) {
+        throw new Error("Device API error");
+      }
+
+      const data = await res.json();
+
+      if (data.lastSeen) {
+
+        const lastSeen =
+          new Date(data.lastSeen).getTime();
+
+        const now = Date.now();
+
+        // Last heartbeat within 30 seconds = ONLINE
+        const online =
+          now - lastSeen <= 30000;
+
+        setDeviceOnline(online);
+
+        // Device offline -> Manual status reset nahi karna,
+        // sirf controls disable karne hain.
+        if (!online) {
+          setMessage(
+            "RMU FW Update available or Pump is not connected to network"
+          );
+        }
+
+      } else {
+
+        setDeviceOnline(false);
+
+        setMessage(
+          "RMU FW Update available or Pump is not connected to network"
+        );
+
+      }
+
+    } catch (err) {
+
+      console.log(
+        "Device connection error:",
+        err
+      );
+
+      setDeviceOnline(false);
+
+      setMessage(
+        "RMU FW Update available or Pump is not connected to network"
+      );
+
+    }
+
+  }
+
+
+  // =========================================
+  // Current pump status
+  // ONLY when device is online
+  // =========================================
+
+  async function loadPumpStatus() {
+
+    if (!deviceOnline) {
+      return;
+    }
+
+    try {
+
+      const res = await fetch(
+        `${API}/api/status/${DEVICE_ID}`,
+        { cache: "no-store" }
       );
 
       const data = await res.json();
@@ -29,19 +108,26 @@ function ManualControl({ onCommandSent }) {
 
     } catch (err) {
 
-      console.log("Status error:", err);
+      console.log(
+        "Pump status error:",
+        err
+      );
 
     }
 
   }
 
 
+  // =========================================
+  // Device heartbeat/status polling
+  // =========================================
+
   useEffect(() => {
 
-    loadStatus();
+    loadDeviceStatus();
 
     const timer = setInterval(
-      loadStatus,
+      loadDeviceStatus,
       5000
     );
 
@@ -50,7 +136,47 @@ function ManualControl({ onCommandSent }) {
   }, []);
 
 
+  // =========================================
+  // Pump status polling
+  // =========================================
+
+  useEffect(() => {
+
+    if (deviceOnline) {
+      loadPumpStatus();
+    }
+
+    const timer = setInterval(() => {
+
+      if (deviceOnline) {
+        loadPumpStatus();
+      }
+
+    }, 5000);
+
+    return () => clearInterval(timer);
+
+  }, [deviceOnline]);
+
+
+  // =========================================
+  // Send Manual Command
+  // =========================================
+
   async function sendCommand(command) {
+
+    // IMPORTANT:
+    // Manual command cannot be sent while offline.
+
+    if (!deviceOnline) {
+
+      setMessage(
+        "RMU FW Update available or Pump is not connected to network"
+      );
+
+      return;
+
+    }
 
     if (loading) return;
 
@@ -75,7 +201,7 @@ function ManualControl({ onCommandSent }) {
           },
 
           body: JSON.stringify({
-            deviceId: "PUMP001",
+            deviceId: DEVICE_ID,
             command
           })
         }
@@ -124,20 +250,25 @@ function ManualControl({ onCommandSent }) {
 
         }
 
-      }
+      } else {
 
-      else {
-
-        setMessage("❌ Command Failed");
+        setMessage(
+          "❌ Command Failed"
+        );
 
       }
 
 
     } catch (err) {
 
-      console.log(err);
+      console.log(
+        "Command error:",
+        err
+      );
 
-      setMessage("❌ Server Error");
+      setMessage(
+        "❌ Server Error"
+      );
 
     }
 
@@ -147,11 +278,25 @@ function ManualControl({ onCommandSent }) {
   }
 
 
+  // =========================================
+  // Manual Toggle
+  // =========================================
+
   function togglePump() {
 
-    const nextCommand = isOn
-      ? "OFF"
-      : "ON";
+    // Extra protection
+    if (!deviceOnline) {
+
+      setMessage(
+        "RMU FW Update available or Pump is not connected to network"
+      );
+
+      return;
+
+    }
+
+    const nextCommand =
+      isOn ? "OFF" : "ON";
 
     sendCommand(nextCommand);
 
@@ -173,7 +318,33 @@ function ManualControl({ onCommandSent }) {
       <h2>🎮 Manual Control</h2>
 
 
-      {/* Digital Toggle */}
+      {/* =====================================
+          OFFLINE MESSAGE
+      ===================================== */}
+
+      {!deviceOnline && (
+
+        <div
+          style={{
+            marginBottom: "20px",
+            padding: "15px",
+            borderRadius: "10px",
+            background: "#fff7ed",
+            border: "1px solid #fed7aa",
+            color: "#c2410c",
+            fontWeight: "bold",
+            lineHeight: "1.5"
+          }}
+        >
+          RMU FW Update available or Pump is not connected to network
+        </div>
+
+      )}
+
+
+      {/* =====================================
+          DIGITAL TOGGLE
+      ===================================== */}
 
       <div
         style={{
@@ -185,13 +356,20 @@ function ManualControl({ onCommandSent }) {
       >
 
         <button
+
           onClick={togglePump}
-          disabled={loading}
+
+          disabled={
+            loading ||
+            !deviceOnline
+          }
 
           aria-label={
-            isOn
-              ? "Turn Pump OFF"
-              : "Turn Pump ON"
+            !deviceOnline
+              ? "Pump disconnected"
+              : isOn
+                ? "Turn Pump OFF"
+                : "Turn Pump ON"
           }
 
           style={{
@@ -200,22 +378,33 @@ function ManualControl({ onCommandSent }) {
             border: "none",
             borderRadius: "35px",
             padding: "5px",
-            cursor: loading
-              ? "not-allowed"
-              : "pointer",
 
-            background: isOn
-              ? "#16a34a"
-              : "#6b7280",
+            cursor:
+              loading || !deviceOnline
+                ? "not-allowed"
+                : "pointer",
 
-            boxShadow: isOn
-              ? "0 0 18px rgba(22,163,74,0.45)"
-              : "0 3px 10px rgba(0,0,0,0.2)",
+            background:
+              !deviceOnline
+                ? "#d1d5db"
+                : isOn
+                  ? "#16a34a"
+                  : "#6b7280",
+
+            boxShadow:
+              deviceOnline && isOn
+                ? "0 0 18px rgba(22,163,74,0.45)"
+                : "0 3px 10px rgba(0,0,0,0.2)",
 
             transition:
               "all 0.25s ease",
 
-            opacity: loading ? 0.7 : 1
+            opacity:
+              !deviceOnline
+                ? 0.55
+                : loading
+                  ? 0.7
+                  : 1
           }}
         >
 
@@ -227,9 +416,10 @@ function ManualControl({ onCommandSent }) {
               borderRadius: "50%",
               background: "white",
 
-              transform: isOn
-                ? "translateX(60px)"
-                : "translateX(0px)",
+              transform:
+                isOn
+                  ? "translateX(60px)"
+                  : "translateX(0px)",
 
               transition:
                 "transform 0.25s ease",
@@ -242,51 +432,75 @@ function ManualControl({ onCommandSent }) {
         </button>
 
 
-        <div
-          style={{
-            fontSize: "20px",
-            fontWeight: "bold",
-            color: isOn
-              ? "#15803d"
-              : "#dc2626"
-          }}
-        >
+        {/* =====================================
+            MOTOR STATUS
+            ONLY WHEN ONLINE
+        ===================================== */}
 
-          {loading
-            ? "Processing..."
-            : isOn
-              ? "🟢 PUMP ON"
-              : "🔴 PUMP OFF"}
+        {deviceOnline && (
 
-        </div>
+          <div
+            style={{
+              fontSize: "20px",
+              fontWeight: "bold",
+              color:
+                isOn
+                  ? "#15803d"
+                  : "#dc2626"
+            }}
+          >
+
+            {loading
+              ? "Processing..."
+              : isOn
+                ? "🟢 MOTOR RUNNING"
+                : "🔴 MOTOR STOPPED"}
+
+          </div>
+
+        )}
 
 
-        <div
-          style={{
-            fontSize: "13px",
-            color: "#666"
-          }}
-        >
+        {/* =====================================
+            SWITCH DESCRIPTION
+        ===================================== */}
 
-          Tap switch to turn pump{" "}
-          {isOn ? "OFF" : "ON"}
+        {deviceOnline && (
 
-        </div>
+          <div
+            style={{
+              fontSize: "13px",
+              color: "#666"
+            }}
+          >
+
+            Tap switch to turn pump{" "}
+            {isOn ? "OFF" : "ON"}
+
+          </div>
+
+        )}
 
       </div>
 
 
-      <p
-        style={{
-          fontWeight: "bold",
-          fontSize: "16px",
-          minHeight: "24px"
-        }}
-      >
+      {/* =====================================
+          COMMAND MESSAGE
+      ===================================== */}
 
-        {message}
+      {deviceOnline && (
 
-      </p>
+        <p
+          style={{
+            fontWeight: "bold",
+            fontSize: "16px",
+            minHeight: "24px"
+          }}
+        >
+          {message}
+        </p>
+
+      )}
 
     </div>
 
