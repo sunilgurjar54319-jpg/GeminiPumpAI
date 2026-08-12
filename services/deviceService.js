@@ -103,8 +103,8 @@ async function getDevice(deviceId) {
     try {
 
         const result = await databases.listDocuments(
-            process.env.APPWRITE_DATABASE_ID,
-            process.env.APPWRITE_DEVICES_COLLECTION_ID,
+            DATABASE_ID,
+            DEVICES_COLLECTION,
             [
                 Query.equal("deviceId", deviceId)
             ]
