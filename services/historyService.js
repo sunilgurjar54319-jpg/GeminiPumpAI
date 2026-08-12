@@ -1,66 +1,154 @@
 const databases = require("../config/appwrite");
 const { ID, Query } = require("node-appwrite");
 
+const DATABASE_ID = process.env.APPWRITE_DATABASE_ID;
+const HISTORY_COLLECTION = "history";
+
+// =========================================
 // Add History
+// =========================================
+
 async function addHistory(deviceId, command, result) {
 
-  return await databases.createDocument(
-    process.env.APPWRITE_DATABASE_ID,
-    "history",
-    ID.unique(),
-    {
-      deviceId,
-      command,
-      result,
-      createdAt: new Date().toISOString()
+  try {
+
+    if (!deviceId) {
+      throw new Error("deviceId is required");
     }
-  );
 
-}
+    command = String(command || "").toUpperCase();
+    result = String(result || "Completed");
 
-// Get History
-async function getHistory(deviceId) {
+    if (command !== "ON" && command !== "OFF") {
+      throw new Error(
+        "Invalid history command: " + command
+      );
+    }
 
-  const history = await databases.listDocuments(
-    process.env.APPWRITE_DATABASE_ID,
-    "history",
-    [
-      Query.equal("deviceId", deviceId),
-      Query.orderDesc("$createdAt"),
-      Query.limit(100)
-    ]
-  );
+    const document =
+      await databases.createDocument(
+        DATABASE_ID,
+        HISTORY_COLLECTION,
+        ID.unique(),
+        {
+          deviceId,
+          command,
+          result,
+          createdAt: new Date().toISOString()
+        }
+      );
 
-  return history.documents;
-
-}
-
-// Clear History
-async function clearHistory(deviceId) {
-
-  const history = await databases.listDocuments(
-    process.env.APPWRITE_DATABASE_ID,
-    "history",
-    [
-      Query.equal("deviceId", deviceId)
-    ]
-  );
-
-  for (const item of history.documents) {
-
-    await databases.deleteDocument(
-      process.env.APPWRITE_DATABASE_ID,
-      "history",
-      item.$id
+    console.log(
+      `History Saved: ${deviceId} -> ${command} | ${result}`
     );
+
+    return document;
+
+  } catch (error) {
+
+    console.error(
+      "addHistory Error:",
+      error.message
+    );
+
+    throw error;
 
   }
 
-  return {
-    success: true
-  };
+}
+
+
+// =========================================
+// Get History
+// =========================================
+
+async function getHistory(deviceId) {
+
+  try {
+
+    const result =
+      await databases.listDocuments(
+        DATABASE_ID,
+        HISTORY_COLLECTION,
+        [
+          Query.equal(
+            "deviceId",
+            deviceId
+          ),
+          Query.orderDesc("$createdAt"),
+          Query.limit(100)
+        ]
+      );
+
+    return result.documents;
+
+  } catch (error) {
+
+    console.error(
+      "getHistory Error:",
+      error.message
+    );
+
+    throw error;
+
+  }
 
 }
+
+
+// =========================================
+// Clear History
+// =========================================
+
+async function clearHistory(deviceId) {
+
+  try {
+
+    const result =
+      await databases.listDocuments(
+        DATABASE_ID,
+        HISTORY_COLLECTION,
+        [
+          Query.equal(
+            "deviceId",
+            deviceId
+          )
+        ]
+      );
+
+    let deleted = 0;
+
+    for (const item of result.documents) {
+
+      await databases.deleteDocument(
+        DATABASE_ID,
+        HISTORY_COLLECTION,
+        item.$id
+      );
+
+      deleted++;
+
+    }
+
+    return {
+      success: true,
+      deviceId,
+      deleted
+    };
+
+  } catch (error) {
+
+    console.error(
+      "clearHistory Error:",
+      error.message
+    );
+
+    throw error;
+
+  }
+
+}
+
 
 module.exports = {
   addHistory,

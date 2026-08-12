@@ -3,30 +3,29 @@ const { ID, Query } = require("node-appwrite");
 const { addHistory } = require("./historyService");
 const { updateStatus, getStatus } = require("./statusService");
 
+const DATABASE_ID = process.env.APPWRITE_DATABASE_ID;
+const COMMAND_COLLECTION = "commands";
 
-// =========================================
-// Send New Command
-// =========================================
 
+// ==================================// SEND NEW COMMAND
+// ==================================
 async function sendCommand(deviceId, command, source = "MANUAL") {
 
   try {
 
-    command = String(command).toUpperCase();
+    command = String(command || "").toUpperCase();
 
     if (command !== "ON" && command !== "OFF") {
       throw new Error("Invalid command: " + command);
     }
 
 
-    // =======================================
-    // Check pending commands FIRST
-    // =======================================
-
+    // ================================    // Get pending commands
+    // ================================
     const pending =
       await databases.listDocuments(
-        process.env.APPWRITE_DATABASE_ID,
-        "commands",
+        DATABASE_ID,
+        COMMAND_COLLECTION,
         [
           Query.equal("deviceId", deviceId),
           Query.equal("executed", false),
@@ -35,14 +34,11 @@ async function sendCommand(deviceId, command, source = "MANUAL") {
       );
 
 
-    // =======================================
-    // STALE SCHEDULED ON PROTECTION
-    // =======================================
-    // A missed scheduled ON must never be reused
+    // ================================    // STALE SCHEDULED ON PROTECTION
+    // ================================    // A missed scheduled ON must never be reused
     // after its scheduled window has already started.
     // Recovery logic will create a fresh ON command.
-    // =======================================
-
+    // ================================
     // Pending ON command 20 seconds से पुरानी हो जाए
 // तो Recovery नया ON बना सके.
 const STALE_AFTER_MS = 5 * 60 * 1000;
@@ -99,12 +95,12 @@ const STALE_AFTER_MS = 5 * 60 * 1000;
 
     // ---------------------------------------
     // Same command already pending
-    // ---------------------------------------
-
+    // ================================
     const samePending =
       freshPending.documents.find(
-        doc => doc.command === command
+        doc => String(doc.command).toUpperCase() === command
       );
+
 
     if (samePending) {
 
@@ -117,47 +113,56 @@ const STALE_AFTER_MS = 5 * 60 * 1000;
     }
 
 
-    // =======================================
-    // Check current status
-    // =======================================
+    // ================================    // Current pump status
+    // ================================
+    let currentStatus;
 
-    const currentStatus =
-      await getStatus(deviceId);
+    try {
 
+      currentStatus = await getStatus(deviceId);
 
-    // ---------------------------------------
-    // If no pending command and status
-    // already matches requested command
-    // ---------------------------------------
+    } catch (error) {
 
-    if (
-      freshPending.documents.length === 0 &&
-      (currentStatus.status === "ON" ||
-       currentStatus.status === "OFF") &&
-      currentStatus.status === command
-    ) {
+      console.log(
+        "Status check failed:",
+        error.message
+      );
 
-      return {
-        ignored: true,
-        message: "Pump already " + command,
-        status: currentStatus.status
+      currentStatus = {
+        status: "UNKNOWN"
       };
 
     }
 
 
-    // =======================================
-    // Opposite command is pending
-    //
-    // Example:
-    // ON pending → now OFF requested
-    //
-    // DO NOT block OFF.
-    // Create OFF as a new command.
-    // FIFO execution will process ON first,
-    // then OFF.
-    // =======================================
+    const currentState =
+      String(currentStatus?.status || "UNKNOWN").toUpperCase();
 
+
+    // ================================
+    // Already in requested state
+    // ================================
+
+    if (
+      freshPending.documents.length === 0 &&
+      currentState === command
+    ) {
+
+      console.log(
+        `Command ignored: ${deviceId} already ${command}`
+      );
+
+      return {
+        ignored: true,
+        message: "Pump already " + command,
+        status: currentState
+      };
+
+    }
+
+
+    // ================================    // Pending command exists
+    // ================================
     if (freshPending.documents.length > 0) {
 
       console.log(
@@ -167,14 +172,12 @@ const STALE_AFTER_MS = 5 * 60 * 1000;
     }
 
 
-    // =======================================
-    // Create New Command
-    // =======================================
-
+    // ================================    // Create command
+    // ================================
     const result =
       await databases.createDocument(
-        process.env.APPWRITE_DATABASE_ID,
-        "commands",
+        DATABASE_ID,
+        COMMAND_COLLECTION,
         ID.unique(),
         {
           deviceId,
@@ -187,7 +190,7 @@ const STALE_AFTER_MS = 5 * 60 * 1000;
 
 
     console.log(
-      `📝 Command Queued: ${command} → ${deviceId}`
+      `Command Queued: ${command} -> ${deviceId}`
     );
 
 
@@ -197,7 +200,7 @@ const STALE_AFTER_MS = 5 * 60 * 1000;
   } catch (err) {
 
     console.error(
-      "❌ sendCommand Error:",
+      "sendCommand Error:",
       err.message
     );
 
@@ -209,25 +212,19 @@ const STALE_AFTER_MS = 5 * 60 * 1000;
 
 
 
-// =========================================
-// Get Pending Command
-// =========================================
-
+// ==================================// GET PENDING COMMAND
+// ==================================
 async function getCommand(deviceId) {
 
   try {
 
     const result =
       await databases.listDocuments(
-        process.env.APPWRITE_DATABASE_ID,
-        "commands",
+        DATABASE_ID,
+        COMMAND_COLLECTION,
         [
           Query.equal("deviceId", deviceId),
           Query.equal("executed", false),
-
-          // IMPORTANT:
-          // Oldest command first.
-          // ON must execute before OFF.
           Query.orderAsc("$createdAt")
         ]
       );
@@ -242,10 +239,8 @@ async function getCommand(deviceId) {
     }
 
 
-    // =========================================
-    // STALE SCHEDULED COMMAND PROTECTION
-    // =========================================
-    // If device/simulator was offline when a
+    // ==================================    // STALE SCHEDULED COMMAND PROTECTION
+    // ==================================    // If device/simulator was offline when a
     // scheduled ON was created, do NOT execute
     // that old ON after the scheduled minute has
     // already passed.
@@ -255,8 +250,7 @@ async function getCommand(deviceId) {
     // should still be allowed to turn it OFF.
     //
     // MANUAL commands are never affected.
-    // =========================================
-
+    // ==================================
     const STALE_AFTER_MS = 5 * 60 * 1000;
 
     for (const pendingCommand of result.documents) {
@@ -310,7 +304,7 @@ async function getCommand(deviceId) {
   } catch (err) {
 
     console.error(
-      "❌ getCommand Error:",
+      "getCommand Error:",
       err.message
     );
 
@@ -322,30 +316,91 @@ async function getCommand(deviceId) {
 
 
 
-// =========================================
-// Complete Command
-// + History
-// + Status
-// =========================================
-
+// ==================================// COMPLETE COMMAND
+//
+// IMPORTANT:
+// History is created ONLY when actual
+// status changes.
+//
+// OFF -> OFF = no history
+// ON  -> ON  = no history
+// OFF -> ON  = history
+// ON  -> OFF = history
+// ==================================
 async function completeCommand(commandId) {
 
   try {
 
-    // Get command details
+    // ================================    // Get command
+    // ================================
     const command =
       await databases.getDocument(
-        process.env.APPWRITE_DATABASE_ID,
-        "commands",
+        DATABASE_ID,
+        COMMAND_COLLECTION,
         commandId
       );
 
 
-    // Mark command completed
+    if (!command) {
+      throw new Error("Command not found");
+    }
+
+
+    const deviceId =
+      command.deviceId;
+
+    const requestedCommand =
+      String(command.command).toUpperCase();
+
+
+    if (
+      requestedCommand !== "ON" &&
+      requestedCommand !== "OFF"
+    ) {
+
+      throw new Error(
+        "Invalid command in database: " +
+        requestedCommand
+      );
+
+    }
+
+
+    // ================================    // Get current REAL status
+    // BEFORE updating it
+    // ================================
+    let currentStatus;
+
+    try {
+
+      currentStatus =
+        await getStatus(deviceId);
+
+    } catch (error) {
+
+      console.log(
+        `Status unavailable for ${deviceId}: ${error.message}`
+      );
+
+      currentStatus = {
+        status: "UNKNOWN"
+      };
+
+    }
+
+
+    const previousState =
+      String(
+        currentStatus?.status || "UNKNOWN"
+      ).toUpperCase();
+
+
+    // ================================    // Mark command completed
+    // ================================
     const updated =
       await databases.updateDocument(
-        process.env.APPWRITE_DATABASE_ID,
-        "commands",
+        DATABASE_ID,
+        COMMAND_COLLECTION,
         commandId,
         {
           executed: true
@@ -353,19 +408,40 @@ async function completeCommand(commandId) {
       );
 
 
-    // Save History
-    await addHistory(
-      command.deviceId,
-      command.command,
-      "Completed"
-    );
-
-
-    // Update Current Status
+    // ================================    // UPDATE STATUS
+    // ================================
     await updateStatus(
-      command.deviceId,
-      command.command
+      deviceId,
+      requestedCommand
     );
+
+
+    // ================================    // HISTORY
+    //
+    // ONLY if state actually changed.
+    // ================================
+    if (
+      previousState !== requestedCommand
+    ) {
+
+      await addHistory(
+        deviceId,
+        requestedCommand,
+        "Completed"
+      );
+
+
+      console.log(
+        `HISTORY: ${deviceId} ${previousState} -> ${requestedCommand}`
+      );
+
+    } else {
+
+      console.log(
+        `NO HISTORY: ${deviceId} already ${requestedCommand}`
+      );
+
+    }
 
 
     return updated;
@@ -374,7 +450,7 @@ async function completeCommand(commandId) {
   } catch (err) {
 
     console.error(
-      "❌ completeCommand Error:",
+      "completeCommand Error:",
       err.message
     );
 
@@ -386,6 +462,8 @@ async function completeCommand(commandId) {
 
 
 
+// ==================================// EXPORT
+// ==================================
 module.exports = {
 
   sendCommand,

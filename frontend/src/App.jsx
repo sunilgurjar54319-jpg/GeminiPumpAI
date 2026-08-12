@@ -7,6 +7,7 @@ import VoiceControl from "./components/VoiceControl";
 import Schedule from "./components/Schedule";
 import HistoryCard from "./components/HistoryCard";
 import StatsCard from "./components/StatsCard";
+import DeviceConnection from "./components/DeviceConnection";
 
 import "./App.css";
 
@@ -38,6 +39,13 @@ function App() {
           <StatusCard
             refresh={refresh}
           />
+
+        </div>
+
+
+        <div className="card">
+
+          <DeviceConnection />
 
         </div>
 
