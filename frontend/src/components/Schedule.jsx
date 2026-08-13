@@ -676,8 +676,8 @@ function Schedule({ refresh, deviceName }) {
 
           const commandText =
             item.command === "OFF"
-              ? "🔴 मोटर बंद"
-              : "🟢 मोटर चालू";
+              ? `🔴 ${deviceName || "Pump"} बंद`
+              : `🟢 ${deviceName || "Pump"} चालू`;
 
           const timeText =
             item.endTime &&

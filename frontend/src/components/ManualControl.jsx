@@ -455,8 +455,8 @@ function ManualControl({ onCommandSent, deviceName }) {
             {loading
               ? "Processing..."
               : isOn
-                ? "🟢 MOTOR RUNNING"
-                : "🔴 MOTOR STOPPED"}
+                ? `🟢 ${displayName} RUNNING`
+                : `🔴 ${displayName} STOPPED`}
 
           </div>
 
