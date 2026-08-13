@@ -803,11 +803,16 @@ return res.json({
   );
 
     const scheduledDate =
-    offDate.getFullYear() +
+    indiaDate.getFullYear() +
     "-" +
-    String(offDate.getMonth() + 1).padStart(2, "0") +
+    String(indiaDate.getMonth() + 1).padStart(2, "0") +
     "-" +
-    String(offDate.getDate()).padStart(2, "0");
+    String(indiaDate.getDate()).padStart(2, "0");
+
+  const startTime =
+    String(indiaDate.getHours()).padStart(2, "0") +
+    ":" +
+    String(indiaDate.getMinutes()).padStart(2, "0");
 
   const offTime =
     String(offDate.getHours()).padStart(2, "0") +
@@ -831,11 +836,11 @@ return res.json({
       ID.unique(),
       {
         deviceId: "PUMP001",
-        startTime: offTime,
+        startTime: startTime,
         endTime: offTime,
-        days: dayNames[offDate.getDay()],
+        days: dayNames[indiaDate.getDay()],
         enabled: true,
-        command: "OFF",
+        command: "ON",
         scheduledDate: scheduledDate
       }
     );
