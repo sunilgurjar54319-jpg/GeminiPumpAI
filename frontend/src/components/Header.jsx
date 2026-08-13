@@ -1,4 +1,4 @@
-function Header() {
+function Header({ deviceName }) {
   return (
     <header className="app-header">
       <div className="header-inner">
@@ -10,7 +10,7 @@ function Header() {
 
           <div>
             <h1>Gemini Pump AI</h1>
-            <p>Smart Water Pump Controller</p>
+            <p>{deviceName || "Smart Water Pump Controller"}</p>
           </div>
         </div>
 

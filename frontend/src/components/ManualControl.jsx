@@ -3,7 +3,9 @@ import { useEffect, useState } from "react";
 const API = "https://geminipumpai.onrender.com";
 const DEVICE_ID = "PUMP001";
 
-function ManualControl({ onCommandSent }) {
+function ManualControl({ onCommandSent, deviceName }) {
+
+  const displayName = deviceName || "Pump";
 
   const [isOn, setIsOn] = useState(false);
   const [deviceOnline, setDeviceOnline] = useState(false);
@@ -184,8 +186,8 @@ function ManualControl({ onCommandSent }) {
 
     setMessage(
       command === "ON"
-        ? "🟢 Pump Starting..."
-        : "🔴 Pump Stopping..."
+        ? `🟢 ${displayName} Starting...`
+        : `🔴 ${displayName} Stopping...`
     );
 
 
@@ -218,8 +220,8 @@ function ManualControl({ onCommandSent }) {
 
         setMessage(
           data.status === "ON"
-            ? "🟢 Pump is already ON"
-            : "🔴 Pump is already OFF"
+            ? `🟢 ${displayName} is already ON`
+            : `🔴 ${displayName} is already OFF`
         );
 
         setLoading(false);
@@ -235,8 +237,8 @@ function ManualControl({ onCommandSent }) {
 
         setMessage(
           command === "ON"
-            ? "✅ Pump ON Command Sent"
-            : "✅ Pump OFF Command Sent"
+            ? `✅ ${displayName} ON Command Sent`
+            : `✅ ${displayName} OFF Command Sent`
         );
 
 
@@ -315,7 +317,7 @@ function ManualControl({ onCommandSent }) {
       }}
     >
 
-      <h2>🎮 Manual Control</h2>
+      <h2>🎮 {displayName} Manual Control</h2>
 
 
       {/* =====================================
@@ -366,10 +368,10 @@ function ManualControl({ onCommandSent }) {
 
           aria-label={
             !deviceOnline
-              ? "Pump disconnected"
+              ? `${displayName} disconnected`
               : isOn
-                ? "Turn Pump OFF"
-                : "Turn Pump ON"
+                ? `Turn ${displayName} OFF`
+                : `Turn ${displayName} ON`
           }
 
           style={{
@@ -474,7 +476,7 @@ function ManualControl({ onCommandSent }) {
             }}
           >
 
-            Tap switch to turn pump{" "}
+            Tap switch to control {displayName}{" "}
             {isOn ? "OFF" : "ON"}
 
           </div>

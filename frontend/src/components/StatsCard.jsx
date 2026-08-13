@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getStats } from "../api";
 
 
-function StatsCard({refresh}){
+function StatsCard({ refresh, deviceName }) {
 
 
 const [stats,setStats]=useState(null);
@@ -40,7 +40,7 @@ return(
 
 <div>
 
-<h2>📊 Pump Statistics</h2>
+<h2>📊 {deviceName || "Pump"} Statistics</h2>
 
 
 {

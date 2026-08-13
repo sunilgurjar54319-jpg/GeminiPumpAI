@@ -7,7 +7,7 @@ const DEVICE_ID = "PUMP001";
 // Heartbeat 30 seconds se purana ho to ESP32 offline
 const ONLINE_TIMEOUT = 30000;
 
-function StatusCard({ refresh }) {
+function StatusCard({ refresh, deviceName }) {
 
   // =========================================
   // PUMP STATUS
@@ -202,6 +202,8 @@ function StatusCard({ refresh }) {
   }, [refresh]);
 
 
+  const displayName = deviceName || "Pump";
+
   const isOn =
     status === "ON";
 
@@ -226,7 +228,7 @@ function StatusCard({ refresh }) {
 
     <div className="status-card">
 
-      <h2>📡 Pump Status</h2>
+      <h2>📡 {displayName} Status</h2>
 
 
       {/* =====================================
@@ -305,8 +307,8 @@ function StatusCard({ refresh }) {
       >
 
         {isOn
-          ? "🟢 Pump Running"
-          : "🔴 Pump Stopped"}
+          ? `🟢 ${displayName} Running`
+          : `🔴 ${displayName} Stopped`}
 
       </div>
 
@@ -314,11 +316,11 @@ function StatusCard({ refresh }) {
       <p>
 
         <strong>Device:</strong>{" "}
-        {DEVICE_ID}
+        {displayName}
 
         <br />
 
-        <strong>Pump Status:</strong>{" "}
+        <strong>{displayName} Status:</strong>{" "}
 
         {isOn
           ? "ON"

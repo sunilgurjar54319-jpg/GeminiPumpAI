@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { sendVoice } from "../api";
 
-function VoiceControl({ onCommandSent }) {
+function VoiceControl({ onCommandSent, deviceName }) {
+
+  const displayName = deviceName || "Pump";
   const [listening, setListening] = useState(false);
   const [message, setMessage] = useState("");
   const [schedules, setSchedules] = useState([]);
@@ -130,9 +132,9 @@ function VoiceControl({ onCommandSent }) {
 
         if (data.type === "IMMEDIATE") {
           if (data.command === "ON") {
-            setMessage("✅ Pump ON Command Sent");
+            setMessage(`✅ ${displayName} ON Command Sent`);
           } else if (data.command === "OFF") {
-            setMessage("✅ Pump OFF Command Sent");
+            setMessage(`✅ ${displayName} OFF Command Sent`);
           }
 
           if (onCommandSent) {
@@ -351,7 +353,7 @@ function VoiceControl({ onCommandSent }) {
         textAlign: "center"
       }}
     >
-      <h2>🎙️ Gemini Voice Control</h2>
+      <h2>🎙️ {displayName} Voice Control</h2>
 
       <button
         onClick={startListening}
@@ -366,7 +368,7 @@ function VoiceControl({ onCommandSent }) {
       >
         {listening
           ? "🎙️ सुन रहा हूँ..."
-          : "🎙️ बोलकर Pump Control करें"}
+          : `🎙️ बोलकर ${displayName} Control करें`}
       </button>
 
       <p

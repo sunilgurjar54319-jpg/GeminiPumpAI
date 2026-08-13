@@ -4,7 +4,7 @@ import {
   clearHistory
 } from "../api";
 
-function HistoryCard() {
+function HistoryCard({ deviceName }) {
 
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -31,7 +31,7 @@ function HistoryCard() {
   async function deleteHistory() {
 
     const ok = window.confirm(
-      "क्या आप पूरी Pump History delete करना चाहते हैं?"
+      `क्या आप पूरी ${deviceName || "Pump"} History delete करना चाहते हैं?`
     );
 
     if (!ok) return;
@@ -121,7 +121,7 @@ function HistoryCard() {
       >
 
         <h2>
-          📜 Pump History
+          📜 {deviceName || "Pump"} History
         </h2>
 
 
@@ -170,7 +170,7 @@ function HistoryCard() {
         }}
       >
 
-        Latest pump ON/OFF activity
+        Latest {deviceName || "Pump"} ON/OFF activity
 
       </p>
 
@@ -199,7 +199,7 @@ function HistoryCard() {
           </div>
 
           <p>
-            No Pump History Found
+            No {deviceName || "Pump"} History Found
           </p>
 
         </div>
@@ -283,8 +283,8 @@ function HistoryCard() {
                     >
 
                       {isOn
-                        ? "Pump ON"
-                        : "Pump OFF"}
+                        ? `${deviceName || "Pump"} ON`
+                        : `${deviceName || "Pump"} OFF`}
 
                     </div>
 

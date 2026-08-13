@@ -16,7 +16,7 @@ const DAYS = [
   ["Sun", "Sun"]
 ];
 
-function Schedule({ refresh }) {
+function Schedule({ refresh, deviceName }) {
 
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -403,7 +403,7 @@ function Schedule({ refresh }) {
       }}
     >
 
-      <h2>⏰ Pump Schedule</h2>
+      <h2>⏰ {deviceName || "Pump"} Schedule</h2>
 
 
       {/* Command */}
