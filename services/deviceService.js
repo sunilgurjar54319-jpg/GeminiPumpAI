@@ -95,6 +95,61 @@ async function heartbeatDevice(deviceId, wifiStatus) {
 
 
 // =========================================
+// Update Device Name
+// =========================================
+
+async function updateDeviceName(deviceId, deviceName) {
+
+    try {
+
+        if (!deviceId) {
+            throw new Error("deviceId is required");
+        }
+
+        const name = String(deviceName || "").trim();
+
+        if (!name) {
+            throw new Error("deviceName is required");
+        }
+
+        const result = await databases.listDocuments(
+            DATABASE_ID,
+            DEVICES_COLLECTION,
+            [
+                Query.equal("deviceId", deviceId)
+            ]
+        );
+
+        if (result.documents.length === 0) {
+            throw new Error(
+                "Device not found: " + deviceId
+            );
+        }
+
+        const device = result.documents[0];
+
+        return await databases.updateDocument(
+            DATABASE_ID,
+            DEVICES_COLLECTION,
+            device.$id,
+            {
+                deviceName: name
+            }
+        );
+
+    } catch (err) {
+
+        console.error(
+            "updateDeviceName Error:",
+            err.message
+        );
+
+        throw err;
+    }
+}
+
+
+// =========================================
 // Get Device
 // =========================================
 
@@ -146,5 +201,6 @@ async function getDevice(deviceId) {
 module.exports = {
     getDevice,
     registerDevice,
-    heartbeatDevice
+    heartbeatDevice,
+    updateDeviceName
 };

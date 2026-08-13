@@ -21,6 +21,10 @@ const {
   getStatus
 } = require("../services/statusService");
 
+const {
+  getDevice
+} = require("../services/deviceService");
+
 
 const DATABASE_ID =
   process.env.APPWRITE_DATABASE_ID;
@@ -58,6 +62,32 @@ router.post("/voice", async (req, res) => {
     // =========================================
 
     let lowerText = text.toLowerCase();
+
+    // =========================================
+    // DEVICE NAME
+    // =========================================
+
+    const device =
+      await getDevice("PUMP001");
+
+    const deviceName =
+      device.deviceName || "PUMP001";
+
+    // =========================================
+    // DEVICE NAME NORMALIZATION
+    // =========================================
+
+    const normalizedDeviceName =
+      String(deviceName || "")
+        .trim()
+        .toLowerCase();
+
+    if (normalizedDeviceName) {
+      lowerText = lowerText.replace(
+        normalizedDeviceName,
+        "pump"
+      );
+    }
 
 
     // =========================================
@@ -103,10 +133,10 @@ router.post("/voice", async (req, res) => {
 
         message:
           status === "ON"
-            ? "Motor ON hai"
+            ? `${deviceName} ON hai`
             : status === "OFF"
-              ? "Motor OFF hai"
-              : "Motor ka status available nahi hai"
+              ? `${deviceName} OFF hai`
+              : `${deviceName} ka status available nahi hai`
 
       });
 

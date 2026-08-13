@@ -6,6 +6,10 @@ const DEVICE_ID = "PUMP001";
 function DeviceConnection() {
   const [data, setData] = useState(null);
   const [online, setOnline] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [newDeviceName, setNewDeviceName] = useState("");
+  const [savingName, setSavingName] = useState(false);
+  const [nameMessage, setNameMessage] = useState("");
 
   async function fetchDeviceStatus() {
     try {
@@ -36,6 +40,54 @@ function DeviceConnection() {
     }
   }
 
+  async function saveDeviceName() {
+    const name = newDeviceName.trim();
+
+    if (!name) {
+      setNameMessage("Device name खाली नहीं हो सकता");
+      return;
+    }
+
+    try {
+      setSavingName(true);
+      setNameMessage("");
+
+      const res = await fetch(
+        `${API}/api/device/${DEVICE_ID}/name`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            deviceName: name
+          })
+        }
+      );
+
+      const result = await res.json();
+
+      if (!res.ok || !result.success) {
+        throw new Error(result.error || "Name update failed");
+      }
+
+      setData((prev) => ({
+        ...prev,
+        deviceName: result.deviceName
+      }));
+
+      setEditingName(false);
+      setNameMessage("Device name updated successfully");
+
+    } catch (err) {
+      console.error("Device name update error:", err);
+      setNameMessage(err.message);
+    } finally {
+      setSavingName(false);
+    }
+  }
+
+
   useEffect(() => {
     fetchDeviceStatus();
 
@@ -57,7 +109,9 @@ function DeviceConnection() {
         background: "#fff"
       }}
     >
-      <h2>📡 ESP32 Device</h2>
+      <h2>
+        📡 {data?.deviceName || "ESP32 Device"}
+      </h2>
 
       <div
         style={{
@@ -90,8 +144,91 @@ function DeviceConnection() {
 
       <div style={{ marginTop: "8px" }}>
         <b>📛 Device Name:</b>{" "}
-        {data?.deviceName || DEVICE_ID}
 
+        {!editingName ? (
+          <>
+            <span>
+              {data?.deviceName || DEVICE_ID}
+            </span>
+
+            <button
+              onClick={() => {
+                setNewDeviceName(data?.deviceName || DEVICE_ID);
+                setNameMessage("");
+                setEditingName(true);
+              }}
+              style={{
+                marginLeft: "10px",
+                padding: "5px 10px",
+                border: "1px solid #ccc",
+                borderRadius: "6px",
+                background: "#f5f5f5",
+                cursor: "pointer"
+              }}
+            >
+              ✏️ Edit
+            </button>
+          </>
+        ) : (
+          <div style={{ marginTop: "8px" }}>
+            <input
+              value={newDeviceName}
+              onChange={(e) => setNewDeviceName(e.target.value)}
+              placeholder="Device name"
+              style={{
+                padding: "8px",
+                border: "1px solid #ccc",
+                borderRadius: "6px",
+                width: "200px"
+              }}
+            />
+
+            <button
+              onClick={saveDeviceName}
+              disabled={savingName}
+              style={{
+                marginLeft: "8px",
+                padding: "7px 12px",
+                border: "none",
+                borderRadius: "6px",
+                background: "#16a34a",
+                color: "#fff",
+                cursor: "pointer"
+              }}
+            >
+              {savingName ? "Saving..." : "Save"}
+            </button>
+
+            <button
+              onClick={() => {
+                setEditingName(false);
+                setNameMessage("");
+              }}
+              disabled={savingName}
+              style={{
+                marginLeft: "6px",
+                padding: "7px 12px",
+                border: "1px solid #ccc",
+                borderRadius: "6px",
+                background: "#fff",
+                cursor: "pointer"
+              }}
+            >
+              Cancel
+            </button>
+
+            {nameMessage && (
+              <div
+                style={{
+                  marginTop: "8px",
+                  fontSize: "13px"
+                }}
+              >
+                {nameMessage}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div style={{ marginTop: "8px" }}>

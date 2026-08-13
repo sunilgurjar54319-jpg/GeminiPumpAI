@@ -4,7 +4,8 @@ const router = express.Router();
 const {
     registerDevice,
     heartbeatDevice,
-    getDevice
+    getDevice,
+    updateDeviceName
 } = require("../services/deviceService");
 
 // =========================================
@@ -74,6 +75,43 @@ router.post("/heartbeat", async (req, res) => {
         console.error("Heartbeat Error:", err.message);
 
         res.status(500).json({
+            success: false,
+            error: err.message
+        });
+
+    }
+
+});
+
+// =========================================
+// Update Device Name
+// =========================================
+
+router.put("/:deviceId/name", async (req, res) => {
+
+    try {
+
+        const { deviceName } = req.body;
+
+        const result = await updateDeviceName(
+            req.params.deviceId,
+            deviceName
+        );
+
+        res.json({
+            success: true,
+            deviceId: result.deviceId,
+            deviceName: result.deviceName
+        });
+
+    } catch (err) {
+
+        console.error(
+            "Update Device Name Error:",
+            err.message
+        );
+
+        res.status(400).json({
             success: false,
             error: err.message
         });
