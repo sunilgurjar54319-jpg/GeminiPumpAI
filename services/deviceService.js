@@ -118,7 +118,17 @@ async function getDevice(deviceId) {
 
         }
 
-        return result.documents[0];
+        const device = result.documents[0];
+
+        return {
+            ...device,
+            deviceType: device.deviceType || "GENERIC",
+            sensorEnabled: device.sensorEnabled === true,
+            voltageSensor: device.voltageSensor === true,
+            currentSensor: device.currentSensor === true,
+            floatSensor: device.floatSensor === true,
+            pressureSensor: device.pressureSensor === true
+        };
 
     } catch (err) {
 

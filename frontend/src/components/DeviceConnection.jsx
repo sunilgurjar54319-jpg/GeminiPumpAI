@@ -89,7 +89,13 @@ function DeviceConnection() {
       </div>
 
       <div style={{ marginTop: "8px" }}>
-        <b>🆔 Device:</b> {DEVICE_ID}
+        <b>📛 Device Name:</b>{" "}
+        {data?.deviceName || DEVICE_ID}
+
+      </div>
+
+      <div style={{ marginTop: "8px" }}>
+        <b>🆔 Device ID:</b> {DEVICE_ID}
       </div>
 
       <div style={{ marginTop: "8px" }}>
@@ -97,6 +103,56 @@ function DeviceConnection() {
         {data?.lastSeen
           ? new Date(data.lastSeen).toLocaleString("en-IN")
           : "Never"}
+      </div>
+
+      <div
+        style={{
+          marginTop: "16px",
+          paddingTop: "12px",
+          borderTop: "1px solid #eee"
+        }}
+      >
+        <b>📡 Sensors</b>
+
+        <div style={{ marginTop: "10px" }}>
+          💧 Water Level: <b>
+            {data?.sensors?.float
+              ? "Sensor Connected"
+              : "No Sensor"}
+          </b>
+        </div>
+
+        <div style={{ marginTop: "8px" }}>
+          ⚡ Voltage: <b>
+            {data?.sensors?.voltage
+              ? "Sensor Connected"
+              : "No Sensor"}
+          </b>
+        </div>
+
+        <div style={{ marginTop: "8px" }}>
+          🔌 Current: <b>
+            {data?.sensors?.current
+              ? "Sensor Connected"
+              : "No Sensor"}
+          </b>
+        </div>
+
+        <div style={{ marginTop: "8px" }}>
+          🌊 Float: <b>
+            {data?.sensors?.float
+              ? "Sensor Connected"
+              : "No Sensor"}
+          </b>
+        </div>
+
+        <div style={{ marginTop: "8px" }}>
+          💨 Pressure: <b>
+            {data?.sensors?.pressure
+              ? "Sensor Connected"
+              : "No Sensor"}
+          </b>
+        </div>
       </div>
     </div>
   );

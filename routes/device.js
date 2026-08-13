@@ -56,6 +56,15 @@ router.post("/heartbeat", async (req, res) => {
         res.json({
             success: true,
             deviceId: result.deviceId,
+            deviceName: result.deviceName || result.deviceId,
+            deviceType: result.deviceType || "GENERIC",
+            sensorEnabled: result.sensorEnabled === true,
+            sensors: {
+                voltage: result.voltageSensor === true,
+                current: result.currentSensor === true,
+                float: result.floatSensor === true,
+                pressure: result.pressureSensor === true
+            },
             wifiStatus: result.wifiStatus,
             lastSeen: result.lastSeen
         });
@@ -88,6 +97,15 @@ router.get("/:deviceId", async (req, res) => {
         res.json({
             success: true,
             deviceId: result.deviceId,
+            deviceName: result.deviceName || result.deviceId,
+            deviceType: result.deviceType || "GENERIC",
+            sensorEnabled: result.sensorEnabled === true,
+            sensors: {
+                voltage: result.voltageSensor === true,
+                current: result.currentSensor === true,
+                float: result.floatSensor === true,
+                pressure: result.pressureSensor === true
+            },
             wifiStatus: result.wifiStatus,
             lastSeen: result.lastSeen
         });
