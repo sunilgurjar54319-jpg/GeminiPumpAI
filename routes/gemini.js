@@ -569,9 +569,24 @@ return res.json({
         .toLowerCase()
         .trim();
 
+    // Hindi voice alias:
+    // "Switch" और "स्विच" को एक ही device name माना जाए.
+    const deviceNameAliases = [
+      strictDeviceName
+    ];
+
+    if (strictDeviceName === "switch") {
+      deviceNameAliases.push("स्विच");
+    }
+
+    const deviceNameMatched =
+      deviceNameAliases.some(name =>
+        name && strictVoiceText.includes(name)
+      );
+
     if (
       !strictDeviceName ||
-      !strictVoiceText.includes(strictDeviceName)
+      !deviceNameMatched
     ) {
       return res.json({
         success: false,

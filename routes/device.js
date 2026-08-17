@@ -8,6 +8,7 @@ const {
     updateDeviceName
 } = require("../services/deviceService");
 
+
 // =========================================
 // Register Device
 // =========================================
@@ -16,12 +17,16 @@ router.post("/register", async (req, res) => {
 
     try {
 
-        const { deviceId, deviceName } = req.body;
-
-        const result = await registerDevice(
+        const {
             deviceId,
             deviceName
-        );
+        } = req.body;
+
+        const result =
+            await registerDevice(
+                deviceId,
+                deviceName
+            );
 
         res.json(result);
 
@@ -36,6 +41,7 @@ router.post("/register", async (req, res) => {
 
 });
 
+
 // =========================================
 // ESP32 Heartbeat
 // =========================================
@@ -46,42 +52,82 @@ router.post("/heartbeat", async (req, res) => {
 
         const {
             deviceId,
-            wifiStatus
+            wifiStatus,
+            sensors
         } = req.body;
 
-        const result = await heartbeatDevice(
-            deviceId,
-            wifiStatus
-        );
+
+        const result =
+            await heartbeatDevice(
+                deviceId,
+                wifiStatus,
+                sensors
+            );
+
 
         res.json({
+
             success: true,
-            deviceId: result.deviceId,
-            deviceName: result.deviceName || result.deviceId,
-            deviceType: result.deviceType || "GENERIC",
-            sensorEnabled: result.sensorEnabled === true,
+
+            deviceId:
+                result.deviceId,
+
+            deviceName:
+                result.deviceName ||
+                result.deviceId,
+
+            deviceType:
+                result.deviceType ||
+                "GENERIC",
+
+            sensorEnabled:
+                result.sensorEnabled === true,
+
             sensors: {
-                voltage: result.voltageSensor === true,
-                current: result.currentSensor === true,
-                float: result.floatSensor === true,
-                pressure: result.pressureSensor === true
+
+                voltage:
+                    result.voltageSensor === true,
+
+                current:
+                    result.currentSensor === true,
+
+                float:
+                    result.floatSensor === true,
+
+                pressure:
+                    result.pressureSensor === true,
+
+                temperature:
+                    result.temperatureSensor === true
+
             },
-            wifiStatus: result.wifiStatus,
-            lastSeen: result.lastSeen
+
+            wifiStatus:
+                result.wifiStatus,
+
+            lastSeen:
+                result.lastSeen
+
         });
 
     } catch (err) {
 
-        console.error("Heartbeat Error:", err.message);
+        console.error(
+            "Heartbeat Error:",
+            err.message
+        );
 
         res.status(500).json({
+
             success: false,
             error: err.message
+
         });
 
     }
 
 });
+
 
 // =========================================
 // Update Device Name
@@ -91,17 +137,28 @@ router.put("/:deviceId/name", async (req, res) => {
 
     try {
 
-        const { deviceName } = req.body;
-
-        const result = await updateDeviceName(
-            req.params.deviceId,
+        const {
             deviceName
-        );
+        } = req.body;
+
+
+        const result =
+            await updateDeviceName(
+                req.params.deviceId,
+                deviceName
+            );
+
 
         res.json({
+
             success: true,
-            deviceId: result.deviceId,
-            deviceName: result.deviceName
+
+            deviceId:
+                result.deviceId,
+
+            deviceName:
+                result.deviceName
+
         });
 
     } catch (err) {
@@ -112,13 +169,16 @@ router.put("/:deviceId/name", async (req, res) => {
         );
 
         res.status(400).json({
+
             success: false,
             error: err.message
+
         });
 
     }
 
 });
+
 
 // =========================================
 // Get ESP32 Connection Status
@@ -128,24 +188,55 @@ router.get("/:deviceId", async (req, res) => {
 
     try {
 
-        const result = await getDevice(
-            req.params.deviceId
-        );
+        const result =
+            await getDevice(
+                req.params.deviceId
+            );
+
 
         res.json({
+
             success: true,
-            deviceId: result.deviceId,
-            deviceName: result.deviceName || result.deviceId,
-            deviceType: result.deviceType || "GENERIC",
-            sensorEnabled: result.sensorEnabled === true,
+
+            deviceId:
+                result.deviceId,
+
+            deviceName:
+                result.deviceName ||
+                result.deviceId,
+
+            deviceType:
+                result.deviceType ||
+                "GENERIC",
+
+            sensorEnabled:
+                result.sensorEnabled === true,
+
             sensors: {
-                voltage: result.voltageSensor === true,
-                current: result.currentSensor === true,
-                float: result.floatSensor === true,
-                pressure: result.pressureSensor === true
+
+                voltage:
+                    result.voltageSensor === true,
+
+                current:
+                    result.currentSensor === true,
+
+                float:
+                    result.floatSensor === true,
+
+                pressure:
+                    result.pressureSensor === true,
+
+                temperature:
+                    result.temperatureSensor === true
+
             },
-            wifiStatus: result.wifiStatus,
-            lastSeen: result.lastSeen
+
+            wifiStatus:
+                result.wifiStatus,
+
+            lastSeen:
+                result.lastSeen
+
         });
 
     } catch (err) {
@@ -156,12 +247,15 @@ router.get("/:deviceId", async (req, res) => {
         );
 
         res.status(500).json({
+
             success: false,
             error: err.message
+
         });
 
     }
 
 });
+
 
 module.exports = router;

@@ -5,50 +5,132 @@ const DEVICE_ID = "PUMP001";
 
 function DeviceConnection() {
   const [data, setData] = useState(null);
+  const [pumpStatus, setPumpStatus] = useState("UNKNOWN");
+
   const [online, setOnline] = useState(false);
+
   const [editingName, setEditingName] = useState(false);
   const [newDeviceName, setNewDeviceName] = useState("");
   const [savingName, setSavingName] = useState(false);
   const [nameMessage, setNameMessage] = useState("");
 
+  // =========================================
+  // DEVICE + SENSOR STATUS
+  // =========================================
+
   async function fetchDeviceStatus() {
     try {
       const res = await fetch(
         `${API}/api/device/${DEVICE_ID}`,
-        { cache: "no-store" }
+        {
+          cache: "no-store"
+        }
       );
 
-      if (!res.ok) throw new Error("API error");
+      if (!res.ok) {
+        throw new Error("Device API error");
+      }
 
       const result = await res.json();
 
       setData(result);
 
+      // -----------------------------
+      // ONLINE / OFFLINE
+      // -----------------------------
+
       if (result.lastSeen) {
-        const lastSeen = new Date(result.lastSeen).getTime();
+        const lastSeen =
+          new Date(result.lastSeen).getTime();
+
         const now = Date.now();
 
-        // 30 seconds ke andar heartbeat = ONLINE
-        setOnline(now - lastSeen <= 30000);
+        setOnline(
+          now - lastSeen <= 30000
+        );
       } else {
         setOnline(false);
       }
 
     } catch (err) {
-      console.error("Device status error:", err);
+
+      console.error(
+        "Device status error:",
+        err
+      );
+
       setOnline(false);
     }
   }
 
+
+  // =========================================
+  // PUMP REAL STATUS
+  // =========================================
+
+  async function fetchPumpStatus() {
+
+    try {
+
+      const res = await fetch(
+        `${API}/api/status/${DEVICE_ID}`,
+        {
+          cache: "no-store"
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Status API error");
+      }
+
+      const result = await res.json();
+
+      const status =
+        String(
+          result?.status || "UNKNOWN"
+        ).toUpperCase();
+
+      if (
+        status === "ON" ||
+        status === "OFF"
+      ) {
+        setPumpStatus(status);
+      } else {
+        setPumpStatus("UNKNOWN");
+      }
+
+    } catch (err) {
+
+      console.error(
+        "Pump status error:",
+        err
+      );
+
+      setPumpStatus("UNKNOWN");
+    }
+  }
+
+
+  // =========================================
+  // DEVICE NAME
+  // =========================================
+
   async function saveDeviceName() {
-    const name = newDeviceName.trim();
+
+    const name =
+      newDeviceName.trim();
 
     if (!name) {
-      setNameMessage("Device name खाली नहीं हो सकता");
+
+      setNameMessage(
+        "Device name खाली नहीं हो सकता"
+      );
+
       return;
     }
 
     try {
+
       setSavingName(true);
       setNameMessage("");
 
@@ -56,50 +138,110 @@ function DeviceConnection() {
         `${API}/api/device/${DEVICE_ID}/name`,
         {
           method: "PUT",
+
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type":
+              "application/json"
           },
+
           body: JSON.stringify({
             deviceName: name
           })
         }
       );
 
-      const result = await res.json();
+      const result =
+        await res.json();
 
-      if (!res.ok || !result.success) {
-        throw new Error(result.error || "Name update failed");
+      if (
+        !res.ok ||
+        !result.success
+      ) {
+
+        throw new Error(
+          result.error ||
+          "Name update failed"
+        );
       }
 
       setData((prev) => ({
         ...prev,
-        deviceName: result.deviceName
+        deviceName:
+          result.deviceName
       }));
 
       setEditingName(false);
-      setNameMessage("Device name updated successfully");
+
+      setNameMessage(
+        "Device name updated successfully"
+      );
 
     } catch (err) {
-      console.error("Device name update error:", err);
-      setNameMessage(err.message);
+
+      console.error(
+        "Device name update error:",
+        err
+      );
+
+      setNameMessage(
+        err.message
+      );
+
     } finally {
+
       setSavingName(false);
     }
   }
 
 
+  // =========================================
+  // AUTO REFRESH
+  // =========================================
+
   useEffect(() => {
+
     fetchDeviceStatus();
+    fetchPumpStatus();
 
-    const timer = setInterval(
-      fetchDeviceStatus,
-      5000
-    );
+    const timer =
+      setInterval(() => {
 
-    return () => clearInterval(timer);
+        fetchDeviceStatus();
+        fetchPumpStatus();
+
+      }, 5000);
+
+    return () =>
+      clearInterval(timer);
+
   }, []);
 
+
+  // =========================================
+  // SENSOR CAPABILITIES
+  // =========================================
+
+  const sensors =
+    data?.sensors || {};
+
+  const hasVoltage =
+    sensors.voltage === true;
+
+  const hasCurrent =
+    sensors.current === true;
+
+  const hasFloat =
+    sensors.float === true;
+
+  const hasPressure =
+    sensors.pressure === true;
+
+  const hasTemperature =
+    sensors.temperature === true;
+
+
   return (
+
     <div
       style={{
         border: "1px solid #ddd",
@@ -109,9 +251,21 @@ function DeviceConnection() {
         background: "#fff"
       }}
     >
+
+      {/* ================================= */}
+      {/* DEVICE NAME */}
+      {/* ================================= */}
+
       <h2>
-        📡 {data?.deviceName || "ESP32 Device"}
+        📡{" "}
+        {data?.deviceName ||
+          "ESP32 Device"}
       </h2>
+
+
+      {/* ================================= */}
+      {/* ONLINE */}
+      {/* ================================= */}
 
       <div
         style={{
@@ -122,12 +276,16 @@ function DeviceConnection() {
           fontWeight: "bold"
         }}
       >
+
         <span
           style={{
             width: "14px",
             height: "14px",
             borderRadius: "50%",
-            background: online ? "#16a34a" : "#dc2626",
+            background:
+              online
+                ? "#16a34a"
+                : "#dc2626",
             display: "inline-block"
           }}
         />
@@ -135,32 +293,65 @@ function DeviceConnection() {
         {online
           ? "🟢 ESP32 Online"
           : "🔴 ESP32 Offline"}
+
       </div>
 
-      <div style={{ marginTop: "12px" }}>
+
+      {/* ================================= */}
+      {/* WIFI */}
+      {/* ================================= */}
+
+      <div
+        style={{
+          marginTop: "12px"
+        }}
+      >
         <b>📶 Wi-Fi:</b>{" "}
-        {data?.wifiStatus || "UNKNOWN"}
+        {data?.wifiStatus ||
+          "UNKNOWN"}
       </div>
 
-      <div style={{ marginTop: "8px" }}>
+
+      {/* ================================= */}
+      {/* DEVICE NAME EDIT */}
+      {/* ================================= */}
+
+      <div
+        style={{
+          marginTop: "8px"
+        }}
+      >
+
         <b>📛 Device Name:</b>{" "}
 
         {!editingName ? (
+
           <>
+
             <span>
-              {data?.deviceName || DEVICE_ID}
+              {data?.deviceName ||
+                DEVICE_ID}
             </span>
 
             <button
               onClick={() => {
-                setNewDeviceName(data?.deviceName || DEVICE_ID);
+
+                setNewDeviceName(
+                  data?.deviceName ||
+                  DEVICE_ID
+                );
+
                 setNameMessage("");
+
                 setEditingName(true);
+
               }}
+
               style={{
                 marginLeft: "10px",
                 padding: "5px 10px",
-                border: "1px solid #ccc",
+                border:
+                  "1px solid #ccc",
                 borderRadius: "6px",
                 background: "#f5f5f5",
                 cursor: "pointer"
@@ -168,16 +359,29 @@ function DeviceConnection() {
             >
               ✏️ Edit
             </button>
+
           </>
+
         ) : (
-          <div style={{ marginTop: "8px" }}>
+
+          <div
+            style={{
+              marginTop: "8px"
+            }}
+          >
+
             <input
               value={newDeviceName}
-              onChange={(e) => setNewDeviceName(e.target.value)}
+              onChange={(e) =>
+                setNewDeviceName(
+                  e.target.value
+                )
+              }
               placeholder="Device name"
               style={{
                 padding: "8px",
-                border: "1px solid #ccc",
+                border:
+                  "1px solid #ccc",
                 borderRadius: "6px",
                 width: "200px"
               }}
@@ -196,19 +400,26 @@ function DeviceConnection() {
                 cursor: "pointer"
               }}
             >
-              {savingName ? "Saving..." : "Save"}
+              {savingName
+                ? "Saving..."
+                : "Save"}
             </button>
 
             <button
               onClick={() => {
+
                 setEditingName(false);
                 setNameMessage("");
+
               }}
+
               disabled={savingName}
+
               style={{
                 marginLeft: "6px",
                 padding: "7px 12px",
-                border: "1px solid #ccc",
+                border:
+                  "1px solid #ccc",
                 borderRadius: "6px",
                 background: "#fff",
                 cursor: "pointer"
@@ -218,6 +429,7 @@ function DeviceConnection() {
             </button>
 
             {nameMessage && (
+
               <div
                 style={{
                   marginTop: "8px",
@@ -226,71 +438,294 @@ function DeviceConnection() {
               >
                 {nameMessage}
               </div>
+
             )}
+
           </div>
+
         )}
+
       </div>
 
-      <div style={{ marginTop: "8px" }}>
-        <b>🆔 Device ID:</b> {DEVICE_ID}
-      </div>
 
-      <div style={{ marginTop: "8px" }}>
-        <b>🕐 Last Seen:</b>{" "}
-        {data?.lastSeen
-          ? new Date(data.lastSeen).toLocaleString("en-IN")
-          : "Never"}
-      </div>
+      {/* ================================= */}
+      {/* DEVICE ID */}
+      {/* ================================= */}
 
       <div
         style={{
-          marginTop: "16px",
-          paddingTop: "12px",
-          borderTop: "1px solid #eee"
+          marginTop: "8px"
         }}
       >
-        <b>📡 Sensors</b>
-
-        <div style={{ marginTop: "10px" }}>
-          💧 Water Level: <b>
-            {data?.sensors?.float
-              ? "Sensor Connected"
-              : "No Sensor"}
-          </b>
-        </div>
-
-        <div style={{ marginTop: "8px" }}>
-          ⚡ Voltage: <b>
-            {data?.sensors?.voltage
-              ? "Sensor Connected"
-              : "No Sensor"}
-          </b>
-        </div>
-
-        <div style={{ marginTop: "8px" }}>
-          🔌 Current: <b>
-            {data?.sensors?.current
-              ? "Sensor Connected"
-              : "No Sensor"}
-          </b>
-        </div>
-
-        <div style={{ marginTop: "8px" }}>
-          🌊 Float: <b>
-            {data?.sensors?.float
-              ? "Sensor Connected"
-              : "No Sensor"}
-          </b>
-        </div>
-
-        <div style={{ marginTop: "8px" }}>
-          💨 Pressure: <b>
-            {data?.sensors?.pressure
-              ? "Sensor Connected"
-              : "No Sensor"}
-          </b>
-        </div>
+        <b>🆔 Device ID:</b>{" "}
+        {DEVICE_ID}
       </div>
+
+
+      {/* ================================= */}
+      {/* LAST SEEN */}
+      {/* ================================= */}
+
+      <div
+        style={{
+          marginTop: "8px"
+        }}
+      >
+
+        <b>🕐 Last Seen:</b>{" "}
+
+        {data?.lastSeen
+          ? new Date(
+              data.lastSeen
+            ).toLocaleString(
+              "en-IN"
+            )
+          : "Never"}
+
+      </div>
+
+
+      {/* ================================= */}
+      {/* PUMP STATUS */}
+      {/* ================================= */}
+
+      <div
+        style={{
+          marginTop: "18px",
+          padding: "14px",
+          borderRadius: "10px",
+          background:
+            pumpStatus === "ON"
+              ? "#dcfce7"
+              : pumpStatus === "OFF"
+              ? "#fee2e2"
+              : "#f3f4f6"
+        }}
+      >
+
+        <b>🚰 Pump Status:</b>{" "}
+
+        {pumpStatus === "ON" && (
+          <span
+            style={{
+              color: "#15803d",
+              fontWeight: "bold"
+            }}
+          >
+            🟢 ON
+          </span>
+        )}
+
+        {pumpStatus === "OFF" && (
+          <span
+            style={{
+              color: "#b91c1c",
+              fontWeight: "bold"
+            }}
+          >
+            🔴 OFF
+          </span>
+        )}
+
+        {pumpStatus === "UNKNOWN" && (
+          <span
+            style={{
+              color: "#6b7280",
+              fontWeight: "bold"
+            }}
+          >
+            ⚪ UNKNOWN
+          </span>
+        )}
+
+      </div>
+
+
+      {/* ================================= */}
+      {/* CONNECTED SENSORS */}
+      {/* ================================= */}
+
+      {(hasVoltage ||
+        hasCurrent ||
+        hasFloat ||
+        hasPressure ||
+        hasTemperature) && (
+
+        <div
+          style={{
+            marginTop: "16px",
+            paddingTop: "12px",
+            borderTop:
+              "1px solid #eee"
+          }}
+        >
+
+          <b>📡 Connected Sensors</b>
+
+
+          {/* VOLTAGE */}
+
+          {hasVoltage && (
+
+            <div
+              style={{
+                marginTop: "10px"
+              }}
+            >
+              ⚡ Voltage:{" "}
+              <b>
+                Sensor Connected
+              </b>
+
+              {data?.voltage !==
+                undefined && (
+                <>
+                  {" "}
+                  —{" "}
+                  {data.voltage} V
+                </>
+              )}
+            </div>
+
+          )}
+
+
+          {/* CURRENT */}
+
+          {hasCurrent && (
+
+            <div
+              style={{
+                marginTop: "8px"
+              }}
+            >
+              🔌 Current:{" "}
+              <b>
+                Sensor Connected
+              </b>
+
+              {data?.current !==
+                undefined && (
+                <>
+                  {" "}
+                  —{" "}
+                  {data.current} A
+                </>
+              )}
+            </div>
+
+          )}
+
+
+          {/* WATER LEVEL / FLOAT */}
+
+          {hasFloat && (
+
+            <div
+              style={{
+                marginTop: "8px"
+              }}
+            >
+              💧 Water Level:{" "}
+              <b>
+                Sensor Connected
+              </b>
+
+              {data?.waterLevel !==
+                undefined && (
+                <>
+                  {" "}
+                  —{" "}
+                  {data.waterLevel}
+                </>
+              )}
+            </div>
+
+          )}
+
+
+          {/* PRESSURE */}
+
+          {hasPressure && (
+
+            <div
+              style={{
+                marginTop: "8px"
+              }}
+            >
+              💨 Pressure:{" "}
+              <b>
+                Sensor Connected
+              </b>
+
+              {data?.pressure !==
+                undefined && (
+                <>
+                  {" "}
+                  —{" "}
+                  {data.pressure} PSI
+                </>
+              )}
+            </div>
+
+          )}
+
+
+          {/* TEMPERATURE */}
+
+          {hasTemperature && (
+
+            <div
+              style={{
+                marginTop: "8px"
+              }}
+            >
+              🌡️ Temperature:{" "}
+              <b>
+                Sensor Connected
+              </b>
+
+              {data?.temperature !==
+                undefined && (
+                <>
+                  {" "}
+                  —{" "}
+                  {data.temperature} °C
+                </>
+              )}
+            </div>
+
+          )}
+
+        </div>
+
+      )}
+
+
+      {/* ================================= */}
+      {/* NO SENSOR */}
+      {/* ================================= */}
+
+      {!hasVoltage &&
+        !hasCurrent &&
+        !hasFloat &&
+        !hasPressure &&
+        !hasTemperature && (
+
+        <div
+          style={{
+            marginTop: "16px",
+            paddingTop: "12px",
+            borderTop:
+              "1px solid #eee",
+            color: "#6b7280"
+          }}
+        >
+          📡 कोई sensor connected नहीं है।
+        </div>
+
+      )}
+
     </div>
   );
 }
