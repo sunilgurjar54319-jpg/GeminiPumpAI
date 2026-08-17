@@ -8,63 +8,94 @@ function understandCommand(text, deviceName) {
     .toLowerCase()
     .trim();
 
-  // Device name ke bina command allowed nahi hai
+  // Device name required
   if (!name) {
     return null;
   }
 
-  // Hindi voice aliases for common device names.
-  // Edited English device name और उसके common Hindi रूप दोनों स्वीकार होंगे.
-  const hindiDeviceAliases = {
-    switch: ["स्विच"],
-    motor: ["मोटर"],
-    pump: ["पंप", "पम्प"],
-    controller: ["कंट्रोलर"],
-    machine: ["मशीन"]
-  };
+  // =========================================
+  // DEVICE NAME ALIASES
+  // =========================================
+  // Hindi voice recognition:
+  // Switch -> स्विच
+  // Motor  -> मोटर
+  // Pump   -> पंप / पम्प
+  // =========================================
 
-  const deviceNameAliases = [
-    name,
-    ...(hindiDeviceAliases[name] || [])
-  ];
+  const deviceNameAliases = [name];
 
-  const deviceNameMatched = deviceNameAliases.some(
-    alias => alias && command.includes(alias)
-  );
+  if (name === "switch") {
+    deviceNameAliases.push("स्विच");
+  }
+
+  if (name === "motor") {
+    deviceNameAliases.push("मोटर");
+  }
+
+  if (name === "pump") {
+    deviceNameAliases.push("पंप");
+    deviceNameAliases.push("पम्प");
+  }
+
+  const deviceNameMatched =
+    deviceNameAliases.some(
+      alias => alias && command.includes(alias)
+    );
 
   if (!deviceNameMatched) {
     return null;
   }
 
-  // =========================
-  // ON Command
-  // =========================
+  // =========================================
+  // ON / START
+  // =========================================
 
-  if (
-    command.includes("chalu") ||
-    command.includes("start") ||
-    command.includes("on") ||
-    command.includes("चालू")
-  ) {
+  const onWords = [
+    "on",
+    "start",
+    "chalu",
+    "chaalu",
+    "chaloo",
+    "चालू",
+    "चालु",
+    "चालू करो",
+    "चालू कर",
+    "शुरू",
+    "शुरु",
+    "चलाओ",
+    "चलाओ",
+    "चलाना"
+  ];
+
+  if (onWords.some(word => command.includes(word))) {
     return "ON";
   }
 
-  // =========================
-  // OFF Command
-  // =========================
+  // =========================================
+  // OFF / STOP
+  // =========================================
 
-  if (
-    command.includes("band") ||
-    command.includes("stop") ||
-    command.includes("off") ||
-    command.includes("बंद")
-  ) {
+  const offWords = [
+    "off",
+    "stop",
+    "band",
+    "bnd",
+    "बंद",
+    "बन्द",
+    "बंद करो",
+    "बन्द करो",
+    "रोक",
+    "रुको",
+    "रोक दो",
+    "बंद कर"
+  ];
+
+  if (offWords.some(word => command.includes(word))) {
     return "OFF";
   }
 
   return null;
 }
-
 
 module.exports = {
   understandCommand

@@ -877,9 +877,41 @@ return res.json({
     const durationDeviceName =
       String(deviceName || "").toLowerCase().trim();
 
+    // =========================================
+    // HINDI DEVICE NAME ALIASES FOR DURATION
+    // =========================================
+    // Switch -> स्विच
+    // Motor  -> मोटर
+    // Pump   -> पंप / पम्प
+    // =========================================
+
+    const durationDeviceNameAliases = [
+      durationDeviceName
+    ];
+
+    if (durationDeviceName === "switch") {
+      durationDeviceNameAliases.push("स्विच");
+    }
+
+    if (durationDeviceName === "motor") {
+      durationDeviceNameAliases.push("मोटर");
+    }
+
+    if (durationDeviceName === "pump") {
+      durationDeviceNameAliases.push("पंप");
+      durationDeviceNameAliases.push("पम्प");
+    }
+
+    const durationDeviceNameMatched =
+      durationDeviceNameAliases.some(
+        name =>
+          name &&
+          durationText.includes(name)
+      );
+
     if (
       !durationDeviceName ||
-      !durationText.includes(durationDeviceName)
+      !durationDeviceNameMatched
     ) {
       return res.json({
         success: false,
