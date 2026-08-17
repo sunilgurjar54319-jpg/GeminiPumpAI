@@ -82,12 +82,9 @@ router.post("/voice", async (req, res) => {
         .trim()
         .toLowerCase();
 
-    if (normalizedDeviceName) {
-      lowerText = lowerText.replace(
-        normalizedDeviceName,
-        "pump"
-      );
-    }
+    // Device name must remain available for
+    // immediate ON/OFF command validation.
+    // Do NOT replace it with "pump".
 
 
     // =========================================
@@ -554,6 +551,38 @@ return res.json({
     }
 
 
+    // =========================================
+    // STRICT DEVICE NAME VALIDATION
+    // =========================================
+    // Voice ON/OFF/SCHEDULE command तभी आगे जाएगा
+    // जब edited deviceName voice text में मौजूद हो.
+    // किसी दूसरे नाम से command reject होगी.
+    // =========================================
+
+    const strictVoiceText =
+      String(text || "")
+        .toLowerCase()
+        .trim();
+
+    const strictDeviceName =
+      String(deviceName || "")
+        .toLowerCase()
+        .trim();
+
+    if (
+      !strictDeviceName ||
+      !strictVoiceText.includes(strictDeviceName)
+    ) {
+      return res.json({
+        success: false,
+        type: "DEVICE_NAME_REQUIRED",
+        deviceId: "PUMP001",
+        message:
+          `कृपया ${deviceName} का नाम बोलकर command दें`
+      });
+    }
+
+    // =========================================
     // Parse Voice
     // =========================================
 
@@ -818,6 +847,28 @@ return res.json({
     })
   );
 
+    // =========================================
+    // DEVICE NAME VALIDATION FOR DURATION
+    // =========================================
+
+    const durationText =
+      String(text || "").toLowerCase().trim();
+
+    const durationDeviceName =
+      String(deviceName || "").toLowerCase().trim();
+
+    if (
+      !durationDeviceName ||
+      !durationText.includes(durationDeviceName)
+    ) {
+      return res.json({
+        success: false,
+        type: "DURATION",
+        message:
+          `कृपया ${deviceName} का नाम बोलकर command दें`
+      });
+    }
+
     // Send ON Immediately
   await sendCommand(
     "PUMP001",
@@ -1000,7 +1051,7 @@ return res.json({
     // =========================================
 
     const command =
-      await understandCommand(text);
+      await understandCommand(text, deviceName);
 
 
     if (!command) {
