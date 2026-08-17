@@ -8,19 +8,21 @@ import Schedule from "./components/Schedule";
 import HistoryCard from "./components/HistoryCard";
 import StatsCard from "./components/StatsCard";
 import DeviceConnection from "./components/DeviceConnection";
+import Login from "./components/Login";
 import "./App.css";
 
+import { authFetch } from "./api";
 const API = "https://geminipumpai.onrender.com";
 const DEVICE_ID = "PUMP001";
 
 function App() {
-
+  const [user, setUser] = useState(null);
   const [refresh, setRefresh] = useState(false);
   const [deviceName, setDeviceName] = useState(DEVICE_ID);
 
   async function loadDeviceName() {
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${API}/api/device/${DEVICE_ID}?t=${Date.now()}`,
         { cache: "no-store" }
       );
@@ -34,7 +36,6 @@ function App() {
       if (data.deviceName) {
         setDeviceName(data.deviceName);
       }
-
     } catch (err) {
       console.error("Device name error:", err);
     }
@@ -46,6 +47,7 @@ function App() {
   }
 
   useEffect(() => {
+    if (!user) return;
 
     loadDeviceName();
 
@@ -55,11 +57,13 @@ function App() {
     );
 
     return () => clearInterval(timer);
+  }, [user]);
 
-  }, []);
+  if (!user) {
+    return <Login onLogin={setUser} />;
+  }
 
   return (
-
     <div className="dashboard">
 
       <Header deviceName={deviceName} />

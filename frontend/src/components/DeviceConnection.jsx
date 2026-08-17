@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { authFetch } from "../api";
 const API = "https://geminipumpai.onrender.com";
 const DEVICE_ID = "PUMP001";
 
@@ -20,7 +21,7 @@ function DeviceConnection() {
 
   async function fetchDeviceStatus() {
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${API}/api/device/${DEVICE_ID}`,
         {
           cache: "no-store"
@@ -72,7 +73,7 @@ function DeviceConnection() {
 
     try {
 
-      const res = await fetch(
+      const res = await authFetch(
         `${API}/api/status/${DEVICE_ID}`,
         {
           cache: "no-store"
@@ -134,7 +135,7 @@ function DeviceConnection() {
       setSavingName(true);
       setNameMessage("");
 
-      const res = await fetch(
+      const res = await authFetch(
         `${API}/api/device/${DEVICE_ID}/name`,
         {
           method: "PUT",

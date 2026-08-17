@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { authFetch } from "../api";
 
 const API = "https://geminipumpai.onrender.com";
 const DEVICE_ID = "PUMP001";
@@ -20,7 +21,7 @@ function ManualControl({ onCommandSent, deviceName }) {
 
     try {
 
-      const res = await fetch(
+      const res = await authFetch(
         `${API}/api/device/${DEVICE_ID}`,
         { cache: "no-store" }
       );
@@ -93,7 +94,7 @@ function ManualControl({ onCommandSent, deviceName }) {
 
     try {
 
-      const res = await fetch(
+      const res = await authFetch(
         `${API}/api/status/${DEVICE_ID}`,
         { cache: "no-store" }
       );
@@ -193,8 +194,8 @@ function ManualControl({ onCommandSent, deviceName }) {
 
     try {
 
-      const res = await fetch(
-        `${API}/api/command/send`,
+      const res = await authFetch(
+        "/api/command/send",
         {
           method: "POST",
 

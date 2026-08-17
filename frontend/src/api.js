@@ -1,13 +1,33 @@
 const API = "https://geminipumpai.onrender.com";
 
+export async function authFetch(path, options = {}) {
+  const jwt = sessionStorage.getItem("geminiPumpJWT");
 
+  const headers = {
+    ...(options.headers || {})
+  };
+
+  if (jwt) {
+    headers.Authorization = `Bearer ${jwt}`;
+  }
+
+  if (options.body && !headers["Content-Type"]) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  return fetch(`${API}${path}`, {
+    ...options,
+    headers
+  });
+}
+
+
+// =========================================
 // Gemini Voice Command
+// =========================================
 export async function sendVoice(text) {
-  const res = await fetch(`${API}/api/gemini/voice`, {
+  const res = await authFetch("/api/gemini/voice", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
     body: JSON.stringify({ text })
   });
 
@@ -15,13 +35,12 @@ export async function sendVoice(text) {
 }
 
 
+// =========================================
 // Save Schedule
+// =========================================
 export async function saveSchedule(data) {
-  const res = await fetch(`${API}/api/schedule`, {
+  const res = await authFetch("/api/schedule", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
     body: JSON.stringify(data)
   });
 
@@ -29,21 +48,22 @@ export async function saveSchedule(data) {
 }
 
 
+// =========================================
 // Get Schedule
+// =========================================
 export async function getSchedules(deviceId) {
-  const res = await fetch(`${API}/api/schedule/${deviceId}`);
+  const res = await authFetch(`/api/schedule/${deviceId}`);
 
   return await res.json();
 }
 
 
+// =========================================
 // Update Schedule
+// =========================================
 export async function updateSchedule(id, data) {
-  const res = await fetch(`${API}/api/schedule/${id}`, {
+  const res = await authFetch(`/api/schedule/${id}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json"
-    },
     body: JSON.stringify(data)
   });
 
@@ -51,9 +71,11 @@ export async function updateSchedule(id, data) {
 }
 
 
+// =========================================
 // Delete Schedule
+// =========================================
 export async function deleteSchedule(id) {
-  const res = await fetch(`${API}/api/schedule/${id}`, {
+  const res = await authFetch(`/api/schedule/${id}`, {
     method: "DELETE"
   });
 
@@ -61,37 +83,43 @@ export async function deleteSchedule(id) {
 }
 
 
+// =========================================
 // Get Pump Status
+// =========================================
 export async function getStatus(deviceId) {
-  const res = await fetch(`${API}/api/status/${deviceId}`);
+  const res = await authFetch(`/api/status/${deviceId}`);
 
   return await res.json();
 }
 
 
+// =========================================
 // Get Pump History
+// =========================================
 export async function getHistory(deviceId) {
-  const res = await fetch(`${API}/api/history/${deviceId}`);
+  const res = await authFetch(`/api/history/${deviceId}`);
 
   return await res.json();
 }
 
 
+// =========================================
 // Clear Pump History
+// =========================================
 export async function clearHistory(deviceId) {
-  const res = await fetch(`${API}/api/history/${deviceId}`, {
+  const res = await authFetch(`/api/history/${deviceId}`, {
     method: "DELETE"
   });
 
   return await res.json();
 }
-export async function getStats(deviceId){
-
-const res = await fetch(
-`${API}/api/stats/${deviceId}`
-);
 
 
-return await res.json();
+// =========================================
+// Get Stats
+// =========================================
+export async function getStats(deviceId) {
+  const res = await authFetch(`/api/stats/${deviceId}`);
 
+  return await res.json();
 }

@@ -1,72 +1,101 @@
 const express = require("express");
 const router = express.Router();
 
-const { sendCommand, getCommand, completeCommand } = require("../services/commandService");
+const {
+  requireAuth,
+  requireDeviceOwner
+} = require("../middleware/auth");
 
-router.post("/send", async (req, res) => {
+const {
+  sendCommand,
+  getCommand,
+  completeCommand
+} = require("../services/commandService");
 
+// ==================================
+// SEND COMMAND
+// Login + Device Owner required
+// ==================================
+router.post(
+  "/send",
+  requireAuth,
+  requireDeviceOwner,
+  async (req, res) => {
     try {
+      const { deviceId, command } = req.body;
 
-        const { deviceId, command } = req.body;
+      if (!deviceId || !command) {
+        return res.status(400).json({
+          success: false,
+          error: "deviceId and command are required"
+        });
+      }
 
-        const result = await sendCommand(
-            deviceId,
-            command
-        );
+      const result = await sendCommand(
+        deviceId,
+        command
+      );
 
-        res.json(result);
+      res.json(result);
 
     } catch (err) {
+      console.error("Send Command Route Error:", err.message);
 
-        res.status(500).json({
-            success: false,
-            error: err.message
-        });
-
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
     }
+  }
+);
 
-});
-
+// ==================================
+// GET PENDING COMMAND
+// Device firmware uses this.
+// ==================================
 router.get("/get/:deviceId", async (req, res) => {
+  try {
+    const result = await getCommand(
+      req.params.deviceId
+    );
 
-    try {
+    res.json(result);
 
-        const result = await getCommand(
-            req.params.deviceId
-        );
-
-        res.json(result);
-
-    } catch (err) {
-
-        res.status(500).json({
-            success:false,
-            error:err.message
-        });
-
-    }
-
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
 });
 
+// ==================================
+// COMPLETE COMMAND
+// Device firmware uses this.
+// ==================================
 router.post("/complete", async (req, res) => {
+  try {
+    const { commandId } = req.body;
 
-    try {
-
-        const { commandId } = req.body;
-
-        const result = await completeCommand(commandId);
-
-        res.json(result);
-
-    } catch (err) {
-
-        res.status(500).json({
-            success:false,
-            error:err.message
-        });
-
+    if (!commandId) {
+      return res.status(400).json({
+        success: false,
+        error: "commandId is required"
+      });
     }
 
+    const result = await completeCommand(
+      commandId
+    );
+
+    res.json(result);
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
 });
 
 module.exports = router;

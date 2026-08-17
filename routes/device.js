@@ -2,6 +2,11 @@ const express = require("express");
 const router = express.Router();
 
 const {
+    requireAuth,
+    requireDeviceOwner
+} = require("../middleware/auth");
+
+const {
     registerDevice,
     heartbeatDevice,
     getDevice,
@@ -133,7 +138,11 @@ router.post("/heartbeat", async (req, res) => {
 // Update Device Name
 // =========================================
 
-router.put("/:deviceId/name", async (req, res) => {
+router.put(
+    "/:deviceId/name",
+    requireAuth,
+    requireDeviceOwner,
+    async (req, res) => {
 
     try {
 

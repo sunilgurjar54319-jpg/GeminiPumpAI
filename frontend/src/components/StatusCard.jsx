@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getStatus } from "../api";
 
+import { authFetch } from "../api";
 const API = "https://geminipumpai.onrender.com";
 const DEVICE_ID = "PUMP001";
 
@@ -95,7 +96,7 @@ function StatusCard({ refresh, deviceName }) {
 
     try {
 
-      const res = await fetch(
+      const res = await authFetch(
         `${API}/api/device/${DEVICE_ID}?t=${Date.now()}`,
         {
           cache: "no-store"
