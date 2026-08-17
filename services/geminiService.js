@@ -13,13 +13,20 @@ function understandCommand(text, deviceName) {
     return null;
   }
 
-  // Device name voice text me hona zaroori hai
-  // Hindi voice recognition me "Switch" aksar "स्विच" aata hai.
-  const deviceNameAliases = [name];
+  // Hindi voice aliases for common device names.
+  // Edited English device name और उसके common Hindi रूप दोनों स्वीकार होंगे.
+  const hindiDeviceAliases = {
+    switch: ["स्विच"],
+    motor: ["मोटर"],
+    pump: ["पंप", "पम्प"],
+    controller: ["कंट्रोलर"],
+    machine: ["मशीन"]
+  };
 
-  if (name === "switch") {
-    deviceNameAliases.push("स्विच");
-  }
+  const deviceNameAliases = [
+    name,
+    ...(hindiDeviceAliases[name] || [])
+  ];
 
   const deviceNameMatched = deviceNameAliases.some(
     alias => alias && command.includes(alias)
