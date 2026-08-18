@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
-import { getStatus } from "../api";
+import { getStatus, getDevice } from "../api";
 
-import { authFetch } from "../api";
-const API = "https://geminipumpai.onrender.com";
 const DEVICE_ID = "PUMP001";
 
 // Heartbeat 30 seconds se purana ho to ESP32 offline
-const ONLINE_TIMEOUT = 30000;
+const ONLINE_TIMEOUT = 60000;
 
 function StatusCard({ refresh, deviceName }) {
 
@@ -96,26 +94,12 @@ function StatusCard({ refresh, deviceName }) {
 
     try {
 
-      const res = await authFetch(
-        `${API}/api/device/${DEVICE_ID}?t=${Date.now()}`,
-        {
-          cache: "no-store"
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error(
-          "Device API HTTP " + res.status
-        );
-      }
-
-      const data = await res.json();
+      const data = await getDevice(DEVICE_ID);
 
       console.log(
         "ESP32 Device API:",
         data
       );
-
 
       if (data.wifiStatus) {
 
@@ -127,7 +111,6 @@ function StatusCard({ refresh, deviceName }) {
         setWifiStatus(wifi);
 
       }
-
 
       if (data.lastSeen) {
 
@@ -146,11 +129,22 @@ function StatusCard({ refresh, deviceName }) {
             data.wifiStatus || ""
           ).toUpperCase() === "CONNECTED";
 
-        setEspOnline(
+        const online =
           connected &&
           age >= 0 &&
-          age <= ONLINE_TIMEOUT
+          age <= ONLINE_TIMEOUT;
+
+        console.log(
+          "ESP32 Online Check:",
+          {
+            lastSeen: data.lastSeen,
+            age: age,
+            wifiStatus: data.wifiStatus,
+            online: online
+          }
         );
+
+        setEspOnline(online);
 
       } else {
 
@@ -160,12 +154,13 @@ function StatusCard({ refresh, deviceName }) {
 
     } catch (err) {
 
-      console.log(
+      console.error(
         "ESP32 Status Error:",
         err
       );
 
       setWifiStatus("UNKNOWN");
+      setLastSeen("");
       setEspOnline(false);
 
     }

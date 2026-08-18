@@ -22,6 +22,46 @@ export async function authFetch(path, options = {}) {
 }
 
 
+
+// =========================================
+// DEVICE FETCH
+// Device heartbeat/status read APIs
+// JWT ki zarurat nahi
+// =========================================
+export async function deviceFetch(path, options = {}) {
+  const headers = {
+    ...(options.headers || {})
+  };
+
+  if (options.body && !headers["Content-Type"]) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  return fetch(`${API}${path}`, {
+    ...options,
+    headers,
+    cache: "no-store"
+  });
+}
+
+
+// =========================================
+// GET DEVICE STATUS
+// =========================================
+export async function getDevice(deviceId) {
+  const res = await deviceFetch(
+    `/api/device/${deviceId}`
+  );
+
+  if (!res.ok) {
+    throw new Error(
+      `Device API HTTP ${res.status}`
+    );
+  }
+
+  return await res.json();
+}
+
 // =========================================
 // Gemini Voice Command
 // =========================================

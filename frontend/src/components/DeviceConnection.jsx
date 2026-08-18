@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { authFetch } from "../api";
-const API = "https://geminipumpai.onrender.com";
+import { deviceFetch } from "../api";
 const DEVICE_ID = "PUMP001";
 
 function DeviceConnection() {
@@ -21,8 +20,8 @@ function DeviceConnection() {
 
   async function fetchDeviceStatus() {
     try {
-      const res = await authFetch(
-        `${API}/api/device/${DEVICE_ID}`,
+      const res = await deviceFetch(
+        `/api/device/${DEVICE_ID}`,
         {
           cache: "no-store"
         }
@@ -47,7 +46,7 @@ function DeviceConnection() {
         const now = Date.now();
 
         setOnline(
-          now - lastSeen <= 30000
+          now - lastSeen <= 60000
         );
       } else {
         setOnline(false);
@@ -73,8 +72,8 @@ function DeviceConnection() {
 
     try {
 
-      const res = await authFetch(
-        `${API}/api/status/${DEVICE_ID}`,
+      const res = await deviceFetch(
+        `/api/status/${DEVICE_ID}`,
         {
           cache: "no-store"
         }
