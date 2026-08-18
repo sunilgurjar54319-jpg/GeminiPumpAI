@@ -554,9 +554,12 @@ return res.json({
     // =========================================
     // STRICT DEVICE NAME VALIDATION
     // =========================================
-    // Voice ON/OFF/SCHEDULE command तभी आगे जाएगा
-    // जब edited deviceName voice text में मौजूद हो.
-    // किसी दूसरे नाम से command reject होगी.
+    // ON/OFF/SCHEDULE command तभी चलेगा जब
+    // बोले गए text में वास्तविक deviceName मौजूद हो.
+    //
+    // IMPORTANT:
+    // केवल generic words जैसे motor/pump/switch को
+    // किसी भी device के लिए automatically accept नहीं करेंगे.
     // =========================================
 
     const strictVoiceText =
@@ -569,30 +572,60 @@ return res.json({
         .toLowerCase()
         .trim();
 
-    // Hindi voice aliases for common device names.
-    // Edited English device name और उसके common Hindi रूप दोनों स्वीकार होंगे.
-    const hindiDeviceAliases = {
-      switch: ["स्विच"],
+    if (!strictDeviceName) {
+      return res.json({
+        success: false,
+        type: "DEVICE_NAME_REQUIRED",
+        deviceId: "PUMP001",
+        message: "कृपया device का नाम बोलकर command दें"
+      });
+    }
+
+    // Exact device name matching.
+    // Name के बीच spaces/extra whitespace normalize किए जाते हैं.
+    const normalizedVoiceName =
+      strictVoiceText
+        .replace(/\s+/g, " ")
+        .trim();
+
+    const normalizedDeviceNameForVoice =
+      strictDeviceName
+        .replace(/\s+/g, " ")
+        .trim();
+
+    let deviceNameMatched = false;
+
+    // Exact configured device name.
+    if (
+      normalizedVoiceName.includes(
+        normalizedDeviceNameForVoice
+      )
+    ) {
+      deviceNameMatched = true;
+    }
+
+    // Common Hindi pronunciation is allowed ONLY
+    // when the configured device name itself is that word.
+    const configuredHindiAliases = {
       motor: ["मोटर"],
       pump: ["पंप", "पम्प"],
+      switch: ["स्विच"],
       controller: ["कंट्रोलर"],
       machine: ["मशीन"]
     };
 
-    const deviceNameAliases = [
-      strictDeviceName,
-      ...(hindiDeviceAliases[strictDeviceName] || [])
-    ];
+    if (!deviceNameMatched) {
+      const aliases =
+        configuredHindiAliases[
+          normalizedDeviceNameForVoice
+        ] || [];
 
-    const deviceNameMatched =
-      deviceNameAliases.some(name =>
-        name && strictVoiceText.includes(name)
+      deviceNameMatched = aliases.some(alias =>
+        normalizedVoiceName.includes(alias)
       );
+    }
 
-    if (
-      !strictDeviceName ||
-      !deviceNameMatched
-    ) {
+    if (!deviceNameMatched) {
       return res.json({
         success: false,
         type: "DEVICE_NAME_REQUIRED",
@@ -604,6 +637,8 @@ return res.json({
 
     // =========================================
     // Parse Voice
+    // =========================================
+
     // =========================================
 
     const parsed =

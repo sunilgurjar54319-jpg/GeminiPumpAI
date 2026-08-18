@@ -1,26 +1,49 @@
+import { account } from "./appwrite";
+
 const API = "https://geminipumpai.onrender.com";
 
 export async function authFetch(path, options = {}) {
-  const jwt = sessionStorage.getItem("geminiPumpJWT");
+  try {
+    // Appwrite session से नया JWT बनाएं.
+    // JWT की default validity 15 minutes होती है.
+    const jwtResult = await account.createJWT();
 
-  const headers = {
-    ...(options.headers || {})
-  };
+    const jwt = jwtResult.jwt;
 
-  if (jwt) {
-    headers.Authorization = `Bearer ${jwt}`;
+    sessionStorage.setItem(
+      "geminiPumpJWT",
+      jwt
+    );
+
+    const headers = {
+      ...(options.headers || {}),
+      Authorization: `Bearer ${jwt}`
+    };
+
+    if (
+      options.body &&
+      !headers["Content-Type"]
+    ) {
+      headers["Content-Type"] = "application/json";
+    }
+
+    return fetch(`${API}${path}`, {
+      ...options,
+      headers
+    });
+
+  } catch (err) {
+
+    console.error(
+      "JWT refresh error:",
+      err
+    );
+
+    throw new Error(
+      "Appwrite session expired. Please login again."
+    );
   }
-
-  if (options.body && !headers["Content-Type"]) {
-    headers["Content-Type"] = "application/json";
-  }
-
-  return fetch(`${API}${path}`, {
-    ...options,
-    headers
-  });
 }
-
 
 
 // =========================================
