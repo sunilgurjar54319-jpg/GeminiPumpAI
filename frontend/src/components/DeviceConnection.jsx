@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { deviceFetch } from "../api";
+import { authFetch, deviceFetch } from "../api";
 const DEVICE_ID = "PUMP001";
 
 function DeviceConnection() {
