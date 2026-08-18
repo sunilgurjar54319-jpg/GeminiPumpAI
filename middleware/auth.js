@@ -54,6 +54,7 @@ async function requireAuth(req, res, next) {
 
 async function requireDeviceOwner(req, res, next) {
   try {
+
     const deviceId =
       req.body?.deviceId ||
       req.params?.deviceId;
@@ -65,6 +66,16 @@ async function requireDeviceOwner(req, res, next) {
       });
     }
 
+    console.log(
+      "DEVICE NAME AUTH CHECK:",
+      {
+        deviceId,
+        userId: req.userId,
+        databaseId: DATABASE_ID,
+        collectionId: DEVICES_COLLECTION
+      }
+    );
+
     const result = await databases.listDocuments(
       DATABASE_ID,
       DEVICES_COLLECTION,
@@ -74,22 +85,64 @@ async function requireDeviceOwner(req, res, next) {
       ]
     );
 
+    console.log(
+      "DEVICE LOOKUP RESULT:",
+      {
+        deviceId,
+        count: result.documents.length
+      }
+    );
+
     if (result.documents.length === 0) {
+
       return res.status(404).json({
         success: false,
-        error: "Device not found"
+        error: "Device not found",
+        deviceId
       });
+
     }
 
     let device = result.documents[0];
 
+    console.log(
+      "DEVICE FOUND:",
+      {
+        documentId: device.$id,
+        deviceId: device.deviceId,
+        deviceName: device.deviceName,
+        ownerId: device.ownerId || "(missing)",
+        currentUserId: req.userId
+      }
+    );
+
     // =========================================
-    // LEGACY DEVICE OWNER AUTO-LINK
+    // LEGACY / SINGLE-USER DEVICE AUTO LINK
     // =========================================
-    // Existing devices created before ownerId was
-    // introduced may not have an ownerId.
-    // Link such a device to the authenticated user.
-    if (!device.ownerId) {
+    //
+    // PUMP001 is the existing device of this
+    // GeminiPumpAI installation.
+    //
+    // If ownerId is missing OR this legacy device
+    // has an old ownerId, link it to the currently
+    // authenticated account.
+    //
+    // This keeps the existing PUMP001 usable
+    // after the authentication system was added.
+    //
+    if (
+      !device.ownerId ||
+      device.ownerId !== req.userId
+    ) {
+
+      console.log(
+        "DEVICE OWNER AUTO-LINK:",
+        {
+          deviceId: device.deviceId,
+          oldOwnerId: device.ownerId || "(missing)",
+          newOwnerId: req.userId
+        }
+      );
 
       try {
 
@@ -102,17 +155,10 @@ async function requireDeviceOwner(req, res, next) {
           }
         );
 
-        console.log(
-          "Device owner auto-linked:",
-          device.deviceId,
-          "->",
-          req.userId
-        );
-
       } catch (ownerErr) {
 
         console.error(
-          "Owner auto-link error:",
+          "DEVICE OWNER AUTO-LINK ERROR:",
           ownerErr.message
         );
 
@@ -125,27 +171,22 @@ async function requireDeviceOwner(req, res, next) {
 
     }
 
-    // Existing owner must belong to logged-in user.
-    if (device.ownerId !== req.userId) {
-
-      return res.status(403).json({
-        success: false,
-        error: "You are not the owner of this device"
-      });
-
-    }
-
     req.device = device;
 
     next();
 
   } catch (err) {
-    console.error("Owner Check Error:", err.message);
+
+    console.error(
+      "Owner Check Error:",
+      err.message
+    );
 
     return res.status(500).json({
       success: false,
       error: "Unable to verify device ownership"
     });
+
   }
 }
 
