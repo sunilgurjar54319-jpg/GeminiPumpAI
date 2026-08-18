@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { authFetch, deviceFetch } from "../api";
+import { authFetch, getDevice } from "../api";
 
-const API = "https://geminipumpai.onrender.com";
 const DEVICE_ID = "PUMP001";
+const ONLINE_TIMEOUT = 60000;
 
 function ManualControl({ onCommandSent, deviceName }) {
 
@@ -21,46 +21,20 @@ function ManualControl({ onCommandSent, deviceName }) {
 
     try {
 
-      const res = await authFetch(
-        `${API}/api/device/${DEVICE_ID}`,
-        { cache: "no-store" }
+      const data = await getDevice(DEVICE_ID);
+
+      console.log(
+        "MANUAL CONTROL DEVICE API:",
+        data
       );
 
-      if (!res.ok) {
-        throw new Error("Device API error");
+      if (!data || data.success === false) {
+        throw new Error(
+          data?.message || "Device API failed"
+        );
       }
 
-      const data = await res.json();
-
-      if (data.lastSeen) {
-
-        const lastSeen =
-          new Date(data.lastSeen).getTime();
-
-        const now = Date.now();
-
-        // Last heartbeat within 30 seconds = ONLINE
-        const online =
-          now - lastSeen <= 60000;
-
-        console.log("MANUAL CONTROL ONLINE CHECK", {
-          lastSeen: data.lastSeen,
-          age: now - lastSeen,
-          wifiStatus: data.wifiStatus,
-          online
-        });
-
-        setDeviceOnline(online);
-
-        // Device offline -> Manual status reset nahi karna,
-        // sirf controls disable karne hain.
-        if (!online) {
-          setMessage(
-            "RMU FW Update available or Pump is not connected to network"
-          );
-        }
-
-      } else {
+      if (!data.lastSeen) {
 
         setDeviceOnline(false);
 
@@ -68,12 +42,50 @@ function ManualControl({ onCommandSent, deviceName }) {
           "RMU FW Update available or Pump is not connected to network"
         );
 
+        return;
+      }
+
+      const lastSeenTime =
+        new Date(data.lastSeen).getTime();
+
+      const age =
+        Date.now() - lastSeenTime;
+
+      const wifiConnected =
+        String(
+          data.wifiStatus || ""
+        ).toUpperCase() === "CONNECTED";
+
+      const online =
+        wifiConnected &&
+        age >= 0 &&
+        age <= ONLINE_TIMEOUT;
+
+      console.log(
+        "MANUAL CONTROL ONLINE CHECK:",
+        {
+          lastSeen: data.lastSeen,
+          age: age,
+          wifiStatus: data.wifiStatus,
+          wifiConnected: wifiConnected,
+          online: online
+        }
+      );
+
+      setDeviceOnline(online);
+
+      if (online) {
+        setMessage("");
+      } else {
+        setMessage(
+          "RMU FW Update available or Pump is not connected to network"
+        );
       }
 
     } catch (err) {
 
-      console.log(
-        "Device connection error:",
+      console.error(
+        "Manual Control Device Error:",
         err
       );
 
@@ -102,7 +114,7 @@ function ManualControl({ onCommandSent, deviceName }) {
     try {
 
       const res = await authFetch(
-        `${API}/api/status/${DEVICE_ID}`,
+        `/api/status/${DEVICE_ID}`,
         { cache: "no-store" }
       );
 
