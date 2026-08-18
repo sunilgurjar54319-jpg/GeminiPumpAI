@@ -135,7 +135,7 @@ function DeviceConnection() {
       setNameMessage("");
 
       const res = await authFetch(
-        `${API}/api/device/${DEVICE_ID}/name`,
+        "/api/device/${DEVICE_ID}/name",
         {
           method: "PUT",
 
