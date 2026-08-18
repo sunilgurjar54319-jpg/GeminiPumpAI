@@ -6,7 +6,8 @@ const databases = require("../config/appwrite");
 const { ID, Query } = require("node-appwrite");
 
 const {
-  understandCommand
+  understandCommand,
+  deviceNameMatches
 } = require("../services/geminiService");
 
 const {
@@ -552,81 +553,21 @@ return res.json({
 
 
     // =========================================
-    // STRICT DEVICE NAME VALIDATION
     // =========================================
-    // ON/OFF/SCHEDULE command तभी चलेगा जब
-    // बोले गए text में वास्तविक deviceName मौजूद हो.
+    // DYNAMIC DEVICE NAME VALIDATION
+    // =========================================
+    // Configured deviceName ही authority है.
     //
-    // IMPORTANT:
-    // केवल generic words जैसे motor/pump/switch को
-    // किसी भी device के लिए automatically accept नहीं करेंगे.
+    // सभी device names dynamic हैं.
+    // Fan / Light / Motor / Pump जैसे names hard-code नहीं हैं.
+    //
+    // English exact name तथा Hindi/English phonetic
+    // pronunciation common matcher से validate होगी.
+    //
+    // गलत device name होने पर command आगे नहीं जाएगी.
     // =========================================
 
-    const strictVoiceText =
-      String(text || "")
-        .toLowerCase()
-        .trim();
-
-    const strictDeviceName =
-      String(deviceName || "")
-        .toLowerCase()
-        .trim();
-
-    if (!strictDeviceName) {
-      return res.json({
-        success: false,
-        type: "DEVICE_NAME_REQUIRED",
-        deviceId: "PUMP001",
-        message: "कृपया device का नाम बोलकर command दें"
-      });
-    }
-
-    // Exact device name matching.
-    // Name के बीच spaces/extra whitespace normalize किए जाते हैं.
-    const normalizedVoiceName =
-      strictVoiceText
-        .replace(/\s+/g, " ")
-        .trim();
-
-    const normalizedDeviceNameForVoice =
-      strictDeviceName
-        .replace(/\s+/g, " ")
-        .trim();
-
-    let deviceNameMatched = false;
-
-    // Exact configured device name.
-    if (
-      normalizedVoiceName.includes(
-        normalizedDeviceNameForVoice
-      )
-    ) {
-      deviceNameMatched = true;
-    }
-
-    // Common Hindi pronunciation is allowed ONLY
-    // when the configured device name itself is that word.
-    const configuredHindiAliases = {
-      motor: ["मोटर"],
-      pump: ["पंप", "पम्प"],
-      switch: ["स्विच"],
-      controller: ["कंट्रोलर"],
-      machine: ["मशीन"],
-      light: ["लाइट", "लाईट"]
-    };
-
-    if (!deviceNameMatched) {
-      const aliases =
-        configuredHindiAliases[
-          normalizedDeviceNameForVoice
-        ] || [];
-
-      deviceNameMatched = aliases.some(alias =>
-        normalizedVoiceName.includes(alias)
-      );
-    }
-
-    if (!deviceNameMatched) {
+    if (!deviceNameMatches(text, deviceName)) {
       return res.json({
         success: false,
         type: "DEVICE_NAME_REQUIRED",
@@ -638,6 +579,10 @@ return res.json({
 
     // =========================================
     // Parse Voice
+    // =========================================
+
+    // =========================================
+
     // =========================================
 
     // =========================================
@@ -889,73 +834,155 @@ return res.json({
 
       // =========================================
       // =========================================
+      // =========================================
       // DURATION SCHEDULE
       // =========================================
 
       if (parsed.type === "DURATION") {
 
-          // Current India Time
-  const now = new Date();
+        let indiaDate;
 
-  const indiaDate = new Date(
-    now.toLocaleString("en-US", {
-      timeZone: "Asia/Kolkata"
-    })
-  );
+        /*
+         * Scheduled duration:
+         *
+         * parsed.scheduledAt मौजूद है तो उसी समय से
+         * duration शुरू होगी.
+         *
+         * Example:
+         * आज शाम 7 बजे + 5 मिनट
+         * => 19:00 -> 19:05
+         */
 
-    // =========================================
-    // DEVICE NAME VALIDATION FOR DURATION
-    // =========================================
+        if (parsed.scheduledAt) {
 
-    const durationText =
-      String(text || "").toLowerCase().trim();
+          indiaDate = new Date(parsed.scheduledAt);
 
-    const durationDeviceName =
-      String(deviceName || "").toLowerCase().trim();
+        } else {
 
-    // =========================================
-    // HINDI DEVICE NAME ALIASES FOR DURATION
-    // =========================================
-    // Switch -> स्विच
-    // Motor  -> मोटर
-    // Pump   -> पंप / पम्प
-    // =========================================
+          // Normal duration:
+          // अभी से duration शुरू होगी.
 
-    const durationDeviceNameAliases = [
-      durationDeviceName
-    ];
+          const now = new Date();
 
-    if (durationDeviceName === "switch") {
-      durationDeviceNameAliases.push("स्विच");
-    }
+          indiaDate = new Date(
+            now.toLocaleString("en-US", {
+              timeZone: "Asia/Kolkata"
+            })
+          );
 
-    if (durationDeviceName === "motor") {
-      durationDeviceNameAliases.push("मोटर");
-    }
+        }
 
-    if (durationDeviceName === "pump") {
-      durationDeviceNameAliases.push("पंप");
-      durationDeviceNameAliases.push("पम्प");
-    }
+        // Scheduled duration को अभी तुरंत ON नहीं करना है.
+        // केवल future scheduled time पर scheduler ON करेगा.
+        //
+        // Normal duration में अभी ON करना है.
 
-    const durationDeviceNameMatched =
-      durationDeviceNameAliases.some(
-        name =>
-          name &&
-          durationText.includes(name)
-      );
+        const isScheduledDuration =
+          Boolean(parsed.scheduledAt);
 
-    if (
-      !durationDeviceName ||
-      !durationDeviceNameMatched
-    ) {
-      return res.json({
-        success: false,
-        type: "DURATION",
-        message:
-          `कृपया ${deviceName} का नाम बोलकर command दें`
-      });
-    }
+        if (!isScheduledDuration) {
+
+          await sendCommand(
+            "PUMP001",
+            "ON"
+          );
+
+        }
+
+        // OFF Time
+        const offDate =
+          new Date(
+            indiaDate.getTime() +
+            parsed.durationMinutes * 60 * 1000
+          );
+
+        function indiaParts(date) {
+
+          const parts =
+            new Intl.DateTimeFormat("en-CA", {
+              timeZone: "Asia/Kolkata",
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false
+            }).formatToParts(date);
+
+          const result = {};
+
+          for (const part of parts) {
+            if (part.type !== "literal") {
+              result[part.type] = part.value;
+            }
+          }
+
+          return result;
+
+        }
+
+        const startParts = indiaParts(indiaDate);
+        const offParts = indiaParts(offDate);
+
+        const scheduledDate =
+          `${startParts.year}-${startParts.month}-${startParts.day}`;
+
+        const startTime =
+          `${startParts.hour}:${startParts.minute}`;
+
+        const offTime =
+          `${offParts.hour}:${offParts.minute}`;
+
+        const dayNames = [
+          "Sun",
+          "Mon",
+          "Tue",
+          "Wed",
+          "Thu",
+          "Fri",
+          "Sat"
+        ];
+
+        const day =
+          dayNames[
+            indiaDate.getDay()
+          ];
+
+        const result =
+          await databases.createDocument(
+            DATABASE_ID,
+            SCHEDULE_COLLECTION,
+            ID.unique(),
+            {
+              deviceId: "PUMP001",
+              startTime,
+              endTime: offTime,
+              days: day,
+              enabled: true,
+              command: "ON",
+              scheduledDate
+            }
+          );
+
+        return res.json({
+
+          success: true,
+
+          type: "DURATION",
+
+          command: "ON",
+
+          durationMinutes:
+            parsed.durationMinutes,
+
+          offAt:
+            `${scheduledDate} ${offTime}`,
+
+          schedule: result
+
+        });
+
+      }
 
     // Send ON Immediately
   await sendCommand(
@@ -1131,7 +1158,6 @@ return res.json({
 
       }
 
-    }
 
 
     // =========================================

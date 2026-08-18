@@ -1,74 +1,167 @@
-function understandCommand(text, deviceName) {
-
-  const command = String(text || "")
+function normalizeText(value) {
+  return String(value || "")
     .toLowerCase()
+    .normalize("NFKC")
+    .replace(/[.,!?'"`]/g, " ")
+    .replace(/\s+/g, " ")
     .trim();
+}
 
-  const name = String(deviceName || "")
-    .toLowerCase()
-    .trim();
+/*
+ * Hindi/English device-name matching.
+ *
+ * Important:
+ * - Configured English device name is always authoritative.
+ * - Hindi pronunciation is matched phonetically.
+ * - No fixed Fan/Light/Motor/Pump device list is required.
+ */
+function phonetic(value) {
+  let s = normalizeText(value);
 
-  // Device name required
-  if (!name) {
-    return null;
+  const map = [
+    ["क्ष", "ksh"],
+    ["त्र", "tr"],
+    ["ज्ञ", "gy"],
+    ["श्र", "shr"],
+
+    ["अ", "a"],
+    ["आ", "a"],
+    ["इ", "i"],
+    ["ई", "i"],
+    ["उ", "u"],
+    ["ऊ", "u"],
+    ["ए", "e"],
+    ["ऐ", "a"],
+    ["ओ", "o"],
+    ["औ", "au"],
+
+    ["ा", "a"],
+    ["ि", "i"],
+    ["ी", "i"],
+    ["ु", "u"],
+    ["ू", "u"],
+    ["े", "e"],
+    ["ै", "a"],
+    ["ो", "o"],
+    ["ौ", "au"],
+
+    ["ं", "n"],
+    ["ँ", "n"],
+    ["ः", "h"],
+    ["्", ""],
+    ["़", ""],
+
+    ["ख", "kh"],
+    ["घ", "gh"],
+    ["च", "ch"],
+    ["छ", "chh"],
+    ["ज", "j"],
+    ["झ", "jh"],
+    ["ट", "t"],
+    ["ठ", "th"],
+    ["ड", "d"],
+    ["ढ", "dh"],
+    ["त", "t"],
+    ["थ", "th"],
+    ["द", "d"],
+    ["ध", "dh"],
+    ["न", "n"],
+    ["प", "p"],
+    ["फ", "f"],
+    ["ब", "b"],
+    ["भ", "bh"],
+    ["म", "m"],
+    ["य", "y"],
+    ["र", "r"],
+    ["ल", "l"],
+    ["व", "v"],
+    ["श", "sh"],
+    ["ष", "sh"],
+    ["स", "s"],
+    ["ह", "h"],
+    ["क", "k"],
+    ["ग", "g"],
+    ["ङ", "n"],
+    ["ण", "n"]
+  ];
+
+  for (const [from, to] of map) {
+    s = s.split(from).join(to);
   }
 
-  // =========================================
-  // SAFE DYNAMIC DEVICE NAME MATCHING
-  // =========================================
-  // Configured device name is mandatory.
-  // Exact English name is accepted.
-  // Common Hindi pronunciations are accepted only
-  // for the matching configured English name.
-  //
-  // IMPORTANT:
-  // Do NOT use generic motor/pump/light words for
-  // another configured device.
-  // =========================================
+  return s
+    .replace(/ph/g, "f")
+    .replace(/bh/g, "b")
+    .replace(/dh/g, "d")
+    .replace(/th/g, "t")
+    .replace(/kh/g, "k")
+    .replace(/gh/g, "g")
+    .replace(/sh/g, "s")
+    .replace(/ch/g, "c")
+    .replace(/oo/g, "u")
+    .replace(/ee/g, "i")
+    .replace(/aa/g, "a")
+    .replace(/ou/g, "au")
+    .replace(/[^a-z0-9]+/g, "");
+}
 
-  const normalizedCommand =
-    String(command || "")
-      .normalize("NFKC")
-      .replace(/\s+/g, " ")
-      .trim();
+/*
+ * Returns TRUE only when the spoken text contains
+ * the configured device name or its phonetic Hindi pronunciation.
+ *
+ * No fixed device names are used here.
+ */
+function deviceNameMatches(text, deviceName) {
+  const command = normalizeText(text);
+  const name = normalizeText(deviceName);
 
-  const normalizedName =
-    String(name || "")
-      .normalize("NFKC")
-      .replace(/\s+/g, " ")
-      .trim();
-
-  if (!normalizedName) {
-    return null;
+  if (!command || !name) {
+    return false;
   }
 
-  const hindiAliases = {
+  // Exact configured name.
+  if (command.includes(name)) {
+    return true;
+  }
+
+  // Common Hindi semantic aliases for configured device names.
+  // These aliases apply ONLY to the matching configured device.
+  const hindiDeviceAliases = {
+    fan: ["फैन", "पंखा"],
     light: ["लाइट", "लाईट"],
     motor: ["मोटर"],
     pump: ["पंप", "पम्प"],
-    fan: ["फैन", "पंखा"],
     switch: ["स्विच"],
     controller: ["कंट्रोलर"],
     machine: ["मशीन"]
   };
 
-  const aliases = [
-    normalizedName,
-    ...(hindiAliases[normalizedName] || [])
-  ];
+  const aliases = hindiDeviceAliases[name] || [];
 
-  const deviceNameMatched = aliases.some(alias => {
-    return alias &&
-      normalizedCommand.includes(alias);
-  });
-
-  if (!deviceNameMatched) {
-    return null;
+  if (aliases.some(alias => command.includes(alias))) {
+    return true;
   }
 
-  // =========================================
-  // ON / START
-  // =========================================
+  const commandPhonetic = phonetic(command);
+  const namePhonetic = phonetic(name);
+
+  if (
+    commandPhonetic &&
+    namePhonetic &&
+    commandPhonetic.includes(namePhonetic)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function understandCommand(text, deviceName) {
+  const command = normalizeText(text);
+
+  if (!deviceNameMatches(command, deviceName)) {
+    return null;
+  }
 
   const onWords = [
     "on",
@@ -83,17 +176,12 @@ function understandCommand(text, deviceName) {
     "शुरू",
     "शुरु",
     "चलाओ",
-    "चलाओ",
     "चलाना"
   ];
 
   if (onWords.some(word => command.includes(word))) {
     return "ON";
   }
-
-  // =========================================
-  // OFF / STOP
-  // =========================================
 
   const offWords = [
     "off",
@@ -118,5 +206,6 @@ function understandCommand(text, deviceName) {
 }
 
 module.exports = {
-  understandCommand
+  understandCommand,
+  deviceNameMatches
 };

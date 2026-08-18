@@ -96,14 +96,94 @@ if (
     durationMinutes = value * 60;
   }
 
- // Maximum pump runtime safety limit
-const MAX_RUNTIME_MINUTES = 240;
+  const MAX_RUNTIME_MINUTES = 240;
 
-if (durationMinutes > MAX_RUNTIME_MINUTES) {
-  return {
-    error: "Maximum pump runtime is 4 hours"
-  };
-}
+  if (durationMinutes > MAX_RUNTIME_MINUTES) {
+    return {
+      error: "Maximum pump runtime is 4 hours"
+    };
+  }
+
+  /*
+   * IMPORTANT:
+   * अगर command में कोई date/day/time मौजूद है,
+   * तो इसे immediate duration नहीं मानेंगे.
+   *
+   * Example:
+   * आज शाम 7 बजे पंखा ON करो 5 मिनट के लिए
+   *
+   * Duration phrase हटाकर बाकी text को normal
+   * schedule parser से parse करेंगे.
+   */
+
+  const commandWithoutDuration =
+    command
+      .replace(durationMatch[0], " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  const hasExplicitSchedule =
+    commandWithoutDuration.includes("आज") ||
+    commandWithoutDuration.includes("aaj") ||
+    commandWithoutDuration.includes("today") ||
+    commandWithoutDuration.includes("कल") ||
+    commandWithoutDuration.includes("kal") ||
+    commandWithoutDuration.includes("tomorrow") ||
+    commandWithoutDuration.includes("हर दिन") ||
+    commandWithoutDuration.includes("हर रोज") ||
+    commandWithoutDuration.includes("har din") ||
+    commandWithoutDuration.includes("har roj") ||
+    commandWithoutDuration.includes("daily") ||
+    commandWithoutDuration.includes("रविवार") ||
+    commandWithoutDuration.includes("सोमवार") ||
+    commandWithoutDuration.includes("मंगलवार") ||
+    commandWithoutDuration.includes("बुधवार") ||
+    commandWithoutDuration.includes("गुरुवार") ||
+    commandWithoutDuration.includes("शुक्रवार") ||
+    commandWithoutDuration.includes("शनिवार") ||
+    commandWithoutDuration.includes("ravivar") ||
+    commandWithoutDuration.includes("somvar") ||
+    commandWithoutDuration.includes("mangalvar") ||
+    commandWithoutDuration.includes("budhvar") ||
+    commandWithoutDuration.includes("guruvaar") ||
+    commandWithoutDuration.includes("guruvar") ||
+    commandWithoutDuration.includes("shukravar") ||
+    commandWithoutDuration.includes("shanivar") ||
+    /(\d{1,2})(?::|\.|\s*(?:बजे|baje|बजकर|bajkar))/.test(
+      commandWithoutDuration
+    ) ||
+    commandWithoutDuration.includes("शाम") ||
+    commandWithoutDuration.includes("shaam") ||
+    commandWithoutDuration.includes("सुबह") ||
+    commandWithoutDuration.includes("subah") ||
+    commandWithoutDuration.includes("दोपहर") ||
+    commandWithoutDuration.includes("dopahar") ||
+    commandWithoutDuration.includes("pm") ||
+    commandWithoutDuration.includes("am");
+
+  if (hasExplicitSchedule) {
+
+    const scheduled = parseVoiceSchedule(commandWithoutDuration);
+
+    if (scheduled && !scheduled.error) {
+      return {
+        ...scheduled,
+        type: "DURATION",
+        action: "ON",
+        durationMinutes
+      };
+    }
+
+    if (scheduled && scheduled.error) {
+      return {
+        ...scheduled,
+        type: "DURATION",
+        action: "ON",
+        durationMinutes
+      };
+    }
+
+  }
 
   return {
     type: "DURATION",
