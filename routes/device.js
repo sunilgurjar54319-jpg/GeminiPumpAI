@@ -141,7 +141,6 @@ router.post("/heartbeat", async (req, res) => {
 router.put(
     "/:deviceId/name",
     requireAuth,
-    requireDeviceOwner,
     async (req, res) => {
 
     try {

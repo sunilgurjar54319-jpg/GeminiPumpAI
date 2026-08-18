@@ -40,14 +40,6 @@ async function requireAuth(req, res, next) {
     req.user = user;
     req.userId = user.$id;
 
-    console.log(
-      "AUTH SUCCESS:",
-      {
-        userId: user.$id,
-        email: user.email
-      }
-    );
-
     next();
 
   } catch (err) {
