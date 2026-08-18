@@ -984,80 +984,6 @@ return res.json({
 
       }
 
-    // Send ON Immediately
-  await sendCommand(
-    "PUMP001",
-    "ON"
-  );
-
-  // OFF Time
-  const offDate = new Date(indiaDate);
-
-  offDate.setMinutes(
-    offDate.getMinutes() +
-    parsed.durationMinutes
-  );
-
-    const scheduledDate =
-    indiaDate.getFullYear() +
-    "-" +
-    String(indiaDate.getMonth() + 1).padStart(2, "0") +
-    "-" +
-    String(indiaDate.getDate()).padStart(2, "0");
-
-  const startTime =
-    String(indiaDate.getHours()).padStart(2, "0") +
-    ":" +
-    String(indiaDate.getMinutes()).padStart(2, "0");
-
-  const offTime =
-    String(offDate.getHours()).padStart(2, "0") +
-    ":" +
-    String(offDate.getMinutes()).padStart(2, "0");
-
-  const dayNames = [
-    "Sun",
-    "Mon",
-    "Tue",
-    "Wed",
-    "Thu",
-    "Fri",
-    "Sat"
-  ];
-
-    const result =
-    await databases.createDocument(
-      DATABASE_ID,
-      SCHEDULE_COLLECTION,
-      ID.unique(),
-      {
-        deviceId: "PUMP001",
-        startTime: startTime,
-        endTime: offTime,
-        days: dayNames[indiaDate.getDay()],
-        enabled: true,
-        command: "ON",
-        scheduledDate: scheduledDate
-      }
-    );
-
-      return res.json({
-
-    success: true,
-
-    type: "DURATION",
-
-    command: "ON",
-
-    durationMinutes: parsed.durationMinutes,
-
-    offAt: `${scheduledDate} ${offTime}`,
-
-    schedule: result
-
-  });
-
-}
       // ONE-TIME DATE SCHEDULE
       // =========================================
 
@@ -1159,6 +1085,7 @@ return res.json({
       }
 
 
+      }
 
     // =========================================
     // Immediate ON / OFF Command
