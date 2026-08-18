@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { authFetch } from "../api";
+import { authFetch, deviceFetch } from "../api";
 
 const API = "https://geminipumpai.onrender.com";
 const DEVICE_ID = "PUMP001";
@@ -41,7 +41,14 @@ function ManualControl({ onCommandSent, deviceName }) {
 
         // Last heartbeat within 30 seconds = ONLINE
         const online =
-          now - lastSeen <= 30000;
+          now - lastSeen <= 60000;
+
+        console.log("MANUAL CONTROL ONLINE CHECK", {
+          lastSeen: data.lastSeen,
+          age: now - lastSeen,
+          wifiStatus: data.wifiStatus,
+          online
+        });
 
         setDeviceOnline(online);
 
