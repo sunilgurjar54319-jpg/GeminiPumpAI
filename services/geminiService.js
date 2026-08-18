@@ -14,33 +14,53 @@ function understandCommand(text, deviceName) {
   }
 
   // =========================================
-  // DEVICE NAME ALIASES
+  // SAFE DYNAMIC DEVICE NAME MATCHING
   // =========================================
-  // Hindi voice recognition:
-  // Switch -> स्विच
-  // Motor  -> मोटर
-  // Pump   -> पंप / पम्प
+  // Configured device name is mandatory.
+  // Exact English name is accepted.
+  // Common Hindi pronunciations are accepted only
+  // for the matching configured English name.
+  //
+  // IMPORTANT:
+  // Do NOT use generic motor/pump/light words for
+  // another configured device.
   // =========================================
 
-  const deviceNameAliases = [name];
+  const normalizedCommand =
+    String(command || "")
+      .normalize("NFKC")
+      .replace(/\s+/g, " ")
+      .trim();
 
-  if (name === "switch") {
-    deviceNameAliases.push("स्विच");
+  const normalizedName =
+    String(name || "")
+      .normalize("NFKC")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  if (!normalizedName) {
+    return null;
   }
 
-  if (name === "motor") {
-    deviceNameAliases.push("मोटर");
-  }
+  const hindiAliases = {
+    light: ["लाइट", "लाईट"],
+    motor: ["मोटर"],
+    pump: ["पंप", "पम्प"],
+    fan: ["फैन", "पंखा"],
+    switch: ["स्विच"],
+    controller: ["कंट्रोलर"],
+    machine: ["मशीन"]
+  };
 
-  if (name === "pump") {
-    deviceNameAliases.push("पंप");
-    deviceNameAliases.push("पम्प");
-  }
+  const aliases = [
+    normalizedName,
+    ...(hindiAliases[normalizedName] || [])
+  ];
 
-  const deviceNameMatched =
-    deviceNameAliases.some(
-      alias => alias && command.includes(alias)
-    );
+  const deviceNameMatched = aliases.some(alias => {
+    return alias &&
+      normalizedCommand.includes(alias);
+  });
 
   if (!deviceNameMatched) {
     return null;

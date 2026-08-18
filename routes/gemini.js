@@ -611,7 +611,8 @@ return res.json({
       pump: ["पंप", "पम्प"],
       switch: ["स्विच"],
       controller: ["कंट्रोलर"],
-      machine: ["मशीन"]
+      machine: ["मशीन"],
+      light: ["लाइट", "लाईट"]
     };
 
     if (!deviceNameMatched) {
