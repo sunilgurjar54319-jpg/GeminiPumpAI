@@ -81,13 +81,58 @@ async function requireDeviceOwner(req, res, next) {
       });
     }
 
-    const device = result.documents[0];
+    let device = result.documents[0];
 
-    if (!device.ownerId || device.ownerId !== req.userId) {
+    // =========================================
+    // LEGACY DEVICE OWNER AUTO-LINK
+    // =========================================
+    // Existing devices created before ownerId was
+    // introduced may not have an ownerId.
+    // Link such a device to the authenticated user.
+    if (!device.ownerId) {
+
+      try {
+
+        device = await databases.updateDocument(
+          DATABASE_ID,
+          DEVICES_COLLECTION,
+          device.$id,
+          {
+            ownerId: req.userId
+          }
+        );
+
+        console.log(
+          "Device owner auto-linked:",
+          device.deviceId,
+          "->",
+          req.userId
+        );
+
+      } catch (ownerErr) {
+
+        console.error(
+          "Owner auto-link error:",
+          ownerErr.message
+        );
+
+        return res.status(500).json({
+          success: false,
+          error: "Unable to link device ownership"
+        });
+
+      }
+
+    }
+
+    // Existing owner must belong to logged-in user.
+    if (device.ownerId !== req.userId) {
+
       return res.status(403).json({
         success: false,
         error: "You are not the owner of this device"
       });
+
     }
 
     req.device = device;
