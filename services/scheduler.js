@@ -443,12 +443,19 @@ async function checkSchedules() {
         // POWER-CUT RECOVERY
         // =====================================
         //
-        // Recover ON only once for this schedule
-        // during the current date.
-        //
         // IMPORTANT:
-        // Do NOT expire every pending SCHEDULED ON.
-        // Other schedules may belong to the same device.
+        // This schedule may have scheduledDate, but while
+        // its ON -> OFF window is active, power-cut recovery
+        // must remain available.
+        //
+        // NO recoveryKey.
+        // NO once-per-day lock.
+        //
+        // Every time the actual pump status becomes OFF
+        // while this schedule is active, a fresh ON command
+        // can be created.
+        //
+        // UNKNOWN status is never forced to ON.
         // =====================================
 
         if (
@@ -459,25 +466,28 @@ async function checkSchedules() {
           currentTime < schedule.endTime
         ) {
 
-          const recoveryKey =
-            `${currentDate}-RECOVERY-${schedule.$id}`;
+          const currentStatus =
+            await getStatus(schedule.deviceId);
 
-          // Already recovered this schedule today.
+          console.log(
+            `🔎 POWER-CUT RECOVERY CHECK: ` +
+            `${schedule.deviceId} | ` +
+            `window=${schedule.startTime}-${schedule.endTime} | ` +
+            `now=${currentTime} | ` +
+            `status=${currentStatus ? currentStatus.status : "UNKNOWN"}`
+          );
+
           if (
-            schedule.lastExecuted !== recoveryKey
+            currentStatus &&
+            currentStatus.status === "OFF"
           ) {
 
-            const currentStatus =
-              await getStatus(schedule.deviceId);
+            console.log(
+              `🔄 POWER-CUT RECOVERY: ` +
+              `${schedule.deviceId} → ON`
+            );
 
-            if (
-              currentStatus &&
-              currentStatus.status === "OFF"
-            ) {
-
-              console.log(
-                `🔄 Power-Cut Recovery: ${schedule.deviceId} → ON`
-              );
+            try {
 
               const recoveryResult =
                 await executeCommand(
@@ -485,41 +495,52 @@ async function checkSchedules() {
                   "ON"
                 );
 
-              // Lock only after recovery command was
-              // accepted/queued. If it was ignored because
-              // another ON is already pending, do not lock.
               if (
-                !recoveryResult ||
-                recoveryResult.ignored !== true
+                recoveryResult &&
+                recoveryResult.ignored === true
               ) {
 
-                await databases.updateDocument(
-                  DATABASE_ID,
-                  SCHEDULE_COLLECTION,
-                  schedule.$id,
-                  {
-                    lastExecuted: recoveryKey
-                  }
-                );
-
                 console.log(
-                  `✅ Recovery ON locked: ` +
-                  `${schedule.deviceId} ` +
-                  `${currentDate}`
+                  `ℹ️ POWER-CUT RECOVERY SKIPPED: ` +
+                  `${schedule.deviceId} | ` +
+                  `${recoveryResult.message || "command already pending"}`
                 );
 
               } else {
 
                 console.log(
-                  `ℹ️ Recovery ON not locked: ${
-                    recoveryResult.message ||
-                    "command already pending"
-                  }`
+                  `✅ POWER-CUT RECOVERY ON: ` +
+                  `${schedule.deviceId}`
                 );
 
               }
 
+            } catch (recoveryError) {
+
+              console.log(
+                `❌ POWER-CUT RECOVERY ERROR: ` +
+                `${schedule.deviceId} | ` +
+                `${recoveryError.message}`
+              );
+
             }
+
+          } else if (
+            currentStatus &&
+            currentStatus.status === "ON"
+          ) {
+
+            console.log(
+              `🟢 POWER-CUT RECOVERY NOT REQUIRED: ` +
+              `${schedule.deviceId} already ON`
+            );
+
+          } else {
+
+            console.log(
+              `⚠️ POWER-CUT RECOVERY WAITING: ` +
+              `${schedule.deviceId} status is UNKNOWN`
+            );
 
           }
 
@@ -690,6 +711,121 @@ async function checkSchedules() {
           .includes(today)
       ) {
         continue;
+      }
+
+
+      // =======================================
+      // RECURRING POWER-CUT RECOVERY
+      // =======================================
+      //
+      // Schedule active है और actual status OFF है
+      // तो pump को वापस ON किया जाएगा।
+      //
+      // IMPORTANT:
+      // - कोई once-per-day lock नहीं
+      // - कोई recoveryKey नहीं
+      // - कितनी भी बार power cut हो सकता है
+      // - हर recovery के बाद फिर OFF मिलने पर ON होगा
+      // - schedule के बाहर कभी recovery नहीं होगी
+      // =======================================
+
+      if (
+      schedule.command === "ON" &&
+        schedule.startTime &&
+        schedule.endTime &&
+        currentTime >= schedule.startTime &&
+        currentTime < schedule.endTime
+      ) {
+
+        const currentStatus =
+          await getStatus(schedule.deviceId);
+
+        console.log(
+          `🔎 RECOVERY CHECK: ${schedule.deviceId} | ` +
+          `schedule=${schedule.startTime}-${schedule.endTime} | ` +
+          `now=${currentTime} | ` +
+          `status=${currentStatus ? currentStatus.status : "UNKNOWN"}`
+        );
+
+        // ---------------------------------------
+        // PUMP OFF = POWER-CUT RECOVERY REQUIRED
+        // ---------------------------------------
+
+        if (
+          currentStatus &&
+          currentStatus.status === "OFF"
+        ) {
+
+          console.log(
+            `🔄 POWER-CUT RECOVERY: ` +
+            `${schedule.deviceId} → ON`
+          );
+
+          try {
+
+            const recoveryResult =
+              await executeCommand(
+                schedule.deviceId,
+                "ON"
+              );
+
+            // -----------------------------------
+            // Already pending / already handled
+            // -----------------------------------
+
+            if (
+              recoveryResult &&
+              recoveryResult.ignored === true
+            ) {
+
+              console.log(
+                `ℹ️ POWER-CUT RECOVERY SKIPPED: ` +
+                `${schedule.deviceId} | ` +
+                `${recoveryResult.message || "command already pending"}`
+              );
+
+            } else {
+
+              console.log(
+                `✅ POWER-CUT RECOVERY SUCCESS: ` +
+                `${schedule.deviceId} → ON`
+              );
+
+            }
+
+          } catch (recoveryError) {
+
+            console.log(
+              `❌ POWER-CUT RECOVERY ERROR: ` +
+              `${schedule.deviceId} | ` +
+              `${recoveryError.message}`
+            );
+
+          }
+
+        } else if (
+          currentStatus &&
+          currentStatus.status === "ON"
+        ) {
+
+          console.log(
+            `🟢 POWER-CUT RECOVERY NOT REQUIRED: ` +
+            `${schedule.deviceId} already ON`
+          );
+
+        } else {
+
+          // UNKNOWN को ON नहीं करेंगे।
+          // इससे communication failure में pump
+          // accidentally start नहीं होगा।
+
+          console.log(
+            `⚠️ POWER-CUT RECOVERY WAITING: ` +
+            `${schedule.deviceId} status is UNKNOWN`
+          );
+
+        }
+
       }
 
 
