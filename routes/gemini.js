@@ -862,13 +862,7 @@ return res.json({
           // Normal duration:
           // अभी से duration शुरू होगी.
 
-          const now = new Date();
-
-          indiaDate = new Date(
-            now.toLocaleString("en-US", {
-              timeZone: "Asia/Kolkata"
-            })
-          );
+            indiaDate = new Date();
 
         }
 
