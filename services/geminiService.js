@@ -159,9 +159,9 @@ function deviceNameMatches(text, deviceName) {
 function understandCommand(text, deviceName) {
   const command = normalizeText(text);
 
-  if (!deviceNameMatches(command, deviceName)) {
-    return null;
-  }
+  // The selected device is already supplied by the Voice Control UI.
+  // Therefore the device name is optional for immediate ON/OFF commands.
+  // deviceNameMatches() remains available for explicit device-name validation.
 
   const onWords = [
     "on",

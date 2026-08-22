@@ -38,7 +38,12 @@ router.post("/voice", async (req, res) => {
 
   try {
 
-    const { text } = req.body;
+    const { text, deviceId: requestedDeviceId } = req.body;
+
+// Voice Control selected device.
+// PUMP001 remains only as backward-compatible fallback.
+const selectedDeviceId =
+  String(requestedDeviceId || "PUMP001").trim() || "PUMP001";
 
 
     // =========================================
@@ -69,7 +74,7 @@ router.post("/voice", async (req, res) => {
     // =========================================
 
     const device =
-      await getDevice("PUMP001");
+      await getDevice(selectedDeviceId);
 
     const deviceName =
       device.deviceName || "PUMP001";
@@ -111,7 +116,7 @@ router.post("/voice", async (req, res) => {
     if (isStatusWord && isMotorWord) {
 
       const statusResult =
-        await getStatus("PUMP001");
+        await getStatus(selectedDeviceId);
 
       const status =
         statusResult &&
@@ -125,7 +130,7 @@ router.post("/voice", async (req, res) => {
 
         type: "STATUS",
 
-        deviceId: "PUMP001",
+        deviceId: selectedDeviceId,
 
         status: status,
 
@@ -239,7 +244,7 @@ for (const [word, day] of Object.entries(dayMap)) {
           DATABASE_ID,
           SCHEDULE_COLLECTION,
           [
-            Query.equal("deviceId", "PUMP001"),
+            Query.equal("deviceId", selectedDeviceId),
             Query.limit(100)
           ]
         );
@@ -405,7 +410,7 @@ return res.json({
             DATABASE_ID,
             SCHEDULE_COLLECTION,
             [
-              Query.equal("deviceId", "PUMP001"),
+              Query.equal("deviceId", selectedDeviceId),
               Query.limit(100)
             ]
           );
@@ -517,7 +522,7 @@ return res.json({
           DATABASE_ID,
           SCHEDULE_COLLECTION,
           [
-            Query.equal("deviceId", "PUMP001"),
+            Query.equal("deviceId", selectedDeviceId),
             Query.equal("startTime", cancelTime),
             Query.limit(100)
           ]
@@ -567,15 +572,12 @@ return res.json({
     // गलत device name होने पर command आगे नहीं जाएगी.
     // =========================================
 
-    if (!deviceNameMatches(text, deviceName)) {
-      return res.json({
-        success: false,
-        type: "DEVICE_NAME_REQUIRED",
-        deviceId: "PUMP001",
-        message:
-          `कृपया ${deviceName} का नाम बोलकर command दें`
-      });
-    }
+    // Device name is NOT required here.
+    // The Voice Control UI already selected the target device.
+    // Example:
+    // A Device Voice button -> A Device
+    // B Device Voice button -> B Device
+
 
     // =========================================
     // Parse Voice
@@ -651,7 +653,7 @@ return res.json({
 
             {
 
-              deviceId: "PUMP001",
+              deviceId: selectedDeviceId,
 
               startTime: startTime,
 
@@ -724,7 +726,7 @@ return res.json({
 
             {
 
-              deviceId: "PUMP001",
+              deviceId: selectedDeviceId,
 
               startTime: startTime,
 
@@ -794,7 +796,7 @@ return res.json({
 
             {
 
-              deviceId: "PUMP001",
+              deviceId: selectedDeviceId,
 
               startTime: startTime,
 
@@ -877,7 +879,7 @@ return res.json({
         if (!isScheduledDuration) {
 
           await sendCommand(
-            "PUMP001",
+            selectedDeviceId,
             "ON"
           );
 
@@ -948,7 +950,7 @@ return res.json({
             SCHEDULE_COLLECTION,
             ID.unique(),
             {
-              deviceId: "PUMP001",
+              deviceId: selectedDeviceId,
               startTime,
               endTime: offTime,
               days: day,
@@ -1030,7 +1032,7 @@ return res.json({
 
             {
 
-              deviceId: "PUMP001",
+              deviceId: selectedDeviceId,
 
               startTime: startTime,
 
@@ -1106,7 +1108,7 @@ return res.json({
     const result =
       await sendCommand(
 
-        "PUMP001",
+        selectedDeviceId,
 
         command
 
@@ -1154,12 +1156,15 @@ router.get("/schedule/list", async (req, res) => {
 
   try {
 
+    const requestedDeviceId =
+      String(req.query.deviceId || "PUMP001").trim() || "PUMP001";
+
     const schedules =
       await databases.listDocuments(
         DATABASE_ID,
         SCHEDULE_COLLECTION,
         [
-          Query.equal("deviceId", "PUMP001"),
+          Query.equal("deviceId", requestedDeviceId),
           Query.limit(100)
         ]
       );

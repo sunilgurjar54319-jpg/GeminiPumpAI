@@ -88,10 +88,13 @@ export async function getDevice(deviceId) {
 // =========================================
 // Gemini Voice Command
 // =========================================
-export async function sendVoice(text) {
+export async function sendVoice(text, deviceId) {
   const res = await authFetch("/api/gemini/voice", {
     method: "POST",
-    body: JSON.stringify({ text })
+    body: JSON.stringify({
+      text,
+      deviceId
+    })
   });
 
   return await res.json();

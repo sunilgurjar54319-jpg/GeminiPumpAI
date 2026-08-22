@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { sendVoice } from "../api";
 
-function VoiceControl({ onCommandSent, deviceName }) {
+function VoiceControl({ onCommandSent, deviceName, selectedDeviceId }) {
 
   const displayName = deviceName || "Pump";
   const [listening, setListening] = useState(false);
@@ -115,7 +115,7 @@ function VoiceControl({ onCommandSent, deviceName }) {
       console.log("🛠️ NORMALIZED TEXT:", text);
 
       try {
-        const data = await sendVoice(text);
+        const data = await sendVoice(text, selectedDeviceId);
 
         console.log("Voice API:", data);
 
