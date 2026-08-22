@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getStats } from "../api";
 
 
-function StatsCard({ refresh, deviceName }) {
+function StatsCard({ refresh, deviceName, selectedDeviceId }) {
 
 
 const [stats,setStats]=useState(null);
@@ -13,7 +13,7 @@ async function load(){
 
  try{
 
- const data = await getStats("PUMP001");
+ const data = await getStats(selectedDeviceId);
 
  setStats(data);
 

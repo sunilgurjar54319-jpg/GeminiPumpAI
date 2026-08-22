@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getHistory, clearHistory } from "../api";
 
-function HistoryCard({ deviceName }) {
+function HistoryCard({ deviceName, selectedDeviceId }) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -9,7 +9,7 @@ function HistoryCard({ deviceName }) {
 
   async function loadHistory() {
     try {
-      const data = await getHistory("PUMP001");
+      const data = await getHistory(selectedDeviceId);
 
       if (Array.isArray(data)) {
         setHistory(data);
@@ -32,7 +32,7 @@ function HistoryCard({ deviceName }) {
     try {
       setLoading(true);
 
-      const result = await clearHistory("PUMP001");
+      const result = await clearHistory(selectedDeviceId);
 
       if (result?.success !== false) {
         setHistory([]);

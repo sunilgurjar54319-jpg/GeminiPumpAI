@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 
 import { authFetch, deviceFetch } from "../api";
-const DEVICE_ID = "PUMP001";
 
-function DeviceConnection() {
+function DeviceConnection({ onNameChanged, selectedDeviceId }) {
   const [data, setData] = useState(null);
   const [pumpStatus, setPumpStatus] = useState("UNKNOWN");
 
@@ -21,7 +20,7 @@ function DeviceConnection() {
   async function fetchDeviceStatus() {
     try {
       const res = await deviceFetch(
-        `/api/device/${DEVICE_ID}`,
+        `/api/device/id/${selectedDeviceId}`,
         {
           cache: "no-store"
         }
@@ -73,7 +72,7 @@ function DeviceConnection() {
     try {
 
       const res = await deviceFetch(
-        `/api/status/${DEVICE_ID}`,
+        `/api/status/${selectedDeviceId}`,
         {
           cache: "no-store"
         }
@@ -135,7 +134,7 @@ function DeviceConnection() {
       setNameMessage("");
 
       const res = await authFetch(
-        `/api/device/${DEVICE_ID}/name`,
+        `/api/device/id/${selectedDeviceId}/name`,
         {
           method: "PUT",
 
@@ -169,6 +168,12 @@ function DeviceConnection() {
         deviceName:
           result.deviceName
       }));
+
+      // App.jsx को नया device name तुरंत दें
+      // ताकि dashboard के सभी components में नया नाम दिखे।
+      if (onNameChanged) {
+        onNameChanged(result.deviceName);
+      }
 
       setEditingName(false);
 
@@ -330,7 +335,7 @@ function DeviceConnection() {
 
             <span>
               {data?.deviceName ||
-                DEVICE_ID}
+                selectedDeviceId}
             </span>
 
             <button
@@ -338,7 +343,7 @@ function DeviceConnection() {
 
                 setNewDeviceName(
                   data?.deviceName ||
-                  DEVICE_ID
+                  selectedDeviceId
                 );
 
                 setNameMessage("");
@@ -458,7 +463,7 @@ function DeviceConnection() {
         }}
       >
         <b>🆔 Device ID:</b>{" "}
-        {DEVICE_ID}
+        {selectedDeviceId}
       </div>
 
 

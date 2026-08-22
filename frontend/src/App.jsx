@@ -12,18 +12,21 @@ import Login from "./components/Login";
 import "./App.css";
 
 import { authFetch } from "./api";
-const API = "https://geminipumpai.onrender.com";
-const DEVICE_ID = "PUMP001";
+import DeviceSelector from "./components/DeviceSelector";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 function App() {
   const [user, setUser] = useState(null);
   const [refresh, setRefresh] = useState(false);
-  const [deviceName, setDeviceName] = useState(DEVICE_ID);
+  const [selectedDeviceId, setSelectedDeviceId] = useState("PUMP001");
+  const [deviceName, setDeviceName] = useState("PUMP001");
 
-  async function loadDeviceName() {
+  async function loadDeviceName(deviceId = selectedDeviceId) {
+    if (!deviceId) return;
+
     try {
       const res = await authFetch(
-        `${API}/api/device/${DEVICE_ID}?t=${Date.now()}`,
+        `/api/device/id/${deviceId}?t=${Date.now()}`,
         { cache: "no-store" }
       );
 
@@ -33,9 +36,11 @@ function App() {
 
       const data = await res.json();
 
-      if (data.deviceName) {
-        setDeviceName(data.deviceName);
-      }
+      setDeviceName(
+        data.deviceName ||
+        data.deviceId ||
+        deviceId
+      );
     } catch (err) {
       console.error("Device name error:", err);
     }
@@ -43,30 +48,46 @@ function App() {
 
   function refreshStatus() {
     setRefresh(prev => !prev);
-    loadDeviceName();
+    loadDeviceName(selectedDeviceId);
+  }
+
+  function handleDeviceChange(deviceId) {
+    setSelectedDeviceId(deviceId);
+    setDeviceName(deviceId || "Device");
+    setRefresh(prev => !prev);
+
+    if (deviceId) {
+      loadDeviceName(deviceId);
+    }
   }
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !selectedDeviceId) return;
 
-    loadDeviceName();
+    loadDeviceName(selectedDeviceId);
 
     const timer = setInterval(
-      loadDeviceName,
+      () => loadDeviceName(selectedDeviceId),
       5000
     );
 
     return () => clearInterval(timer);
-  }, [user]);
+  }, [user, selectedDeviceId]);
 
   if (!user) {
     return <Login onLogin={setUser} />;
   }
 
   return (
-    <div className="dashboard">
+    <ErrorBoundary>
+      <div className="dashboard">
 
       <Header deviceName={deviceName} />
+
+      <DeviceSelector
+        selectedDeviceId={selectedDeviceId}
+        onDeviceChange={handleDeviceChange}
+      />
 
       <div className="grid">
 
@@ -74,12 +95,14 @@ function App() {
           <StatusCard
             refresh={refresh}
             deviceName={deviceName}
+            selectedDeviceId={selectedDeviceId}
           />
         </div>
 
         <div className="card">
           <DeviceConnection
-            onNameChanged={loadDeviceName}
+            selectedDeviceId={selectedDeviceId}
+            onNameChanged={() => loadDeviceName(selectedDeviceId)}
           />
         </div>
 
@@ -87,6 +110,7 @@ function App() {
           <ManualControl
             onCommandSent={refreshStatus}
             deviceName={deviceName}
+            selectedDeviceId={selectedDeviceId}
           />
         </div>
 
@@ -94,6 +118,7 @@ function App() {
           <VoiceControl
             onCommandSent={refreshStatus}
             deviceName={deviceName}
+            selectedDeviceId={selectedDeviceId}
           />
         </div>
 
@@ -101,6 +126,7 @@ function App() {
           <StatsCard
             refresh={refresh}
             deviceName={deviceName}
+            selectedDeviceId={selectedDeviceId}
           />
         </div>
 
@@ -108,18 +134,21 @@ function App() {
           <Schedule
             refresh={refresh}
             deviceName={deviceName}
+            selectedDeviceId={selectedDeviceId}
           />
         </div>
 
         <div className="card full">
           <HistoryCard
             deviceName={deviceName}
+            selectedDeviceId={selectedDeviceId}
           />
         </div>
 
       </div>
 
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }
 

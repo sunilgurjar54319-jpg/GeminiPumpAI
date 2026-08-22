@@ -16,7 +16,7 @@ const DAYS = [
   ["Sun", "Sun"]
 ];
 
-function Schedule({ refresh, deviceName }) {
+function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -48,7 +48,7 @@ function Schedule({ refresh, deviceName }) {
 
     try {
 
-      const data = await getSchedules("PUMP001");
+      const data = await getSchedules(selectedDeviceId);
 
       if (data.success) {
         setSchedules(data.schedules);
@@ -113,7 +113,7 @@ function Schedule({ refresh, deviceName }) {
 
       const result = await saveSchedule({
 
-        deviceId: "PUMP001",
+        deviceId: selectedDeviceId,
 
         startTime,
 

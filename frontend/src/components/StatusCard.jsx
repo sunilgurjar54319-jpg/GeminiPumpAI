@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { getStatus, getDevice } from "../api";
 
-const DEVICE_ID = "PUMP001";
 
 // Heartbeat 30 seconds se purana ho to ESP32 offline
 const ONLINE_TIMEOUT = 60000;
 
-function StatusCard({ refresh, deviceName }) {
+function StatusCard({ refresh, deviceName, selectedDeviceId }) {
 
   // =========================================
   // PUMP STATUS
@@ -38,7 +37,7 @@ function StatusCard({ refresh, deviceName }) {
       setLoading(true);
       setError("");
 
-      const data = await getStatus(DEVICE_ID);
+      const data = await getStatus(selectedDeviceId);
 
       console.log("Pump Status API:", data);
 
@@ -94,7 +93,7 @@ function StatusCard({ refresh, deviceName }) {
 
     try {
 
-      const data = await getDevice(DEVICE_ID);
+      const data = await getDevice(selectedDeviceId);
 
       console.log(
         "ESP32 Device API:",

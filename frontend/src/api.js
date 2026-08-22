@@ -73,7 +73,7 @@ export async function deviceFetch(path, options = {}) {
 // =========================================
 export async function getDevice(deviceId) {
   const res = await deviceFetch(
-    `/api/device/${deviceId}`
+    `/api/device/id/${deviceId}`
   );
 
   if (!res.ok) {

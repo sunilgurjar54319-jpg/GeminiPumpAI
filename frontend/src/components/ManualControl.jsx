@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { authFetch, getDevice } from "../api";
 
-const DEVICE_ID = "PUMP001";
 const ONLINE_TIMEOUT = 60000;
 
-function ManualControl({ onCommandSent, deviceName }) {
+function ManualControl({ onCommandSent, deviceName, selectedDeviceId }) {
 
   const displayName = deviceName || "Pump";
 
@@ -21,7 +20,7 @@ function ManualControl({ onCommandSent, deviceName }) {
 
     try {
 
-      const data = await getDevice(DEVICE_ID);
+      const data = await getDevice(selectedDeviceId);
 
       console.log(
         "MANUAL CONTROL DEVICE API:",
@@ -114,7 +113,7 @@ function ManualControl({ onCommandSent, deviceName }) {
     try {
 
       const res = await authFetch(
-        `/api/status/${DEVICE_ID}`,
+        `/api/status/${selectedDeviceId}`,
         { cache: "no-store" }
       );
 
@@ -223,7 +222,7 @@ function ManualControl({ onCommandSent, deviceName }) {
           },
 
           body: JSON.stringify({
-            deviceId: DEVICE_ID,
+            deviceId: selectedDeviceId,
             command
           })
         }

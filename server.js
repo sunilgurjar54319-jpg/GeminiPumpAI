@@ -6,6 +6,7 @@ const deviceRoutes = require("./routes/device");
 const geminiRoutes = require("./routes/gemini");
 const scheduleRoutes = require("./routes/schedule");
 const recoveryRoutes = require("./routes/recovery");
+const authRoutes = require("./routes/auth");
 const express = require("express");
 const cors = require("cors");
 const statusRoutes = require("./routes/status");
@@ -29,6 +30,8 @@ app.get("/api/test", (req, res) => {
         message: "Gemini Pump AI API Working"
     });
 });
+
+app.use("/api/auth", authRoutes);
 
 app.use("/api/device", deviceRoutes);
 
