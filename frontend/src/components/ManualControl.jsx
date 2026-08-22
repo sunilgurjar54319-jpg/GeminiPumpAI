@@ -16,6 +16,14 @@ function ManualControl({ onCommandSent, deviceName, selectedDeviceId }) {
   // Check ESP32 connection
   // =========================================
 
+  // Device switch होते ही पुराना status तुरंत साफ करें
+  useEffect(() => {
+    setIsOn(false);
+    setDeviceOnline(false);
+    setLoading(false);
+    setMessage("");
+  }, [selectedDeviceId]);
+
   async function loadDeviceStatus() {
 
     try {
@@ -145,6 +153,11 @@ function ManualControl({ onCommandSent, deviceName, selectedDeviceId }) {
 
   useEffect(() => {
 
+    if (!selectedDeviceId) {
+      setDeviceOnline(false);
+      return;
+    }
+
     loadDeviceStatus();
 
     const timer = setInterval(
@@ -154,7 +167,7 @@ function ManualControl({ onCommandSent, deviceName, selectedDeviceId }) {
 
     return () => clearInterval(timer);
 
-  }, []);
+  }, [selectedDeviceId]);
 
 
   // =========================================

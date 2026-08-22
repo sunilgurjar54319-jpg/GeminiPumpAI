@@ -205,6 +205,12 @@ function DeviceConnection({ onNameChanged, selectedDeviceId }) {
 
   useEffect(() => {
 
+    // Device बदलते ही पुराने device का data हटाएँ
+    setData(null);
+    setPumpStatus("UNKNOWN");
+    setOnline(false);
+    setNameMessage("");
+
     fetchDeviceStatus();
     fetchPumpStatus();
 
@@ -219,7 +225,7 @@ function DeviceConnection({ onNameChanged, selectedDeviceId }) {
     return () =>
       clearInterval(timer);
 
-  }, []);
+  }, [selectedDeviceId]);
 
 
   // =========================================

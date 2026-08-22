@@ -383,9 +383,14 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
   useEffect(() => {
 
+    // Device बदलते ही पुराने device की schedules हटाएँ
+    setSchedules([]);
+    setEditingId(null);
+    setMessage("");
+
     loadSchedules();
 
-  }, [refresh]);
+  }, [refresh, selectedDeviceId]);
 
 
   // =========================

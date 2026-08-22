@@ -30,9 +30,12 @@ async function load(){
 
 useEffect(()=>{
 
+ // Device बदलते ही पुराने device के stats हटाएँ
+ setStats(null);
+
  load();
 
-},[refresh]);
+},[refresh, selectedDeviceId]);
 
 
 

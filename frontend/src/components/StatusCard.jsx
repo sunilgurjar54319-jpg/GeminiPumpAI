@@ -183,6 +183,14 @@ function StatusCard({ refresh, deviceName, selectedDeviceId }) {
 
   useEffect(() => {
 
+    // Device बदलते ही पुराने device का data तुरंत हटाएँ
+    setStatus("OFF");
+    setUpdated("");
+    setWifiStatus("UNKNOWN");
+    setLastSeen("");
+    setEspOnline(false);
+    setError("");
+
     refreshAll();
 
     const timer =
@@ -194,7 +202,7 @@ function StatusCard({ refresh, deviceName, selectedDeviceId }) {
     return () =>
       clearInterval(timer);
 
-  }, [refresh]);
+  }, [refresh, selectedDeviceId]);
 
 
   const displayName = deviceName || "Pump";

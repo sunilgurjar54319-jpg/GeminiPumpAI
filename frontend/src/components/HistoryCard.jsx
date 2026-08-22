@@ -63,12 +63,17 @@ function HistoryCard({ deviceName, selectedDeviceId }) {
   }
 
   useEffect(() => {
+
+    // Device बदलते ही पुराने device की history हटाएँ
+    setHistory([]);
+
     loadHistory();
 
     const timer = setInterval(loadHistory, 5000);
 
     return () => clearInterval(timer);
-  }, []);
+
+  }, [selectedDeviceId]);
 
   return (
     <div style={{ padding: "20px" }}>
