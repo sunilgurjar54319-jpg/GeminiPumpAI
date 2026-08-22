@@ -17,7 +17,7 @@ function DeviceSelector({ selectedDeviceId, onDeviceChange }) {
 
       const data = await res.json();
       console.log("DEVICE LIST RESPONSE:", data);
-      setMessage("DEBUG: " + JSON.stringify(data));
+      
 
       if (!res.ok || data.success === false) {
         throw new Error(
@@ -72,7 +72,7 @@ function DeviceSelector({ selectedDeviceId, onDeviceChange }) {
 
       const data = await res.json();
       console.log("DEVICE LIST RESPONSE:", data);
-      setMessage("DEBUG: " + JSON.stringify(data));
+      
 
       if (!res.ok || data.success === false) {
         throw new Error(
