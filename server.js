@@ -1,3 +1,4 @@
+const path = require("path");
 require("dns").setDefaultResultOrder("ipv4first");
 require("./services/scheduler");// require("./services/scheduler");
 const historyRoutes = require("./routes/history");
@@ -15,13 +16,13 @@ const statsRoutes = require("./routes/stats");
 
 const app = express();
 
+const frontendDist = path.join(__dirname, "frontend", "dist");
+app.use(express.static(frontendDist));
+
 app.use(cors());
 app.use(express.json());
 
-// Home Route
-app.get("/", (req, res) => {
-    res.send("Gemini Pump AI Server Running");
-});
+
 
 // Test API
 app.get("/api/test", (req, res) => {
@@ -49,8 +50,22 @@ app.use("/api/schedule", scheduleRoutes);
 
 app.use("/api/recovery", recoveryRoutes);
 
+// React SPA fallback
+app.use((req, res, next) => {
+    if (req.path.startsWith("/api/")) {
+        return next();
+    }
+
+    res.sendFile(
+        path.join(frontendDist, "index.html"),
+        (err) => {
+            if (err) next(err);
+        }
+    );
+});
+
 // Server Port
-const PORT = 5001;
+const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => {
     console.log(`🚀 Server Running on Port ${PORT}`);
