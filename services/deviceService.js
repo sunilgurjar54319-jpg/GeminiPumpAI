@@ -10,7 +10,7 @@ const DEVICES_COLLECTION =
 // Register Device
 // =========================================
 
-async function registerDevice(deviceId, deviceName) {
+async function registerDevice(deviceId, deviceName, ownerId) {
 
     try {
 
@@ -21,6 +21,7 @@ async function registerDevice(deviceId, deviceName) {
             {
                 deviceId,
                 deviceName,
+                ownerId: ownerId || null,
                 status: "OFFLINE",
                 wifiStatus: "DISCONNECTED",
                 lastSeen: new Date().toISOString(),
@@ -47,6 +48,32 @@ async function registerDevice(deviceId, deviceName) {
 
 }
 
+
+
+// =========================================
+// List Devices for Logged-in User
+// =========================================
+async function listDevices(ownerId) {
+    try {
+        if (!ownerId) {
+            throw new Error("ownerId is required");
+        }
+
+        const result = await databases.listDocuments(
+            DATABASE_ID,
+            DEVICES_COLLECTION,
+            [
+                Query.equal("ownerId", ownerId),
+                Query.limit(100)
+            ]
+        );
+
+        return result.documents;
+    } catch (err) {
+        console.error("listDevices Error:", err.message);
+        throw err;
+    }
+}
 
 // =========================================
 // ESP32 Heartbeat
@@ -293,6 +320,7 @@ module.exports = {
 
     getDevice,
     registerDevice,
+    listDevices,
     heartbeatDevice,
     updateDeviceName
 
