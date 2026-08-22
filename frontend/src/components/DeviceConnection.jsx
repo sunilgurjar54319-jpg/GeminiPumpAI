@@ -20,7 +20,7 @@ function DeviceConnection({ onNameChanged, selectedDeviceId }) {
   async function fetchDeviceStatus() {
     try {
       const res = await deviceFetch(
-        `/api/device/id/${selectedDeviceId}`,
+        `/api/device/${selectedDeviceId}`,
         {
           cache: "no-store"
         }
@@ -134,7 +134,7 @@ function DeviceConnection({ onNameChanged, selectedDeviceId }) {
       setNameMessage("");
 
       const res = await authFetch(
-        `/api/device/id/${selectedDeviceId}/name`,
+        `/api/device/${selectedDeviceId}/name`,
         {
           method: "PUT",
 

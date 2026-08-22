@@ -26,7 +26,7 @@ function App() {
 
     try {
       const res = await authFetch(
-        `/api/device/id/${deviceId}?t=${Date.now()}`,
+        `/api/device/${deviceId}?t=${Date.now()}`,
         { cache: "no-store" }
       );
 
