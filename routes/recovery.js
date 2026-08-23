@@ -275,8 +275,62 @@ router.get("/:deviceId", async (req, res) => {
     }
 
 
+    // =====================================
+    // MANUAL OFF SAFETY LOCK
+    // =====================================
+    // If the latest manual command is OFF,
+    // recovery must NEVER return ON.
+    // =====================================
+
+    let manualOffActive = false;
+
+    try {
+
+      const latestManual =
+        await databases.listDocuments(
+          DATABASE_ID,
+          COMMAND_COLLECTION,
+          [
+            Query.equal("deviceId", deviceId),
+            Query.equal("source", "MANUAL"),
+            Query.orderDesc("$createdAt"),
+            Query.limit(1)
+          ]
+        );
+
+      if (
+        latestManual.documents.length > 0 &&
+        String(
+          latestManual.documents[0].command || ""
+        ).toUpperCase() === "OFF"
+      ) {
+        manualOffActive = true;
+      }
+
+    } catch (error) {
+
+      console.log(
+        `⚠️ Recovery manual OFF check failed: ${deviceId} | ${error.message}`
+      );
+
+      // Safety-first:
+      // If manual state cannot be verified,
+      // recovery must not turn the pump ON.
+      manualOffActive = true;
+    }
+
     const command =
-      shouldBeON ? "ON" : "OFF";
+      manualOffActive
+        ? "OFF"
+        : (shouldBeON ? "ON" : "OFF");
+
+    if (manualOffActive) {
+
+      console.log(
+        `🛑 RECOVERY MANUAL OFF LOCK: ${deviceId} → OFF`
+      );
+
+    }
 
 
     // =====================================

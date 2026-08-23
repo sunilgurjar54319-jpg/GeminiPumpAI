@@ -6,17 +6,49 @@ const { Query } = require("node-appwrite");
 
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID;
 const SCHEDULE_COLLECTION = "schedules";
+const COMMAND_COLLECTION = "commands";
 
 
 // =========================================
 // Execute Scheduled Command
 // =========================================
 
-async function executeCommand(deviceId, command) {
+async function executeCommand(deviceId, command, source = "SCHEDULED") {
 
   try {
 
-    const result = await sendCommand(deviceId, command, "SCHEDULED");
+    // =========================================
+    // FINAL MANUAL OFF SAFETY GATE
+    // =========================================
+    // Manual OFF active ho to automatic ON
+    // Appwrite command banane se pehle block hoga.
+    // =========================================
+
+    if (
+      String(command || "").toUpperCase() === "ON" &&
+      source !== "MANUAL"
+    ) {
+      const manualOff = await isManualOffActive(deviceId);
+
+      if (manualOff) {
+        console.log(
+          `🛑 FINAL MANUAL OFF GATE: ${deviceId} → ${source} ON BLOCKED`
+        );
+
+        return {
+          ignored: true,
+          blocked: true,
+          status: "OFF",
+          message: "Manual OFF active - automatic ON blocked"
+        };
+      }
+    }
+
+    const result = await sendCommand(
+      deviceId,
+      command,
+      source
+    );
 
     // -----------------------------------------
     // Already in requested state
@@ -158,6 +190,44 @@ function getIndiaDateString(indiaDate) {
 // then removes them from Appwrite.
 // Recurring schedules are never removed.
 // =========================================
+
+// =========================================
+// MANUAL OFF PROTECTION
+// =========================================
+async function isManualOffActive(deviceId) {
+  try {
+    const result = await databases.listDocuments(
+      DATABASE_ID,
+      COMMAND_COLLECTION,
+      [
+        Query.equal("deviceId", deviceId),
+        Query.equal("source", "MANUAL"),
+        Query.orderDesc("$createdAt"),
+        Query.limit(1)
+      ]
+    );
+
+    if (!result.documents.length) {
+      return false;
+    }
+
+    const latestManualCommand = result.documents[0];
+
+    return (
+      String(latestManualCommand.command || "").toUpperCase() === "OFF"
+    );
+
+  } catch (error) {
+    console.log(
+      `⚠️ Manual OFF check failed: ${deviceId} | ${error.message}`
+    );
+
+    // Safety-first:
+    // अगर manual state verify नहीं हो सके,
+    // तो automatic recovery मत करो.
+    return true;
+  }
+}
 
 async function cleanupOldOneTimeSchedules() {
 
@@ -482,49 +552,46 @@ async function checkSchedules() {
             currentStatus.status === "OFF"
           ) {
 
+            const manualOffActive =
+              await isManualOffActive(schedule.deviceId);
+
+            if (manualOffActive) {
+              console.log(
+                `🛑 MANUAL OFF PROTECTION: ${schedule.deviceId} → recovery blocked`
+              );
+              continue;
+            }
+
             console.log(
               `🔄 POWER-CUT RECOVERY: ` +
               `${schedule.deviceId} → ON`
             );
 
             try {
+              const recoveryResult = await executeCommand(
+                schedule.deviceId,
+                "ON"
+              );
 
-              const recoveryResult =
-                await executeCommand(
-                  schedule.deviceId,
-                  "ON"
-                );
-
-              if (
-                recoveryResult &&
-                recoveryResult.ignored === true
-              ) {
-
+              if (recoveryResult && recoveryResult.ignored === true) {
                 console.log(
                   `ℹ️ POWER-CUT RECOVERY SKIPPED: ` +
                   `${schedule.deviceId} | ` +
                   `${recoveryResult.message || "command already pending"}`
                 );
-
               } else {
-
                 console.log(
                   `✅ POWER-CUT RECOVERY ON: ` +
                   `${schedule.deviceId}`
                 );
-
               }
-
             } catch (recoveryError) {
-
               console.log(
                 `❌ POWER-CUT RECOVERY ERROR: ` +
                 `${schedule.deviceId} | ` +
                 `${recoveryError.message}`
               );
-
             }
-
           } else if (
             currentStatus &&
             currentStatus.status === "ON"
@@ -575,10 +642,19 @@ async function checkSchedules() {
             }
 
 
-            await executeCommand(
-              schedule.deviceId,
-              command
-            );
+            if (
+              command === "ON" &&
+              await isManualOffActive(schedule.deviceId)
+            ) {
+              console.log(
+                `🛑 MANUAL OFF PROTECTION: ${schedule.deviceId} → scheduled START blocked`
+              );
+            } else {
+              await executeCommand(
+                schedule.deviceId,
+                command
+              );
+            }
 
 
             // If start and end are the same,
@@ -756,6 +832,16 @@ async function checkSchedules() {
           currentStatus.status === "OFF"
         ) {
 
+          const manualOffActive =
+            await isManualOffActive(schedule.deviceId);
+
+          if (manualOffActive) {
+            console.log(
+              `🛑 MANUAL OFF PROTECTION: ${schedule.deviceId} → recovery blocked`
+            );
+            continue;
+          }
+
           console.log(
             `🔄 POWER-CUT RECOVERY: ` +
             `${schedule.deviceId} → ON`
@@ -850,10 +936,16 @@ async function checkSchedules() {
         }
 
 
-        await executeCommand(
-          schedule.deviceId,
-          "ON"
-        );
+        if (await isManualOffActive(schedule.deviceId)) {
+          console.log(
+            `🛑 MANUAL OFF PROTECTION: ${schedule.deviceId} → recurring scheduled START blocked`
+          );
+        } else {
+          await executeCommand(
+            schedule.deviceId,
+            "ON"
+          );
+        }
 
 
         await databases.updateDocument(

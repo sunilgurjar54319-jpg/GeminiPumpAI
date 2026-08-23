@@ -20,6 +20,69 @@ async function sendCommand(deviceId, command, source = "MANUAL") {
     }
 
 
+    // =========================================
+    // CENTRAL MANUAL OFF SAFETY LOCK
+    // =========================================
+    // Latest MANUAL OFF blocks every automatic ON.
+    // A later MANUAL ON automatically releases the lock.
+    // =========================================
+    if (
+      command === "ON" &&
+      source !== "MANUAL"
+    ) {
+
+      try {
+
+        const latestManual =
+          await databases.listDocuments(
+            DATABASE_ID,
+            COMMAND_COLLECTION,
+            [
+              Query.equal("deviceId", deviceId),
+              Query.equal("source", "MANUAL"),
+              Query.orderDesc("$createdAt"),
+              Query.limit(1)
+            ]
+          );
+
+        if (
+          latestManual.documents.length > 0 &&
+          String(
+            latestManual.documents[0].command || ""
+          ).toUpperCase() === "OFF"
+        ) {
+
+          console.log(
+            `🛑 CENTRAL MANUAL OFF LOCK: ${deviceId} → ${source} ON blocked`
+          );
+
+          return {
+            ignored: true,
+            manualOff: true,
+            status: "OFF",
+            message: "Manual OFF protection active"
+          };
+        }
+
+      } catch (error) {
+
+        console.log(
+          `⚠️ Central manual OFF check failed: ${deviceId} | ${error.message}`
+        );
+
+        // Safety-first:
+        // If manual state cannot be verified,
+        // do not allow automatic ON.
+        return {
+          ignored: true,
+          manualOff: true,
+          status: "UNKNOWN",
+          message: "Manual OFF state could not be verified"
+        };
+      }
+    }
+
+
     // ================================    // Get pending commands
     // ================================
     const pending =
@@ -184,14 +247,22 @@ const STALE_AFTER_MS = 5 * 60 * 1000;
           command,
           executed: false,
           source,
+          manualOff: source === "MANUAL" && command === "OFF",
           createdAt: new Date().toISOString()
         }
       );
 
 
     console.log(
-      `Command Queued: ${command} -> ${deviceId}`
+      `Command Queued: ${command} -> ${deviceId} | source=${source}`
     );
+
+    if (String(command).toUpperCase() === "ON") {
+      console.log(
+        `🚨 ON COMMAND CREATED: ${deviceId} | source=${source}`
+      );
+      console.trace("ON command call stack");
+    }
 
 
     return result;
@@ -253,7 +324,77 @@ async function getCommand(deviceId) {
     // ==================================
     const STALE_AFTER_MS = 5 * 60 * 1000;
 
+
+    // ==================================
+    // MANUAL OFF PROTECTION AT DEVICE QUEUE
+    // ==================================
+    // Latest MANUAL OFF must also block any
+    // already-queued automatic SCHEDULED ON.
+    // This is the final protection before the
+    // command is delivered to the device.
+    // ==================================
+    let manualOffActive = false;
+
+    try {
+      const latestManual = await databases.listDocuments(
+        DATABASE_ID,
+        COMMAND_COLLECTION,
+        [
+          Query.equal("deviceId", deviceId),
+          Query.equal("source", "MANUAL"),
+          Query.orderDesc("$createdAt"),
+          Query.limit(1)
+        ]
+      );
+
+      if (latestManual.documents.length > 0) {
+        manualOffActive =
+          String(
+            latestManual.documents[0].command || ""
+          ).toUpperCase() === "OFF";
+      }
+    } catch (error) {
+      console.log(
+        `⚠️ GET COMMAND manual OFF check failed: ${deviceId} | ${error.message}`
+      );
+
+      // Safety-first: if manual state cannot be verified,
+      // do NOT allow an automatic ON to reach the device.
+      manualOffActive = true;
+    }
     for (const pendingCommand of result.documents) {
+
+      // ==================================
+      // BLOCK QUEUED AUTOMATIC ON
+      // ==================================
+      // ==================================
+      // BLOCK QUEUED AUTOMATIC ON
+      // ==================================
+      //
+      // Latest MANUAL OFF blocks ALL automatic ON.
+      // MANUAL ON is still allowed.
+      // ==================================
+
+      if (
+        manualOffActive &&
+        String(pendingCommand.command || "").toUpperCase() === "ON" &&
+        pendingCommand.source !== "MANUAL"
+      ) {
+        await databases.updateDocument(
+          DATABASE_ID,
+          COMMAND_COLLECTION,
+          pendingCommand.$id,
+          {
+            executed: true
+          }
+        );
+
+        console.log(
+          `🛑 GET COMMAND MANUAL OFF LOCK: ${deviceId} → automatic ON blocked | source=${pendingCommand.source} | ${pendingCommand.$id}`
+        );
+
+        continue;
+      }
 
       if (
         pendingCommand.source === "SCHEDULED" &&
@@ -291,6 +432,10 @@ async function getCommand(deviceId) {
           continue;
         }
       }
+
+      console.log(
+        `📤 GET COMMAND: ${deviceId} | command=${pendingCommand.command} | source=${pendingCommand.source} | manualOff=${pendingCommand.manualOff} | id=${pendingCommand.$id}`
+      );
 
       return pendingCommand;
     }
