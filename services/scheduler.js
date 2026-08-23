@@ -642,19 +642,19 @@ async function checkSchedules() {
             }
 
 
-            if (
-              command === "ON" &&
-              await isManualOffActive(schedule.deviceId)
-            ) {
-              console.log(
-                `🛑 MANUAL OFF PROTECTION: ${schedule.deviceId} → scheduled START blocked`
-              );
-            } else {
-              await executeCommand(
-                schedule.deviceId,
-                command
-              );
-            }
+            await executeCommand(
+
+
+
+              schedule.deviceId,
+
+
+
+              command
+
+
+
+            );
 
 
             // If start and end are the same,
