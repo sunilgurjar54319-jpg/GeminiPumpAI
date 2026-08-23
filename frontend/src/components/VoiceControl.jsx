@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { sendVoice } from "../api";
+import Icon from "./Icon";
 
 // CACHE_VERSION_20260823_VOICE_FIX
 function VoiceControl({ onCommandSent, deviceName, selectedDeviceId }) {
@@ -15,7 +16,7 @@ function VoiceControl({ onCommandSent, deviceName, selectedDeviceId }) {
       window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      setMessage("❌ Voice recognition browser में supported नहीं है");
+      setMessage(" Voice recognition browser में supported नहीं है");
       return;
     }
 
@@ -26,7 +27,7 @@ function VoiceControl({ onCommandSent, deviceName, selectedDeviceId }) {
     recognition.interimResults = false;
 
     setListening(true);
-    setMessage("🎙️ सुन रहा हूँ...");
+    setMessage(" सुन रहा हूँ...");
 
     recognition.onresult = async (event) => {
       const rawText = event.results[0][0].transcript;
@@ -122,7 +123,7 @@ function VoiceControl({ onCommandSent, deviceName, selectedDeviceId }) {
 
         if (!data.success) {
           setMessage(
-            `❌ ${data.message || "Command समझ नहीं आया"}`
+            ` ${data.message || "Command समझ नहीं आया"}`
           );
           return;
         }
@@ -133,9 +134,9 @@ function VoiceControl({ onCommandSent, deviceName, selectedDeviceId }) {
 
         if (data.type === "IMMEDIATE") {
           if (data.command === "ON") {
-            setMessage(`✅ ${displayName} ON Command Sent`);
+            setMessage(` ${displayName} ON Command Sent`);
           } else if (data.command === "OFF") {
-            setMessage(`✅ ${displayName} OFF Command Sent`);
+            setMessage(` ${displayName} OFF Command Sent`);
           }
 
           if (onCommandSent) {
@@ -152,11 +153,11 @@ function VoiceControl({ onCommandSent, deviceName, selectedDeviceId }) {
         if (data.type === "STATUS") {
 
           if (data.status === "ON") {
-            setMessage("🟢 Motor ON है");
+            setMessage(" Motor ON है");
           } else if (data.status === "OFF") {
-            setMessage("🔴 Motor OFF है");
+            setMessage(" Motor OFF है");
           } else {
-            setMessage("⚠️ Motor status उपलब्ध नहीं है");
+            setMessage(" Motor status उपलब्ध नहीं है");
           }
 
           if (onCommandSent) {
@@ -174,7 +175,7 @@ function VoiceControl({ onCommandSent, deviceName, selectedDeviceId }) {
           setSchedules(data.schedules || []);
 
           setMessage(
-            `📋 कुल ${data.count ?? (data.schedules || []).length} schedule मिले`
+            ` कुल ${data.count ?? (data.schedules || []).length} schedule मिले`
           );
 
           return;
@@ -192,7 +193,7 @@ function VoiceControl({ onCommandSent, deviceName, selectedDeviceId }) {
           const endTime = data.endTime || "--:--";
 
           setMessage(
-            `✅ Schedule Set: ${startTime} → ${endTime}`
+            ` Schedule Set: ${startTime} → ${endTime}`
           );
 
           if (onCommandSent) {
@@ -210,7 +211,7 @@ function VoiceControl({ onCommandSent, deviceName, selectedDeviceId }) {
           setMessage(
             data.success
               ? `🗑️ ${data.message || "Schedule delete कर दिया"}`
-              : `❌ ${data.message || "Schedule delete नहीं हुआ"}`
+              : ` ${data.message || "Schedule delete नहीं हुआ"}`
           );
 
           if (data.success && onCommandSent) {
@@ -227,8 +228,8 @@ function VoiceControl({ onCommandSent, deviceName, selectedDeviceId }) {
         if (data.type === "SCHEDULE") {
           const commandText =
             data.command === "ON"
-              ? "मोटर चालू"
-              : "मोटर बंद";
+              ? "ON"
+              : "OFF";
 
           const dateText =
             data.scheduledDate || "";
@@ -239,7 +240,7 @@ function VoiceControl({ onCommandSent, deviceName, selectedDeviceId }) {
             ).padStart(2, "0")}`;
 
           setMessage(
-            `✅ Schedule Set: ${dateText} ${timeText} → ${commandText}`
+            ` Schedule Set: ${dateText} ${timeText} → ${commandText}`
           );
 
           if (onCommandSent) {
@@ -256,8 +257,8 @@ function VoiceControl({ onCommandSent, deviceName, selectedDeviceId }) {
         if (data.type === "RECURRING") {
           const commandText =
             data.command === "ON"
-              ? "मोटर चालू"
-              : "मोटर बंद";
+              ? "ON"
+              : "OFF";
 
           const timeText =
             `${String(data.hour).padStart(2, "0")}:${String(
@@ -284,7 +285,7 @@ function VoiceControl({ onCommandSent, deviceName, selectedDeviceId }) {
           const endTime = data.endTime || "";
 
           setMessage(
-            `✅ रोज़ का Schedule Set: ${startTime} → ON, ${endTime} → OFF`
+            ` रोज़ का Schedule Set: ${startTime} → ON, ${endTime} → OFF`
           );
 
           // Schedule list को तुरंत refresh करवाएँ
@@ -304,7 +305,7 @@ function VoiceControl({ onCommandSent, deviceName, selectedDeviceId }) {
           const endTime = data.endTime || "";
 
           setMessage(
-            `✅ आज का Schedule Set: ${startTime} → ON, ${endTime} → OFF`
+            ` आज का Schedule Set: ${startTime} → ON, ${endTime} → OFF`
           );
 
           if (onCommandSent) {
@@ -318,7 +319,7 @@ function VoiceControl({ onCommandSent, deviceName, selectedDeviceId }) {
         // UNKNOWN RESPONSE
         // =========================
 
-        setMessage("✅ Command received");
+        setMessage(" Command received");
 
         if (onCommandSent) {
           onCommandSent();
@@ -326,14 +327,14 @@ function VoiceControl({ onCommandSent, deviceName, selectedDeviceId }) {
 
       } catch (error) {
         console.log("Voice Error:", error);
-        setMessage("❌ Server Error");
+        setMessage(" Server Error");
       }
     };
 
     recognition.onerror = (event) => {
       console.log("Speech Error:", event);
 
-      setMessage("❌ Voice recognition error");
+      setMessage(" Voice recognition error");
       setListening(false);
     };
 
@@ -345,43 +346,30 @@ function VoiceControl({ onCommandSent, deviceName, selectedDeviceId }) {
   }
 
   return (
-    <div
-      style={{
-        border: "1px solid #ddd",
-        borderRadius: "15px",
-        padding: "25px",
-        marginTop: "20px",
-        textAlign: "center"
-      }}
-    >
-      <h2>🎙️ {displayName} Voice Control</h2>
-
+    <div className="voice-control">
       <button
+        type="button"
+        className={`voice-control-button ${listening ? "voice-control-listening" : ""}`}
         onClick={startListening}
         disabled={listening}
-        style={{
-          border: "none",
-          borderRadius: "30px",
-          padding: "15px 35px",
-          fontSize: "18px",
-          cursor: listening ? "not-allowed" : "pointer"
-        }}
+        aria-label={listening ? "Listening" : "Voice Control"}
       >
-        {listening
-          ? "🎙️ सुन रहा हूँ..."
-          : `🎙️ बोलकर ${displayName} Control करें`}
+        <span className="voice-control-icon">
+          <Icon name="mic" size={18} />
+        </span>
+
+        <span>
+          {listening
+            ? "सुन रहा हूँ..."
+            : "Voice Control"}
+        </span>
       </button>
 
-      <p
-        style={{
-          fontWeight: "bold",
-          fontSize: "16px",
-          minHeight: "24px"
-        }}
-      >
-        {message}
-      </p>
-
+      {message && (
+        <p className="voice-control-message">
+          {message}
+        </p>
+      )}
     </div>
   );
 }

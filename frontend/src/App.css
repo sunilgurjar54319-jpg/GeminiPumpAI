@@ -291,3 +291,3143 @@ input {
   color: inherit;
 }
 
+
+/* =========================================
+   MANUAL CONTROL - PREMIUM UI
+   UI ONLY - existing logic untouched
+========================================= */
+
+.manual-control-card {
+  padding: 0;
+  overflow: hidden;
+  text-align: left;
+  border-radius: 18px;
+}
+
+/* Light blue header */
+.manual-control-header {
+  min-height: 72px;
+  padding: 16px 20px;
+  background: #e8f3ff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.manual-control-title {
+  margin: 0;
+  color: #17324d !important;
+  font-size: 19px;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+/* Animated device status icon */
+.manual-status-logo {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.manual-status-logo svg {
+  width: 25px;
+  height: 25px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.manual-status-logo.online {
+  color: #16a34a !important;
+  animation: manualStatusBreathing 1.8s ease-in-out infinite;
+}
+
+.manual-status-logo.offline {
+  color: #dc2626 !important;
+  animation: manualStatusBreathing 1.8s ease-in-out infinite;
+}
+
+@keyframes manualStatusBreathing {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 1px currentColor);
+    opacity: 0.78;
+  }
+
+  50% {
+    transform: scale(1.12);
+    filter: drop-shadow(0 0 8px currentColor);
+    opacity: 1;
+  }
+}
+
+/* White body */
+.manual-control-body {
+  background: #ffffff;
+  padding: 20px;
+}
+
+/* Inner grey control box */
+.manual-control-inner {
+  background: #f3f5f8;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.manual-control-label {
+  min-width: 0;
+}
+
+.manual-control-label-title {
+  margin: 0;
+  color: #243447 !important;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.manual-control-label-subtitle {
+  margin: 5px 0 0;
+  color: #6b7280 !important;
+  font-size: 12px;
+}
+
+/* Toggle area */
+.manual-toggle-area {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Existing button will keep its command behavior */
+.manual-toggle {
+  position: relative;
+  width: 58px !important;
+  height: 32px !important;
+  padding: 3px !important;
+  border-radius: 18px !important;
+  border: 0 !important;
+  transition: background 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+.manual-toggle-knob {
+  display: block;
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.20);
+  transition: transform 0.3s ease;
+}
+
+.manual-toggle-labels {
+  width: 58px;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 2px;
+  color: #6b7280 !important;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.manual-control-message {
+  min-height: 20px;
+  margin: 12px 2px 0;
+  color: #475569 !important;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+@media (max-width: 420px) {
+
+  .manual-control-header {
+    min-height: 64px;
+    padding: 14px 16px;
+  }
+
+  .manual-control-body {
+    padding: 14px;
+  }
+
+  .manual-control-inner {
+    padding: 14px;
+  }
+
+  .manual-control-title {
+    font-size: 17px;
+  }
+
+  .manual-control-label-title {
+    font-size: 14px;
+  }
+
+}
+
+
+/* =========================================
+   MANUAL CONTROL - FINAL UI PATCH
+   UI ONLY
+========================================= */
+
+/* Header title grouping */
+.manual-control-title {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.manual-control-title-main {
+  color: #17324d !important;
+  font-size: 19px;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.manual-control-device-name {
+  color: #64748b !important;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Animated SVG status icon */
+.device-status-icon {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: color 0.25s ease, background 0.25s ease;
+}
+
+.device-status-icon svg {
+  width: 23px;
+  height: 23px;
+  stroke: currentColor;
+}
+
+.device-status-online {
+  color: #16a34a !important;
+  background: rgba(22, 163, 74, 0.10);
+  animation: deviceStatusBreath 1.8s ease-in-out infinite;
+}
+
+.device-status-offline {
+  color: #dc2626 !important;
+  background: rgba(220, 38, 38, 0.10);
+  animation: deviceStatusBreath 1.8s ease-in-out infinite;
+}
+
+@keyframes deviceStatusBreath {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.75;
+    filter: drop-shadow(0 0 1px currentColor);
+  }
+
+  50% {
+    transform: scale(1.12);
+    opacity: 1;
+    filter: drop-shadow(0 0 7px currentColor);
+  }
+}
+
+/* Inner grey control box */
+.manual-control-box {
+  width: 100%;
+  min-height: 78px;
+  padding: 15px 16px;
+  border: 1px solid #e2e6eb;
+  border-radius: 14px;
+  background: #f3f5f8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.manual-control-box-left {
+  min-width: 0;
+}
+
+.manual-control-box-title {
+  color: #243447 !important;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.manual-control-box-subtitle {
+  margin-top: 5px;
+  color: #6b7280 !important;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+/* Toggle states */
+.manual-toggle-on {
+  background: #16a34a !important;
+  box-shadow: 0 0 12px rgba(22, 163, 74, 0.30) !important;
+}
+
+.manual-toggle-off {
+  background: #94a3b8 !important;
+  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.16) !important;
+}
+
+.manual-toggle-disabled {
+  background: #cbd5e1 !important;
+  box-shadow: none !important;
+  opacity: 0.65;
+}
+
+.manual-toggle-loading {
+  opacity: 0.7;
+}
+
+.manual-toggle-knob-on {
+  transform: translateX(26px) !important;
+}
+
+.toggle-label-active {
+  color: #172033 !important;
+  font-weight: 800;
+}
+
+/* Offline notice stays compact */
+.manual-control-notice {
+  margin-bottom: 12px;
+  padding: 9px 11px;
+  border: 1px solid #fed7aa;
+  border-radius: 9px;
+  background: #fff7ed;
+  color: #9a3412 !important;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+/* Command message */
+.manual-command-message {
+  min-height: 20px;
+  margin-top: 12px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.manual-command-success {
+  color: #475569 !important;
+}
+
+.manual-command-error {
+  color: #b42318 !important;
+}
+
+/* Mobile */
+@media (max-width: 420px) {
+
+  .manual-control-header {
+    padding: 14px 16px;
+  }
+
+  .manual-control-title-main {
+    font-size: 17px;
+  }
+
+  .manual-control-box {
+    padding: 13px;
+    gap: 10px;
+  }
+
+  .manual-control-box-title {
+    font-size: 14px;
+  }
+
+  .manual-control-box-subtitle {
+    font-size: 11px;
+  }
+
+}
+
+
+/* =========================================
+   DEVICE CONNECTION - CLEAN CONTROL UI
+========================================= */
+
+.device-control-card {
+  position: relative;
+  padding: 18px;
+  background: #fff;
+}
+
+.device-control-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.device-control-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #172033;
+}
+
+.device-control-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.device-online-logo {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.device-online-logo-online {
+  background: #16a34a;
+  box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.55);
+  animation: device-online-pulse 1.8s infinite;
+}
+
+.device-online-logo-offline {
+  background: #dc2626;
+  box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.45);
+  animation: device-offline-pulse 1.8s infinite;
+}
+
+@keyframes device-online-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(22, 163, 74, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
+  }
+}
+
+@keyframes device-offline-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(220, 38, 38, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+  }
+}
+
+.device-settings-button {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #344054;
+  font-size: 19px;
+  cursor: pointer;
+}
+
+.device-settings-button:hover {
+  background: #eef4ff;
+}
+
+.device-offline-info {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff5f5;
+  color: #b42318;
+  font-size: 13px;
+}
+
+.device-sensor-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.device-sensor-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border: 1px solid #e4e9f0;
+  border-radius: 9px;
+  background: #f8fafc;
+  font-size: 12px;
+}
+
+.device-sensor-item span {
+  color: #667085;
+}
+
+.device-sensor-item strong {
+  color: #172033;
+}
+
+.device-settings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.device-settings-modal {
+  width: 100%;
+  max-width: 430px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.25);
+  padding: 18px;
+}
+
+.device-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 18px;
+  color: #172033;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e4e9f0;
+}
+
+.device-settings-close {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: #f2f4f7;
+  color: #475467;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.device-settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid #eef1f5;
+  font-size: 14px;
+}
+
+.device-settings-row > span {
+  color: #667085;
+}
+
+.device-settings-row > strong {
+  color: #172033;
+  text-align: right;
+  word-break: break-word;
+}
+
+.device-settings-name {
+  display: block;
+}
+
+.device-settings-name > span {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.device-settings-name-value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.device-settings-edit,
+.device-settings-save,
+.device-settings-cancel {
+  border-radius: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+
+.device-settings-edit {
+  border: 1px solid #dbe2ea;
+  background: #f8fafc;
+  color: #344054;
+}
+
+.device-settings-edit-area input {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.device-settings-edit-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 9px;
+}
+
+.device-settings-save {
+  border: 0;
+  background: #16a34a;
+  color: #fff;
+}
+
+.device-settings-cancel {
+  border: 1px solid #d0d5dd;
+  background: #fff;
+  color: #344054;
+}
+
+.device-settings-message {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #475467;
+}
+
+@media (max-width: 420px) {
+  .device-control-card {
+    padding: 14px;
+  }
+
+  .device-settings-modal {
+    border-radius: 15px;
+    padding: 15px;
+  }
+
+  .device-sensor-strip {
+    gap: 6px;
+  }
+}
+
+
+/* =========================================
+   VOICE CONTROL - PILL + LISTENING RIPPLE
+========================================= */
+
+.voice-control {
+  width: 100%;
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.voice-control-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 999px;
+  background: #e5e7eb;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+  overflow: visible;
+}
+
+.voice-control-button:hover:not(:disabled) {
+  background: #dbe0e6;
+  color: #334155;
+}
+
+.voice-control-button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.voice-control-button:disabled {
+  cursor: default;
+}
+
+/* Mic icon */
+.voice-control-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Listening state */
+.voice-control-listening {
+  background: #d1d5db;
+  color: #374151;
+}
+
+/* Ripple 1 */
+.voice-control-listening::before,
+.voice-control-listening::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border: 2px solid rgba(100, 116, 139, 0.35);
+  border-radius: 999px;
+  pointer-events: none;
+  animation: voice-ripple 1.5s ease-out infinite;
+}
+
+/* Ripple 2 */
+.voice-control-listening::after {
+  animation-delay: 0.75s;
+}
+
+@keyframes voice-ripple {
+  0% {
+    opacity: 0.65;
+    transform: scale(0.96);
+  }
+
+  70% {
+    opacity: 0.18;
+    transform: scale(1.16);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.24);
+  }
+}
+
+.voice-control-message {
+  min-height: 20px;
+  margin: 8px 4px 0;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+@media (max-width: 420px) {
+  .voice-control-button {
+    width: auto;
+    max-width: 100%;
+    padding: 9px 15px;
+    font-size: 13px;
+  }
+}
+
+
+/* =========================================
+   STATISTICS - CLEAN ALIGNMENT
+========================================= */
+
+.stats-card {
+  width: 100%;
+}
+
+.stats-header {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #17324d;
+}
+
+.stats-header:hover {
+  background: transparent !important;
+}
+
+.stats-content {
+  padding: 14px 8px 8px;
+}
+
+.stats-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  gap: 12px;
+}
+
+.stats-item {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.stats-label {
+  color: #9ca3af;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.stats-number {
+  color: #172033;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.stats-divider {
+  width: 1px;
+  height: 22px;
+  flex-shrink: 0;
+  background: #e5e7eb;
+}
+
+.stats-loading {
+  margin: 0;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+@media (max-width: 420px) {
+  .stats-row {
+    gap: 6px;
+  }
+
+  .stats-item {
+    gap: 4px;
+  }
+
+  .stats-label {
+    font-size: 12px;
+  }
+
+  .stats-number {
+    font-size: 18px;
+  }
+}
+
+
+
+/* =========================================
+   SCHEDULE + HISTORY ACCORDION PATCH
+========================================= */
+
+/* Accordion title/header remains clean */
+.schedule-slide-content,
+.history-slide-content {
+  animation: accordion-slide-down 0.28s ease-out both;
+  transform-origin: top center;
+}
+
+@keyframes accordion-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Smooth arrow movement */
+.accordion-header > svg,
+.accordion-header svg {
+  transition: transform 0.25s ease;
+}
+
+/* Schedule day pills */
+.schedule-day-button {
+  min-width: 52px;
+  padding: 8px 14px !important;
+  border-radius: 999px !important;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease;
+}
+
+.schedule-day-button:hover {
+  transform: translateY(-1px);
+}
+
+.schedule-day-ghost {
+  background: transparent !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #64748b !important;
+}
+
+.schedule-day-selected {
+  background: #2563eb !important;
+  border: 1px solid #2563eb !important;
+  color: #ffffff !important;
+}
+
+.schedule-day-button:active {
+  transform: scale(0.96);
+}
+
+@media (max-width: 420px) {
+  .schedule-day-button {
+    min-width: 44px;
+    padding: 7px 10px !important;
+    font-size: 12px;
+  }
+}
+
+
+
+/* =========================================
+   FINAL ACCORDION / HISTORY / STATS PATCH
+   ========================================= */
+
+.accordion-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 4px 2px !important;
+  color: #172033;
+  cursor: pointer;
+  text-align: left;
+}
+
+.accordion-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.accordion-chevron {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: #31506b;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1;
+  transition: transform 0.3s ease, background 0.2s ease;
+}
+
+.accordion-chevron.is-open {
+  transform: rotate(180deg);
+  background: #eef4f9;
+}
+
+.accordion-content {
+  animation: accordionSlideDown 0.3s ease both;
+  transform-origin: top;
+}
+
+@keyframes accordionSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Schedule title must remain plain */
+.schedule-accordion-header {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* History title must remain plain */
+.history-accordion-header {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* History empty state */
+.history-empty-state {
+  min-height: 130px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  color: #64748b;
+}
+
+.history-empty-state svg {
+  color: #94a3b8;
+}
+
+.history-empty-state p {
+  margin: 0;
+  color: #64748b !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+}
+
+/* Statistics */
+.stats-title {
+  margin: 0 0 16px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #172033 !important;
+  font-size: 20px !important;
+  font-weight: 700 !important;
+}
+
+.stats-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.stat-item {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 5px;
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.stat-item strong {
+  color: #172033;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+@media (max-width: 420px) {
+  .stats-row {
+    gap: 6px;
+  }
+
+  .stat-item {
+    font-size: 13px;
+    gap: 3px;
+  }
+
+  .stat-item strong {
+    font-size: 18px;
+  }
+
+  .accordion-chevron {
+    width: 28px;
+    height: 28px;
+    font-size: 22px;
+  }
+}
+
+
+/* ============================================================
+   FINAL MOBILE UI FIX
+   ============================================================ */
+
+/* ---------- Accordion ---------- */
+
+.accordion-header {
+  -webkit-tap-highlight-color: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.accordion-header:focus,
+.accordion-header:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.accordion-chevron {
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #31506b;
+  background: #f1f5f9;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
+  transform: rotate(0deg);
+  transition:
+    transform 0.3s ease,
+    background 0.2s ease;
+  pointer-events: none;
+}
+
+.accordion-chevron.is-open {
+  transform: rotate(180deg);
+  background: #e8f0f7;
+}
+
+/*
+ * IMPORTANT:
+ * Content remains mounted, but max-height controls opening.
+ * This makes the arrow/state reliable and gives real animation.
+ */
+.accordion-content {
+  overflow: hidden;
+  transition:
+    max-height 0.3s ease,
+    opacity 0.25s ease,
+    transform 0.3s ease;
+  transform-origin: top;
+}
+
+.accordion-content-open {
+  max-height: 5000px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.accordion-content-closed {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+}
+
+/* ---------- Schedule ON/OFF ---------- */
+
+.schedule-command-pill {
+  min-width: 58px !important;
+  height: 38px !important;
+  padding: 7px 18px !important;
+  margin-right: 8px !important;
+  border-radius: 999px !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #334155 !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  cursor: pointer;
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.schedule-command-pill:focus,
+.schedule-command-pill:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.schedule-command-active-on {
+  background: #16a34a !important;
+  border-color: #16a34a !important;
+  color: #ffffff !important;
+}
+
+.schedule-command-active-off {
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
+  color: #ffffff !important;
+}
+
+/* ---------- Schedule day pills ---------- */
+
+.schedule-day-pill {
+  min-width: 42px !important;
+  height: 32px !important;
+  padding: 5px 12px !important;
+  margin: 0 4px 7px 0 !important;
+  border-radius: 999px !important;
+  border: 1px solid #3b82f6 !important;
+  background: transparent !important;
+  color: #2563eb !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  cursor: pointer;
+
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.schedule-day-pill:hover {
+  background: #eff6ff !important;
+}
+
+.schedule-day-pill:focus,
+.schedule-day-pill:focus-visible,
+.schedule-day-pill:active {
+  outline: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.schedule-day-pill.schedule-day-selected {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+/* ---------- History empty state ---------- */
+
+.history-empty-state {
+  width: 100%;
+  min-height: 120px;
+  padding: 20px 10px;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+  color: #94a3b8;
+}
+
+.history-empty-state svg {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 7px;
+  color: #94a3b8;
+}
+
+.history-empty-state p {
+  margin: 0 !important;
+  padding: 0 !important;
+  color: #64748b !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+}
+
+/* Prevent old global p/H1 styling from making empty state huge */
+.history-accordion-content .history-empty-state p {
+  font-size: 15px !important;
+  line-height: 1.4 !important;
+}
+
+.history-accordion-content .history-empty-state {
+  font-size: 15px !important;
+}
+
+/* Mobile */
+@media (max-width: 420px) {
+  .accordion-chevron {
+    width: 28px;
+    height: 28px;
+    flex-basis: 28px;
+    font-size: 21px;
+  }
+
+  .schedule-command-pill {
+    min-width: 56px !important;
+    height: 36px !important;
+    padding: 6px 16px !important;
+  }
+
+  .schedule-day-pill {
+    min-width: 41px !important;
+    height: 31px !important;
+    padding: 5px 11px !important;
+  }
+}
+
+
+/* ============================================================
+   FINAL ACCORDION + MOBILE TAP FIX
+   ============================================================ */
+
+/* ---------- Statistics accordion ---------- */
+
+.stats-accordion-header {
+  width: 100%;
+  min-height: 48px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 8px 14px !important;
+
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+
+  color: #172033 !important;
+  font-size: 20px !important;
+  font-weight: 700 !important;
+
+  cursor: pointer;
+  text-align: left;
+
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.stats-accordion-title {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.stats-accordion-header:focus,
+.stats-accordion-header:focus-visible,
+.stats-accordion-header:active {
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* ---------- Chevron ---------- */
+
+.accordion-chevron {
+  width: 30px !important;
+  height: 30px !important;
+  min-width: 30px !important;
+
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  border-radius: 50% !important;
+  background: #f1f5f9 !important;
+
+  color: #31506b !important;
+  font-size: 21px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+
+  transform: rotate(0deg);
+  transition:
+    transform 0.3s cubic-bezier(.4,0,.2,1),
+    background 0.2s ease;
+
+  pointer-events: none !important;
+}
+
+.accordion-chevron.is-open {
+  transform: rotate(180deg) !important;
+  background: #e8f0f7 !important;
+}
+
+/* ---------- TRUE smooth accordion ---------- */
+
+.accordion-content {
+  overflow: hidden !important;
+
+  max-height: 0 !important;
+  opacity: 0 !important;
+
+  transform: translateY(-6px) !important;
+
+  transition:
+    max-height 0.42s cubic-bezier(.4,0,.2,1),
+    opacity 0.25s ease,
+    transform 0.32s cubic-bezier(.4,0,.2,1) !important;
+
+  will-change: max-height, opacity, transform;
+}
+
+.accordion-content-open {
+  max-height: 3000px !important;
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+  pointer-events: auto !important;
+}
+
+.accordion-content-closed {
+  max-height: 0 !important;
+  opacity: 0 !important;
+  transform: translateY(-6px) !important;
+  pointer-events: none !important;
+}
+
+/* Stats content */
+.stats-accordion-inner {
+  width: 100%;
+  box-sizing: border-box;
+  padding-top: 4px;
+}
+
+/* ---------- DAY PILLS: absolutely no square tap effect ---------- */
+
+.schedule-day-pill,
+.schedule-day-pill:focus,
+.schedule-day-pill:focus-visible,
+.schedule-day-pill:active {
+  outline: 0 !important;
+  box-shadow: none !important;
+
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-focus-ring-color: transparent !important;
+
+  border-radius: 999px !important;
+  transform: none !important;
+}
+
+.schedule-day-pill {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  touch-action: manipulation !important;
+
+  overflow: hidden !important;
+  background-clip: padding-box !important;
+}
+
+.schedule-day-pill::-moz-focus-inner {
+  border: 0 !important;
+  padding: 0 !important;
+}
+
+/* Don't let any parent button rule create a tap rectangle */
+.schedule-day-pill,
+.schedule-day-pill *,
+.schedule-day-pill:hover,
+.schedule-day-pill:visited {
+  outline: none !important;
+}
+
+/* Keep selected/unselected states clean */
+.schedule-day-pill:not(.schedule-day-selected) {
+  background: transparent !important;
+  color: #2563eb !important;
+  border-color: #3b82f6 !important;
+}
+
+.schedule-day-pill.schedule-day-selected {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #2563eb !important;
+}
+
+/* ---------- Schedule command pills ---------- */
+
+.schedule-command-pill,
+.schedule-command-pill:focus,
+.schedule-command-pill:focus-visible,
+.schedule-command-pill:active {
+  outline: 0 !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-focus-ring-color: transparent !important;
+  border-radius: 999px !important;
+}
+
+/* ---------- Accordion buttons globally ---------- */
+
+.schedule-accordion-header,
+.history-accordion-header,
+.stats-accordion-header {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-focus-ring-color: transparent !important;
+}
+
+.schedule-accordion-header:focus,
+.schedule-accordion-header:focus-visible,
+.schedule-accordion-header:active,
+.history-accordion-header:focus,
+.history-accordion-header:focus-visible,
+.history-accordion-header:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Mobile */
+@media (max-width: 420px) {
+  .stats-accordion-header {
+    min-height: 46px;
+    padding: 7px 12px !important;
+    font-size: 18px !important;
+  }
+
+  .accordion-chevron {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    font-size: 20px !important;
+  }
+}
+
+/* =========================================================
+   FINAL UI FIX — ACCORDIONS / STATS / SCHEDULE BUTTONS
+   ========================================================= */
+
+/* ---------- All accordion headers ---------- */
+.accordion-header,
+.schedule-accordion-header,
+.history-accordion-header {
+  width: 100%;
+  min-height: 48px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px;
+  box-sizing: border-box;
+  border: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Keep title and arrow on one line */
+.accordion-header > span:first-child,
+.schedule-accordion-header > span:first-child,
+.history-accordion-header > span:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+}
+
+/* ---------- Chevron ---------- */
+.accordion-header ion-icon,
+.accordion-header svg:last-child,
+.schedule-accordion-header ion-icon,
+.schedule-accordion-header svg:last-child,
+.history-accordion-header ion-icon,
+.history-accordion-header svg:last-child {
+  flex: 0 0 auto;
+  transition: transform 0.28s ease;
+}
+
+.accordion-header:focus,
+.accordion-header:active,
+.schedule-accordion-header:focus,
+.schedule-accordion-header:active,
+.history-accordion-header:focus,
+.history-accordion-header:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* ---------- Smooth accordion content ---------- */
+/* Existing conditional rendering will still work, but the
+   content itself gets a smooth entrance animation. */
+@keyframes accordionSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 1400px;
+  }
+}
+
+.schedule-accordion-content,
+.history-accordion-content,
+.stats-accordion-content {
+  overflow: hidden;
+  animation: accordionSlideDown 0.32s ease-out both;
+  transform-origin: top center;
+}
+
+/* ---------- Statistics ---------- */
+.stats-card,
+.stats-container {
+  overflow: hidden;
+}
+
+.stats-card .accordion-header,
+.stats-container .accordion-header {
+  min-height: 48px;
+  padding: 12px 16px !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+
+.stats-card .accordion-header > span:first-child,
+.stats-container .accordion-header > span:first-child {
+  font-size: 17px;
+  font-weight: 700;
+  color: #172033;
+}
+
+/* Statistics values always stay in one row */
+.stats-card .stats-row,
+.stats-card .statistics-row,
+.stats-container .stats-row,
+.stats-container .statistics-row {
+  width: 100%;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px;
+  flex-wrap: nowrap !important;
+}
+
+.stats-card .stats-item,
+.stats-card .stat-item,
+.stats-container .stats-item,
+.stats-container .stat-item {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+}
+
+.stats-card .stats-item strong,
+.stats-card .stat-item strong,
+.stats-container .stats-item strong,
+.stats-container .stat-item strong {
+  display: inline-block;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  color: #172033 !important;
+  line-height: 1.1;
+}
+
+.stats-card .stats-item span,
+.stats-card .stat-item span,
+.stats-container .stats-item span,
+.stats-container .stat-item span {
+  color: #94a3b8 !important;
+  font-size: 12px !important;
+}
+
+/* ---------- Schedule day pills ---------- */
+button[style*="selectedDays"],
+button[style*="background"][style*="1976d2"] {
+  border-radius: 999px !important;
+  min-width: 42px;
+  height: 36px;
+  padding: 7px 13px !important;
+  border: 1.5px solid #2563eb !important;
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-appearance: none;
+  appearance: none;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease;
+}
+
+button[style*="selectedDays"]:active,
+button[style*="background"][style*="1976d2"]:active {
+  transform: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove Android/Chrome rectangular focus/tap effect */
+button:focus:not(:focus-visible) {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---------- Schedule ON / OFF ---------- */
+button[style*="2e7d32"],
+button[style*="d32f2f"] {
+  min-width: 58px;
+  height: 38px;
+  padding: 7px 17px !important;
+  border-radius: 999px !important;
+  border: 1px solid transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Force same shape for both */
+button[style*="2e7d32"] {
+  border-radius: 999px !important;
+}
+
+button[style*="d32f2f"] {
+  border-radius: 999px !important;
+}
+
+/* ---------- History empty state ---------- */
+.history-empty,
+.history-empty-state,
+.no-history,
+.history-no-data {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 110px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-direction: column !important;
+  padding: 24px 12px !important;
+  text-align: center !important;
+  color: #94a3b8 !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+}
+
+.history-empty h1,
+.history-empty h2,
+.history-empty-state h1,
+.history-empty-state h2,
+.no-history h1,
+.no-history h2 {
+  margin: 0 0 6px !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  color: #94a3b8 !important;
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 420px) {
+  .stats-card .stats-row,
+  .stats-card .statistics-row,
+  .stats-container .stats-row,
+  .stats-container .statistics-row {
+    gap: 6px;
+  }
+
+  .stats-card .stats-item strong,
+  .stats-card .stat-item strong,
+  .stats-container .stats-item strong,
+  .stats-container .stat-item strong {
+    font-size: 18px !important;
+  }
+
+  .schedule-accordion-header,
+  .history-accordion-header,
+  .accordion-header {
+    min-height: 46px;
+  }
+}
+
+
+
+/* =========================================
+   FINAL STATS + HISTORY EMPTY STATE FIX
+========================================= */
+
+/* Statistics right-side accordion indicator */
+.stats-header {
+  position: relative;
+  padding-right: 42px !important;
+}
+
+.stats-chevron {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  width: 30px;
+  height: 30px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #eef3f8;
+  color: #172033;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1;
+  transition: transform 0.28s ease, background 0.2s ease;
+}
+
+.stats-chevron.is-open {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.stats-header:hover .stats-chevron {
+  background: #e4ebf3;
+}
+
+/* Clean history empty state */
+.history-empty-state {
+  min-height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px 10px;
+}
+
+.history-empty-state p {
+  margin: 0 !important;
+  color: #64748b !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  line-height: 1.4;
+}
+
+
+/* =========================================
+   GLOBAL PREMIUM UI / UX
+   Borderless + Consistent Radius + Soft Depth
+========================================= */
+
+/* Main feature/card surfaces */
+.card,
+.stats-card,
+.manual-control-card,
+.device-control-card,
+.schedule-card,
+.history-card,
+.device-connection-card {
+  border: none !important;
+  border-radius: 16px !important;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Common inner feature boxes */
+.manual-control-box,
+.device-control-box,
+.schedule-content,
+.history-content,
+.stats-content,
+.device-settings-modal {
+  border-radius: 12px !important;
+}
+
+/* Remove decorative borders from feature containers */
+.manual-control,
+.schedule-container,
+.history-container,
+.stats-container {
+  border: none !important;
+  border-radius: 16px !important;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.07) !important;
+}
+
+/* Buttons — consistent premium rounding */
+button {
+  border-radius: 12px;
+}
+
+/* Pills / compact controls remain fully rounded */
+.manual-toggle,
+.voice-control-button,
+.schedule-day-button,
+.accordion-chevron,
+.stats-chevron,
+.device-status-icon {
+  border-radius: 999px !important;
+}
+
+/* Accordion surfaces */
+.accordion-header {
+  border: none !important;
+  border-radius: 12px !important;
+}
+
+/* Saved schedule / history activity cards */
+.schedule-item,
+.history-item {
+  border-radius: 12px !important;
+}
+
+/* Do not create visible borders around empty states */
+.history-empty-state {
+  border: none !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+}
+
+/* Settings modal */
+.device-settings-modal {
+  border: none !important;
+  box-shadow: 0 12px 35px rgba(15, 23, 42, 0.16) !important;
+}
+
+/* Keep form fields usable and consistent */
+input,
+select,
+textarea {
+  border-radius: 12px;
+}
+
+/* Remove border only where it is decorative, not from form controls */
+.stats-divider {
+  border: none !important;
+}
+
+/* Premium hover depth */
+button:not(:disabled) {
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+button:not(:disabled):hover {
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.10);
+}
+
+/* Mobile cards */
+@media (max-width: 420px) {
+  .card,
+  .stats-card,
+  .manual-control-card,
+  .device-control-card,
+  .schedule-card,
+  .history-card {
+    border-radius: 16px !important;
+  }
+}
+
+
+/* =========================================
+   UNIFORM ACCORDION ARROWS
+   Statistics / Schedule / History
+========================================= */
+
+/* Same arrow container for all three */
+.stats-chevron,
+.accordion-chevron {
+  width: 30px !important;
+  height: 30px !important;
+  min-width: 30px !important;
+  min-height: 30px !important;
+
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  border-radius: 50% !important;
+  background: #f1f4f7 !important;
+
+  color: #888 !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+
+  flex-shrink: 0 !important;
+
+  transition:
+    transform 0.28s ease,
+    background 0.2s ease,
+    color 0.2s ease !important;
+}
+
+/* Statistics arrow */
+.stats-chevron {
+  transform: translateY(-50%) !important;
+}
+
+.stats-chevron.is-open {
+  transform: translateY(-50%) rotate(180deg) !important;
+}
+
+/* History arrow */
+.accordion-chevron.is-open {
+  transform: rotate(180deg) !important;
+}
+
+/* Schedule / History SVG arrows */
+.schedule-accordion-header > svg,
+.history-accordion-header > svg {
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px !important;
+  min-height: 14px !important;
+
+  color: #888 !important;
+  stroke: #888 !important;
+  fill: none !important;
+
+  flex-shrink: 0 !important;
+
+  transition: transform 0.28s ease !important;
+}
+
+/* Any accordion chevron SVG */
+.accordion-header > svg {
+  width: 14px !important;
+  height: 14px !important;
+  color: #888 !important;
+  stroke: #888 !important;
+}
+
+/* Keep arrow color soft on hover */
+.stats-header:hover .stats-chevron,
+.accordion-header:hover .accordion-chevron {
+  color: #888 !important;
+  background: #edf1f4 !important;
+}
+
+
+/* =========================================================
+   PREMIUM UNIFORM ACCORDION ARROW
+   Statistics / Schedule / History
+========================================================= */
+
+/* Remove all previous arrow styling */
+.stats-chevron,
+.accordion-chevron,
+.schedule-accordion-header > svg,
+.history-accordion-header > svg,
+.accordion-header > svg {
+  display: none !important;
+}
+
+/* One identical arrow for every accordion */
+.premium-accordion-arrow {
+  position: relative;
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+
+  flex: 0 0 28px !important;
+
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50% !important;
+  background: #f4f6f8 !important;
+
+  box-shadow:
+    0 2px 7px rgba(15, 23, 42, 0.08),
+    inset 0 0 0 1px rgba(148, 163, 184, 0.12) !important;
+
+  transform: rotate(0deg);
+  transition:
+    transform 0.28s cubic-bezier(.4,0,.2,1),
+    background 0.2s ease,
+    box-shadow 0.2s ease !important;
+}
+
+/* Thin premium V-shaped chevron */
+.premium-accordion-arrow::before,
+.premium-accordion-arrow::after {
+  content: "";
+  position: absolute;
+
+  width: 7px;
+  height: 1.7px;
+
+  top: 13px;
+
+  background: #8b95a1 !important;
+  border-radius: 999px;
+
+  transition:
+    background 0.2s ease,
+    transform 0.28s cubic-bezier(.4,0,.2,1) !important;
+}
+
+.premium-accordion-arrow::before {
+  left: 7px;
+  transform: rotate(45deg);
+  transform-origin: right center;
+}
+
+.premium-accordion-arrow::after {
+  right: 7px;
+  transform: rotate(-45deg);
+  transform-origin: left center;
+}
+
+/* Open = upward chevron */
+.premium-accordion-arrow.is-open {
+  transform: rotate(180deg);
+}
+
+/* Premium hover */
+.accordion-header:hover .premium-accordion-arrow {
+  background: #eef1f4 !important;
+  box-shadow:
+    0 3px 9px rgba(15, 23, 42, 0.11),
+    inset 0 0 0 1px rgba(148, 163, 184, 0.15) !important;
+}
+
+.accordion-header:active .premium-accordion-arrow {
+  transform: scale(0.94);
+}
+
+.accordion-header:active .premium-accordion-arrow.is-open {
+  transform: rotate(180deg) scale(0.94);
+}
+
+/* Statistics header already uses absolute positioning */
+.stats-header .premium-accordion-arrow {
+  position: absolute !important;
+  right: 4px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+.stats-header .premium-accordion-arrow.is-open {
+  transform: translateY(-50%) rotate(180deg) !important;
+}
+
+/* Schedule / History stay naturally aligned at right */
+.schedule-accordion-header,
+.history-accordion-header,
+.stats-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+
+/* =========================================================
+   FINAL SCHEDULE ARROW FIX
+   Visible + Premium + Same visual language
+========================================================= */
+
+/* Hide any old Schedule arrow */
+.schedule-accordion-header > svg,
+.schedule-accordion-header .premium-accordion-arrow {
+  display: none !important;
+}
+
+/* Schedule arrow container */
+.schedule-premium-arrow {
+  position: relative !important;
+
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  min-height: 42px !important;
+
+  flex: 0 0 42px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  margin-left: auto !important;
+
+  border-radius: 50% !important;
+
+  background: #f3f6fa !important;
+
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.08),
+    inset 0 0 0 1px rgba(148, 163, 184, 0.12) !important;
+
+  transform: rotate(0deg) !important;
+
+  transition:
+    transform 0.28s cubic-bezier(.4,0,.2,1),
+    background 0.2s ease !important;
+
+  pointer-events: none !important;
+}
+
+/* Clean V chevron */
+.schedule-arrow-shape {
+  position: relative !important;
+
+  width: 12px !important;
+  height: 12px !important;
+
+  display: block !important;
+
+  border-right: 3px solid #8a94a3 !important;
+  border-bottom: 3px solid #8a94a3 !important;
+
+  border-radius: 1px !important;
+
+  transform: rotate(45deg) translate(-2px, -2px) !important;
+
+  transition:
+    border-color 0.2s ease,
+    transform 0.28s cubic-bezier(.4,0,.2,1) !important;
+}
+
+/* Open = upward */
+.schedule-premium-arrow.is-open {
+  transform: rotate(180deg) !important;
+}
+
+/* Hover */
+.schedule-accordion-header:hover .schedule-premium-arrow {
+  background: #edf1f5 !important;
+}
+
+/* Ensure header always has room for arrow */
+.schedule-accordion-header {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  position: relative !important;
+}
+
+/* Title stays on left */
+.schedule-accordion-header .accordion-title {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+/* =========================================
+   SCHEDULE ARROW - FINAL PREMIUM FIX
+========================================= */
+
+.schedule-accordion-header .accordion-chevron {
+  flex: 0 0 34px !important;
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  min-height: 34px !important;
+
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  margin-left: auto !important;
+  border-radius: 50% !important;
+
+  background: #f1f5f9 !important;
+  color: #8793a1 !important;
+
+  font-size: 25px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.08),
+    inset 0 0 0 1px rgba(148, 163, 184, 0.12) !important;
+
+  transition:
+    transform 0.25s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease !important;
+}
+
+.schedule-accordion-header .accordion-chevron.is-open {
+  transform: rotate(180deg) !important;
+}
+
+.schedule-accordion-header .accordion-chevron:hover {
+  background: #e8eef5 !important;
+}
+
+.schedule-accordion-header {
+  position: relative !important;
+}
+
+
+/* =========================================
+   FINAL PREMIUM ACCORDION ALIGNMENT
+========================================= */
+
+/* All three accordion headers must look identical */
+.stats-header,
+.schedule-accordion-header,
+.history-accordion-header {
+  width: 100% !important;
+  min-height: 72px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+
+  padding: 12px 18px !important;
+
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+
+  color: #172033 !important;
+  cursor: pointer !important;
+  text-align: left !important;
+
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Remove the old Schedule inner rectangle */
+.schedule-accordion-header {
+  margin: 0 !important;
+  border-radius: 16px !important;
+}
+
+/* Same title sizing */
+.stats-header .accordion-title,
+.schedule-accordion-header .accordion-title,
+.history-accordion-header .accordion-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+/* ONE identical premium arrow for all */
+.stats-header > .accordion-chevron,
+.schedule-accordion-header > .accordion-chevron,
+.history-accordion-header > .accordion-chevron {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  border-radius: 50% !important;
+  background: #f4f7fb !important;
+
+  border: 1px solid #e5eaf0 !important;
+  box-shadow: 0 3px 10px rgba(30, 50, 70, 0.08) !important;
+
+  color: #8793a0 !important;
+
+  transition:
+    transform 0.25s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease !important;
+
+  flex-shrink: 0 !important;
+}
+
+/* Actual chevron — same everywhere */
+.chevron-shape {
+  width: 11px !important;
+  height: 11px !important;
+
+  border-right: 3px solid #8793a0 !important;
+  border-bottom: 3px solid #8793a0 !important;
+
+  transform: rotate(45deg) translateY(-2px) !important;
+
+  transition: transform 0.25s ease !important;
+}
+
+/* Open = upward */
+.accordion-chevron.is-open .chevron-shape {
+  transform: rotate(225deg) translateY(-2px) !important;
+}
+
+/* Remove old text-arrow rendering */
+.accordion-chevron {
+  font-size: 0 !important;
+}
+
+/* No browser focus square around day buttons */
+.schedule-day-button,
+.schedule-day-button:focus,
+.schedule-day-button:focus-visible,
+.schedule-day-button:active {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Premium day pills */
+.schedule-day-button {
+  min-width: 48px !important;
+  height: 38px !important;
+  padding: 0 13px !important;
+
+  border-radius: 999px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease !important;
+}
+
+.schedule-day-button:hover {
+  transform: none !important;
+}
+
+/* Empty / unselected */
+.schedule-day-ghost {
+  background: transparent !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #64748b !important;
+}
+
+/* Selected */
+.schedule-day-selected {
+  background: #2563eb !important;
+  border: 1px solid #2563eb !important;
+  color: #fff !important;
+}
+
+/* Kill the old Schedule inner border */
+.schedule-accordion-header + .accordion-content {
+  border: none !important;
+}
+
+/* Mobile alignment */
+@media (max-width: 600px) {
+  .stats-header,
+  .schedule-accordion-header,
+  .history-accordion-header {
+    min-height: 64px !important;
+    padding: 10px 14px !important;
+  }
+
+  .stats-header > .accordion-chevron,
+  .schedule-accordion-header > .accordion-chevron,
+  .history-accordion-header > .accordion-chevron {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+  }
+}
+
+/* Schedule arrow = exactly same as Statistics + History */
+.schedule-accordion-header > .accordion-chevron {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  border-radius: 50% !important;
+  background: #f4f7fb !important;
+  border: 1px solid #e5eaf0 !important;
+  box-shadow: 0 3px 10px rgba(30, 50, 70, 0.08) !important;
+
+  color: #8793a0 !important;
+  flex-shrink: 0 !important;
+}
+
+.schedule-accordion-header > .accordion-chevron .chevron-shape {
+  width: 11px !important;
+  height: 11px !important;
+  border-right: 3px solid #8793a0 !important;
+  border-bottom: 3px solid #8793a0 !important;
+  transform: rotate(45deg) translateY(-2px) !important;
+}
+
+.schedule-accordion-header > .accordion-chevron.is-open .chevron-shape {
+  transform: rotate(225deg) translateY(-2px) !important;
+}
+
+
+/* =========================================
+   SAVED SCHEDULE - PREMIUM COMPACT CARD
+========================================= */
+
+.saved-schedule-card {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 14px 10px;
+  margin-bottom: 10px;
+  border: none !important;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 3px 14px rgba(15, 23, 42, 0.08);
+}
+
+.saved-schedule-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.saved-schedule-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.saved-schedule-action {
+  color: #172033;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.saved-schedule-time {
+  color: #172033;
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: 0.1px;
+}
+
+.saved-schedule-days {
+  margin-top: 2px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* Small schedule ON/OFF toggle */
+.saved-schedule-toggle {
+  position: relative;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 24px;
+  padding: 2px !important;
+  border: none !important;
+  border-radius: 999px !important;
+  cursor: pointer;
+  transition:
+    background 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.saved-schedule-toggle.is-on {
+  background: #16a34a !important;
+  box-shadow: 0 0 9px rgba(22, 163, 74, 0.25);
+}
+
+.saved-schedule-toggle.is-off {
+  background: #cbd5e1 !important;
+  box-shadow: none;
+}
+
+.saved-schedule-toggle-knob {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.22);
+  transform: translateX(0);
+  transition: transform 0.3s ease;
+}
+
+.saved-schedule-toggle.is-on .saved-schedule-toggle-knob {
+  transform: translateX(18px);
+}
+
+.saved-schedule-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.saved-schedule-icon-button {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+  color: #64748b;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.15s ease;
+}
+
+.saved-schedule-icon-button:hover {
+  background: #f1f5f9 !important;
+  color: #334155;
+}
+
+.saved-schedule-icon-button:active {
+  transform: scale(0.94);
+}
+
+.saved-schedule-icon-button.delete {
+  color: #94a3b8;
+}
+
+.saved-schedule-icon-button.delete:hover {
+  background: #fef2f2 !important;
+  color: #dc2626;
+}
+
+.saved-schedule-card button:focus,
+.saved-schedule-card button:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 420px) {
+  .saved-schedule-card {
+    padding: 13px 12px 9px;
+    border-radius: 13px;
+  }
+
+  .saved-schedule-time {
+    font-size: 18px;
+  }
+
+  .saved-schedule-days {
+    font-size: 10px;
+  }
+}
+
+
+/* =========================================
+   SAVED SCHEDULE — FINAL PREMIUM OVERRIDE
+========================================= */
+
+.saved-schedule-card {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 14px 10px !important;
+  margin: 0 0 10px !important;
+  border: none !important;
+  border-radius: 14px !important;
+  background: #fff !important;
+  box-shadow: 0 3px 14px rgba(15, 23, 42, 0.08) !important;
+}
+
+.saved-schedule-top {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+}
+
+.saved-schedule-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.saved-schedule-action {
+  color: #172033;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.saved-schedule-time {
+  color: #172033;
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.saved-schedule-days {
+  margin-top: 2px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* Compact active/inactive switch */
+.saved-schedule-toggle {
+  flex: 0 0 auto !important;
+  width: 42px !important;
+  height: 24px !important;
+  padding: 2px !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 999px !important;
+  cursor: pointer !important;
+  box-sizing: border-box;
+  transition: background 0.25s ease, box-shadow 0.25s ease !important;
+}
+
+.saved-schedule-toggle.is-on {
+  background: #16a34a !important;
+  box-shadow: 0 0 9px rgba(22, 163, 74, 0.22) !important;
+}
+
+.saved-schedule-toggle.is-off {
+  background: #cbd5e1 !important;
+  box-shadow: none !important;
+}
+
+.saved-schedule-toggle-knob {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.22);
+  transform: translateX(0);
+  transition: transform 0.25s ease;
+}
+
+.saved-schedule-toggle.is-on .saved-schedule-toggle-knob {
+  transform: translateX(18px);
+}
+
+/* Edit + Delete icons */
+.saved-schedule-actions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 5px !important;
+  margin-top: 7px !important;
+}
+
+.saved-schedule-icon-button {
+  width: 30px !important;
+  height: 30px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+  color: #64748b !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+}
+
+.saved-schedule-icon-button:hover {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+}
+
+.saved-schedule-icon-button.delete:hover {
+  background: #fef2f2 !important;
+  color: #dc2626 !important;
+}
+
+.saved-schedule-card button:focus,
+.saved-schedule-card button:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 420px) {
+  .saved-schedule-card {
+    padding: 13px 12px 9px !important;
+    border-radius: 13px !important;
+  }
+
+  .saved-schedule-time {
+    font-size: 18px;
+  }
+}
+
+
+/* =========================================
+   SAVED SCHEDULE — FINAL ALIGNMENT
+========================================= */
+
+.saved-schedule-action {
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  font-size: 15px !important;
+  font-weight: 750 !important;
+  line-height: 1.2 !important;
+}
+
+.saved-schedule-status-dot {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  border-radius: 50%;
+  background: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.10);
+}
+
+.saved-schedule-action.is-off .saved-schedule-status-dot {
+  background: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.10);
+}
+
+.saved-schedule-time {
+  font-size: 20px !important;
+  font-weight: 850 !important;
+  color: #172033 !important;
+  letter-spacing: 0 !important;
+}
+
+.saved-schedule-days {
+  color: #7b8491 !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+.saved-schedule-actions {
+  width: 100% !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin-top: 9px !important;
+}
+
+.saved-schedule-icon-button {
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: #64748b !important;
+}
+
+.saved-schedule-icon-button:hover {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+}
+
+.saved-schedule-icon-button.delete:hover {
+  background: #fef2f2 !important;
+  color: #dc2626 !important;
+}
+
+/* Toggle: ON = green + knob right */
+.saved-schedule-toggle.is-on {
+  background: #16a34a !important;
+}
+
+.saved-schedule-toggle.is-on .saved-schedule-toggle-knob {
+  transform: translateX(18px) !important;
+}
+
+/* Keep OFF = grey + knob left */
+.saved-schedule-toggle.is-off {
+  background: #cbd5e1 !important;
+}
+
+.saved-schedule-toggle.is-off .saved-schedule-toggle-knob {
+  transform: translateX(0) !important;
+}
+
+
+/* =========================================
+   SAVED SCHEDULE — ICON CONSISTENCY
+========================================= */
+
+.saved-schedule-card {
+  padding-bottom: 15px !important;
+}
+
+/* Same visual family + same weight for both icons */
+.saved-schedule-icon-button {
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: none !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: #64748b !important;
+}
+
+.saved-schedule-icon-button svg {
+  width: 20px !important;
+  height: 20px !important;
+  stroke-width: 2 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+.saved-schedule-icon-button + .saved-schedule-icon-button {
+  margin-left: 12px !important;
+}
+
+/* Give the icon row breathing room from card bottom */
+.saved-schedule-actions {
+  margin-top: 9px !important;
+  padding-bottom: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 0 !important;
+}
+
+/* Delete uses exactly the same weight as Edit */
+.saved-schedule-icon-button.delete svg {
+  stroke-width: 2 !important;
+}
+
+/* =========================================
+   SAVE SCHEDULE SPACING
+========================================= */
+
+/* Day buttons → Save button gap */
+.schedule-day-button:last-of-type {
+  margin-bottom: 0 !important;
+}
+
+/* Works with common Save Schedule button selectors */
+.schedule-save-button {
+  margin-top: 15px !important;
+}
+
+/* Fallback for the actual green Save button */
+button[type="submit"] {
+  margin-top: 15px;
+}
+
+
+/* =========================================
+   SAVED SCHEDULE - FINAL ICON / SPACING
+========================================= */
+
+.saved-schedule-card {
+  padding-bottom: 18px !important;
+}
+
+/* Edit + Delete: same size, same family, same weight */
+.saved-schedule-actions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 12px !important;
+  margin-top: 10px !important;
+  padding-bottom: 2px !important;
+}
+
+.saved-schedule-icon-button {
+  width: 34px !important;
+  height: 34px !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 9px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  color: #64748b !important;
+}
+
+.saved-schedule-icon-button svg {
+  width: 19px !important;
+  height: 19px !important;
+  stroke-width: 2.2 !important;
+}
+
+.saved-schedule-icon-button.delete {
+  color: #64748b !important;
+}
+
+.saved-schedule-icon-button.delete svg {
+  width: 19px !important;
+  height: 19px !important;
+  stroke-width: 2.2 !important;
+}
+
+.saved-schedule-icon-button:hover {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+}
+
+.saved-schedule-icon-button.delete:hover {
+  background: #fef2f2 !important;
+  color: #dc2626 !important;
+}
+
+/* Save Schedule button spacing */
+.saved-schedule-save-button {
+  margin-top: 15px !important;
+}
+
+
+/* Clear History stays inside the expanded History accordion */
+.history-clear-action {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+  padding: 0 0 10px;
+}
+
+.history-clear-action button {
+  margin: 0 !important;
+}
+
+@media (max-width: 420px) {
+  .history-clear-action {
+    justify-content: stretch;
+  }
+
+  .history-clear-action button {
+    width: 100%;
+  }
+}
+
+
+/* =========================
+   Device Switch Skeleton
+========================= */
+
+.device-switch-skeleton {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.skeleton-card {
+  min-height: 210px;
+  padding: 24px;
+  border: 1px solid #e4e9f0;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 8px 25px rgba(20, 40, 70, 0.07);
+  overflow: hidden;
+  position: relative;
+}
+
+.skeleton-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.75),
+    transparent
+  );
+  animation: deviceSkeletonShimmer 1.35s infinite;
+}
+
+.skeleton-line,
+.skeleton-block,
+.skeleton-button {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #e9edf2;
+}
+
+.skeleton-line {
+  width: 78%;
+  height: 14px;
+  margin-bottom: 16px;
+}
+
+.skeleton-title {
+  width: 45%;
+  height: 20px;
+  margin-bottom: 24px;
+}
+
+.skeleton-short {
+  width: 42%;
+}
+
+.skeleton-block {
+  width: 100%;
+  height: 70px;
+  margin-bottom: 18px;
+}
+
+.skeleton-chart {
+  height: 95px;
+}
+
+.skeleton-form {
+  height: 82px;
+}
+
+.skeleton-history {
+  height: 100px;
+}
+
+.skeleton-button {
+  width: 130px;
+  height: 40px;
+  margin-top: 18px;
+}
+
+.skeleton-full {
+  grid-column: 1 / -1;
+}
+
+@keyframes deviceSkeletonShimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (max-width: 760px) {
+  .device-switch-skeleton {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .skeleton-full {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 420px) {
+  .device-switch-skeleton {
+    gap: 10px;
+  }
+
+  .skeleton-card {
+    min-height: 190px;
+    padding: 20px;
+    border-radius: 16px;
+  }
+}

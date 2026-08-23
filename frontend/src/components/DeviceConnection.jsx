@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { authFetch, deviceFetch } from "../api";
+import Icon from "./Icon";
 
 function DeviceConnection({ onNameChanged, selectedDeviceId }) {
   const [data, setData] = useState(null);
@@ -12,6 +13,7 @@ function DeviceConnection({ onNameChanged, selectedDeviceId }) {
   const [newDeviceName, setNewDeviceName] = useState("");
   const [savingName, setSavingName] = useState(false);
   const [nameMessage, setNameMessage] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
 
   // =========================================
   // DEVICE + SENSOR STATUS
@@ -252,489 +254,266 @@ function DeviceConnection({ onNameChanged, selectedDeviceId }) {
 
 
   return (
+    <div className="device-control-card">
 
-    <div
-      style={{
-        border: "1px solid #ddd",
-        borderRadius: "15px",
-        padding: "20px",
-        marginTop: "20px",
-        background: "#fff"
-      }}
-    >
+      {/* CONNECTION HEADER */}
+      <div className="device-control-header">
 
-      {/* ================================= */}
-      {/* DEVICE NAME */}
-      {/* ================================= */}
+        <div className="device-control-title">
+          Device Connection
+        </div>
 
-      <h2>
-        📡{" "}
-        {data?.deviceName ||
-          "ESP32 Device"}
-      </h2>
+        <div className="device-control-actions">
 
-
-      {/* ================================= */}
-      {/* ONLINE */}
-      {/* ================================= */}
-
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-          fontSize: "18px",
-          fontWeight: "bold"
-        }}
-      >
-
-        <span
-          style={{
-            width: "14px",
-            height: "14px",
-            borderRadius: "50%",
-            background:
+          <span
+            className={`device-online-logo ${
               online
-                ? "#16a34a"
-                : "#dc2626",
-            display: "inline-block"
-          }}
-        />
+                ? "device-online-logo-online"
+                : "device-online-logo-offline"
+            }`}
+            title={
+              online
+                ? "Device connected"
+                : "Device disconnected"
+            }
+            aria-label={
+              online
+                ? "Device connected"
+                : "Device disconnected"
+            }
+          />
 
-        {online
-          ? "🟢 ESP32 Online"
-          : "🔴 ESP32 Offline"}
+          <button
+            type="button"
+            className="device-settings-button"
+            onClick={() => setShowSettings(true)}
+            aria-label="Device settings"
+            title="Device settings"
+          >
+            ⚙
+          </button>
 
+        </div>
       </div>
 
 
-      {/* ================================= */}
-      {/* WIFI */}
-      {/* ================================= */}
-
-      <div
-        style={{
-          marginTop: "12px"
-        }}
-      >
-        <b>📶 Wi-Fi:</b>{" "}
-        {data?.wifiStatus ||
-          "UNKNOWN"}
-      </div>
-
-
-      {/* ================================= */}
-      {/* DEVICE NAME EDIT */}
-      {/* ================================= */}
-
-      <div
-        style={{
-          marginTop: "8px"
-        }}
-      >
-
-        <b>📛 Device Name:</b>{" "}
-
-        {!editingName ? (
-
-          <>
-
+      {/* OFFLINE INFORMATION */}
+      {!online && (
+        <div className="device-offline-info">
+          Device is offline
+          {data?.lastSeen && (
             <span>
-              {data?.deviceName ||
-                selectedDeviceId}
+              {" "}· Last Seen:{" "}
+              {new Date(data.lastSeen).toLocaleString("en-IN")}
             </span>
-
-            <button
-              onClick={() => {
-
-                setNewDeviceName(
-                  data?.deviceName ||
-                  selectedDeviceId
-                );
-
-                setNameMessage("");
-
-                setEditingName(true);
-
-              }}
-
-              style={{
-                marginLeft: "10px",
-                padding: "5px 10px",
-                border:
-                  "1px solid #ccc",
-                borderRadius: "6px",
-                background: "#f5f5f5",
-                cursor: "pointer"
-              }}
-            >
-              ✏️ Edit
-            </button>
-
-          </>
-
-        ) : (
-
-          <div
-            style={{
-              marginTop: "8px"
-            }}
-          >
-
-            <input
-              value={newDeviceName}
-              onChange={(e) =>
-                setNewDeviceName(
-                  e.target.value
-                )
-              }
-              placeholder="Device name"
-              style={{
-                padding: "8px",
-                border:
-                  "1px solid #ccc",
-                borderRadius: "6px",
-                width: "200px"
-              }}
-            />
-
-            <button
-              onClick={saveDeviceName}
-              disabled={savingName}
-              style={{
-                marginLeft: "8px",
-                padding: "7px 12px",
-                border: "none",
-                borderRadius: "6px",
-                background: "#16a34a",
-                color: "#fff",
-                cursor: "pointer"
-              }}
-            >
-              {savingName
-                ? "Saving..."
-                : "Save"}
-            </button>
-
-            <button
-              onClick={() => {
-
-                setEditingName(false);
-                setNameMessage("");
-
-              }}
-
-              disabled={savingName}
-
-              style={{
-                marginLeft: "6px",
-                padding: "7px 12px",
-                border:
-                  "1px solid #ccc",
-                borderRadius: "6px",
-                background: "#fff",
-                cursor: "pointer"
-              }}
-            >
-              Cancel
-            </button>
-
-            {nameMessage && (
-
-              <div
-                style={{
-                  marginTop: "8px",
-                  fontSize: "13px"
-                }}
-              >
-                {nameMessage}
-              </div>
-
-            )}
-
-          </div>
-
-        )}
-
-      </div>
+          )}
+        </div>
+      )}
 
 
-      {/* ================================= */}
-      {/* DEVICE ID */}
-      {/* ================================= */}
-
-      <div
-        style={{
-          marginTop: "8px"
-        }}
-      >
-        <b>🆔 Device ID:</b>{" "}
-        {selectedDeviceId}
-      </div>
-
-
-      {/* ================================= */}
-      {/* LAST SEEN */}
-      {/* ================================= */}
-
-      <div
-        style={{
-          marginTop: "8px"
-        }}
-      >
-
-        <b>🕐 Last Seen:</b>{" "}
-
-        {data?.lastSeen
-          ? new Date(
-              data.lastSeen
-            ).toLocaleString(
-              "en-IN"
-            )
-          : "Never"}
-
-      </div>
-
-
-      {/* ================================= */}
-      {/* PUMP STATUS */}
-      {/* ================================= */}
-
-      <div
-        style={{
-          marginTop: "18px",
-          padding: "14px",
-          borderRadius: "10px",
-          background:
-            pumpStatus === "ON"
-              ? "#dcfce7"
-              : pumpStatus === "OFF"
-              ? "#fee2e2"
-              : "#f3f4f6"
-        }}
-      >
-
-        <b>🚰 Pump Status:</b>{" "}
-
-        {pumpStatus === "ON" && (
-          <span
-            style={{
-              color: "#15803d",
-              fontWeight: "bold"
-            }}
-          >
-            🟢 ON
-          </span>
-        )}
-
-        {pumpStatus === "OFF" && (
-          <span
-            style={{
-              color: "#b91c1c",
-              fontWeight: "bold"
-            }}
-          >
-            🔴 OFF
-          </span>
-        )}
-
-        {pumpStatus === "UNKNOWN" && (
-          <span
-            style={{
-              color: "#6b7280",
-              fontWeight: "bold"
-            }}
-          >
-            ⚪ UNKNOWN
-          </span>
-        )}
-
-      </div>
-
-
-      {/* ================================= */}
-      {/* CONNECTED SENSORS */}
-      {/* ================================= */}
-
+      {/* SENSOR STATUS
+          Show something ONLY when a sensor exists.
+          No-sensor message is intentionally removed. */}
       {(hasVoltage ||
         hasCurrent ||
         hasFloat ||
         hasPressure ||
         hasTemperature) && (
 
-        <div
-          style={{
-            marginTop: "16px",
-            paddingTop: "12px",
-            borderTop:
-              "1px solid #eee"
-          }}
-        >
-
-          <b>📡 Connected Sensors</b>
-
-
-          {/* VOLTAGE */}
+        <div className="device-sensor-strip">
 
           {hasVoltage && (
-
-            <div
-              style={{
-                marginTop: "10px"
-              }}
-            >
-              ⚡ Voltage:{" "}
-              <b>
-                Sensor Connected
-              </b>
-
-              {data?.voltage !==
-                undefined && (
-                <>
-                  {" "}
-                  —{" "}
-                  {data.voltage} V
-                </>
-              )}
+            <div className="device-sensor-item">
+              <span>Voltage</span>
+              <strong>
+                {data?.voltage !== undefined
+                  ? `${data.voltage} V`
+                  : "Connected"}
+              </strong>
             </div>
-
           )}
-
-
-          {/* CURRENT */}
 
           {hasCurrent && (
-
-            <div
-              style={{
-                marginTop: "8px"
-              }}
-            >
-              🔌 Current:{" "}
-              <b>
-                Sensor Connected
-              </b>
-
-              {data?.current !==
-                undefined && (
-                <>
-                  {" "}
-                  —{" "}
-                  {data.current} A
-                </>
-              )}
+            <div className="device-sensor-item">
+              <span>Current</span>
+              <strong>
+                {data?.current !== undefined
+                  ? `${data.current} A`
+                  : "Connected"}
+              </strong>
             </div>
-
           )}
-
-
-          {/* WATER LEVEL / FLOAT */}
 
           {hasFloat && (
-
-            <div
-              style={{
-                marginTop: "8px"
-              }}
-            >
-              💧 Water Level:{" "}
-              <b>
-                Sensor Connected
-              </b>
-
-              {data?.waterLevel !==
-                undefined && (
-                <>
-                  {" "}
-                  —{" "}
-                  {data.waterLevel}
-                </>
-              )}
+            <div className="device-sensor-item">
+              <span>Water Level</span>
+              <strong>
+                {data?.waterLevel !== undefined
+                  ? data.waterLevel
+                  : "Connected"}
+              </strong>
             </div>
-
           )}
-
-
-          {/* PRESSURE */}
 
           {hasPressure && (
-
-            <div
-              style={{
-                marginTop: "8px"
-              }}
-            >
-              💨 Pressure:{" "}
-              <b>
-                Sensor Connected
-              </b>
-
-              {data?.pressure !==
-                undefined && (
-                <>
-                  {" "}
-                  —{" "}
-                  {data.pressure} PSI
-                </>
-              )}
+            <div className="device-sensor-item">
+              <span>Pressure</span>
+              <strong>
+                {data?.pressure !== undefined
+                  ? `${data.pressure} PSI`
+                  : "Connected"}
+              </strong>
             </div>
-
           )}
 
-
-          {/* TEMPERATURE */}
-
           {hasTemperature && (
-
-            <div
-              style={{
-                marginTop: "8px"
-              }}
-            >
-              🌡️ Temperature:{" "}
-              <b>
-                Sensor Connected
-              </b>
-
-              {data?.temperature !==
-                undefined && (
-                <>
-                  {" "}
-                  —{" "}
-                  {data.temperature} °C
-                </>
-              )}
+            <div className="device-sensor-item">
+              <span>Temperature</span>
+              <strong>
+                {data?.temperature !== undefined
+                  ? `${data.temperature} °C`
+                  : "Connected"}
+              </strong>
             </div>
-
           )}
 
         </div>
-
       )}
 
 
-      {/* ================================= */}
-      {/* NO SENSOR */}
-      {/* ================================= */}
-
-      {!hasVoltage &&
-        !hasCurrent &&
-        !hasFloat &&
-        !hasPressure &&
-        !hasTemperature && (
-
+      {/* SETTINGS POPUP */}
+      {showSettings && (
         <div
-          style={{
-            marginTop: "16px",
-            paddingTop: "12px",
-            borderTop:
-              "1px solid #eee",
-            color: "#6b7280"
+          className="device-settings-overlay"
+          onClick={() => {
+            if (!savingName) {
+              setShowSettings(false);
+              setEditingName(false);
+              setNameMessage("");
+            }
           }}
         >
-          📡 कोई sensor connected नहीं है।
-        </div>
 
+          <div
+            className="device-settings-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+
+            <div className="device-settings-header">
+              <strong>Device Settings</strong>
+
+              <button
+                type="button"
+                className="device-settings-close"
+                onClick={() => {
+                  if (!savingName) {
+                    setShowSettings(false);
+                    setEditingName(false);
+                    setNameMessage("");
+                  }
+                }}
+                disabled={savingName}
+                aria-label="Close settings"
+              >
+                ×
+              </button>
+            </div>
+
+
+            {/* DEVICE ID */}
+            <div className="device-settings-row">
+              <span>Device ID</span>
+              <strong>{selectedDeviceId}</strong>
+            </div>
+
+
+            {/* DEVICE NAME */}
+            <div className="device-settings-row device-settings-name">
+
+              <span>Device Name</span>
+
+              {!editingName ? (
+                <div className="device-settings-name-value">
+
+                  <strong>
+                    {data?.deviceName || selectedDeviceId}
+                  </strong>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewDeviceName(
+                        data?.deviceName || selectedDeviceId
+                      );
+                      setNameMessage("");
+                      setEditingName(true);
+                    }}
+                    className="device-settings-edit"
+                  >
+                    Edit
+                  </button>
+
+                </div>
+              ) : (
+                <div className="device-settings-edit-area">
+
+                  <input
+                    value={newDeviceName}
+                    onChange={(e) =>
+                      setNewDeviceName(e.target.value)
+                    }
+                    placeholder="Device name"
+                    autoFocus
+                  />
+
+                  <div className="device-settings-edit-buttons">
+
+                    <button
+                      type="button"
+                      onClick={saveDeviceName}
+                      disabled={savingName}
+                      className="device-settings-save"
+                    >
+                      {savingName ? "Saving..." : "Save"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingName(false);
+                        setNameMessage("");
+                      }}
+                      disabled={savingName}
+                      className="device-settings-cancel"
+                    >
+                      Cancel
+                    </button>
+
+                  </div>
+
+                  {nameMessage && (
+                    <div className="device-settings-message">
+                      {nameMessage}
+                    </div>
+                  )}
+
+                </div>
+              )}
+
+            </div>
+
+
+            {/* WIFI ONLY INSIDE SETTINGS */}
+            <div className="device-settings-row">
+              <span>Wi-Fi</span>
+              <strong>
+                {data?.wifiStatus || "UNKNOWN"}
+              </strong>
+            </div>
+
+          </div>
+
+        </div>
       )}
 
     </div>

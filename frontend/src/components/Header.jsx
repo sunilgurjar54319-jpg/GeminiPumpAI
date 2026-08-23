@@ -1,3 +1,4 @@
+import Icon from "./Icon";
 function Header({ deviceName }) {
   return (
     <header className="app-header">
@@ -5,7 +6,7 @@ function Header({ deviceName }) {
 
         <div className="brand">
           <div className="brand-icon">
-            🚰
+
           </div>
 
           <div>

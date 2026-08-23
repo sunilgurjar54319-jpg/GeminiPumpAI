@@ -5,6 +5,7 @@ import {
   deleteSchedule,
   updateSchedule
 } from "../api";
+import Icon from "./Icon";
 
 const DAYS = [
   ["Mon", "Mon"],
@@ -17,6 +18,7 @@ const DAYS = [
 ];
 
 function Schedule({ refresh, deviceName, selectedDeviceId }) {
+  const [scheduleOpen, setScheduleOpen] = useState(false);
 
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -57,7 +59,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
     } catch (err) {
 
       console.log(err);
-      setMessage("❌ Schedule Load Failed");
+      setMessage(" Schedule Load Failed");
 
     }
 
@@ -93,7 +95,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
     if (!startTime || !endTime) {
 
-      setMessage("⚠️ Start और End time चुनें");
+      setMessage(" Start और End time चुनें");
 
       return;
 
@@ -101,7 +103,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
     if (selectedDays.length === 0) {
 
-      setMessage("⚠️ कम से कम एक दिन चुनें");
+      setMessage(" कम से कम एक दिन चुनें");
 
       return;
 
@@ -134,8 +136,8 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
         setMessage(
           command === "ON"
-            ? "🟢 ON Schedule Saved"
-            : "🔴 OFF Schedule Saved"
+            ? " ON Schedule Saved"
+            : " OFF Schedule Saved"
         );
 
         resetForm();
@@ -145,7 +147,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
       } else {
 
         setMessage(
-          "❌ " + (result.error || "Schedule Save Failed")
+          " " + (result.error || "Schedule Save Failed")
         );
 
       }
@@ -154,7 +156,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
       console.log(err);
 
-      setMessage("❌ Server Error");
+      setMessage(" Server Error");
 
     }
 
@@ -185,7 +187,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
       console.log(err);
 
-      setMessage("❌ Delete Failed");
+      setMessage(" Delete Failed");
 
     }
 
@@ -215,7 +217,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
         : []
     );
 
-    setMessage("✏️ Editing Schedule");
+    setMessage(" Editing Schedule");
 
   }
 
@@ -230,7 +232,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
     if (!startTime || !endTime) {
 
-      setMessage("⚠️ Start और End time चुनें");
+      setMessage(" Start और End time चुनें");
 
       return;
 
@@ -238,7 +240,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
     if (selectedDays.length === 0) {
 
-      setMessage("⚠️ कम से कम एक दिन चुनें");
+      setMessage(" कम से कम एक दिन चुनें");
 
       return;
 
@@ -270,7 +272,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
       if (result.success) {
 
-        setMessage("✅ Schedule Updated");
+        setMessage(" Schedule Updated");
 
         resetForm();
 
@@ -279,7 +281,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
       } else {
 
         setMessage(
-          "❌ " + (result.error || "Update Failed")
+          " " + (result.error || "Update Failed")
         );
 
       }
@@ -288,7 +290,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
       console.log(err);
 
-      setMessage("❌ Server Error");
+      setMessage(" Server Error");
 
     }
 
@@ -330,12 +332,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
       if (result.success) {
 
-        setMessage(
-          result.schedule.enabled
-            ? "▶️ Schedule Enabled"
-            : "⏸️ Schedule Disabled"
-        );
-
+        setMessage("");
         await loadSchedules();
 
       }
@@ -344,7 +341,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
       console.log(err);
 
-      setMessage("❌ Status Update Failed");
+      setMessage(" Status Update Failed");
 
     }
 
@@ -408,7 +405,33 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
       }}
     >
 
-      <h2>⏰ {deviceName || "Pump"} Schedule</h2>
+      <button
+        type="button"
+        className="accordion-header schedule-accordion-header"
+        onClick={() => setScheduleOpen(v => !v)}
+        aria-expanded={scheduleOpen}
+      >
+        <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <Icon name="clock" size={20} />
+          Schedule
+        </span>
+
+        <span
+          className={`accordion-chevron ${
+            scheduleOpen ? "is-open" : ""
+          }`}
+          aria-hidden="true"
+        >
+          ▾
+        </span>
+      </button>
+
+      <div
+        className={`accordion-content schedule-accordion-content ${
+          scheduleOpen ? "accordion-content-open" : "accordion-content-closed"
+        }`}
+      ><div className="accordion-slide-content schedule-slide-content">
+
 
 
       {/* Command */}
@@ -418,53 +441,24 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
       </p>
 
       <button
-
+        type="button"
+        className={`schedule-command-pill ${
+          command === "ON" ? "schedule-command-active-on" : ""
+        }`}
         onClick={() => setCommand("ON")}
-
-        style={{
-          padding: "10px 20px",
-          marginRight: "10px",
-          borderRadius: "8px",
-          border: "none",
-          background:
-            command === "ON"
-              ? "#2e7d32"
-              : "#ddd",
-          color:
-            command === "ON"
-              ? "white"
-              : "black"
-        }}
-
       >
-
-        🟢 ON
-
+        ON
       </button>
 
 
       <button
-
+        type="button"
+        className={`schedule-command-pill ${
+          command === "OFF" ? "schedule-command-active-off" : ""
+        }`}
         onClick={() => setCommand("OFF")}
-
-        style={{
-          padding: "10px 20px",
-          borderRadius: "8px",
-          border: "none",
-          background:
-            command === "OFF"
-              ? "#d32f2f"
-              : "#ddd",
-          color:
-            command === "OFF"
-              ? "white"
-              : "black"
-        }}
-
       >
-
-        🔴 OFF
-
+        OFF
       </button>
 
 
@@ -535,25 +529,15 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
             key={value}
 
-            onClick={() =>
-              toggleDay(value)
-            }
+            type="button"
+            className={`schedule-day-pill ${selectedDays.includes(value) ? "schedule-day-selected" : ""}`}
+            onClick={() => toggleDay(value)}
 
-            style={{
-              padding: "8px 12px",
-              borderRadius: "8px",
-              border: "1px solid #aaa",
-
-              background:
-                selectedDays.includes(value)
-                  ? "#1976d2"
-                  : "#eee",
-
-              color:
-                selectedDays.includes(value)
-                  ? "white"
-                  : "black"
-            }}
+            className={`schedule-day-button ${
+              selectedDays.includes(value)
+                ? "schedule-day-selected"
+                : "schedule-day-ghost"
+            }`}
 
           >
 
@@ -594,7 +578,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
             {loading
               ? "Updating..."
-              : "✏️ Update Schedule"}
+              : " Update Schedule"}
 
           </button>
 
@@ -644,9 +628,14 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
         >
 
-          {loading
-            ? "Saving..."
-            : "💾 Save Schedule"}
+          {loading ? (
+            "Saving..."
+          ) : (
+            <>
+              <Icon name="save" size={18} />
+              <span>Save Schedule</span>
+            </>
+          )}
 
         </button>
 
@@ -669,7 +658,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
       {/* Saved Schedules */}
 
-      <h3>📋 Saved Schedules</h3>
+      <h3> Saved Schedules</h3>
 
       {schedules.length === 0 ? (
 
@@ -680,9 +669,9 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
         schedules.map((item, index) => {
 
           const commandText =
-            item.command === "OFF"
-              ? `🔴 ${deviceName || "Pump"} बंद`
-              : `🟢 ${deviceName || "Pump"} चालू`;
+            String(item.command || "").toUpperCase() === "OFF"
+              ? "OFF"
+              : "ON";
 
           const timeText =
             item.endTime &&
@@ -698,75 +687,68 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
           return (
             <div
               key={item.$id}
-              style={{
-                border: "1px solid #ccc",
-                borderRadius: "12px",
-                padding: "15px",
-                marginBottom: "12px",
-                background: "#fafafa"
-              }}
+              className="saved-schedule-card"
             >
+              <div className="saved-schedule-top">
 
-              <div
-                style={{
-                  fontSize: "17px",
-                  fontWeight: "bold",
-                  marginBottom: "8px"
-                }}
-              >
-                #{index + 1} &nbsp; {commandText}
+                <div className="saved-schedule-main">
+                  <div className={`saved-schedule-action ${
+                    String(commandText).toUpperCase().includes("OFF")
+                      ? "is-off"
+                      : "is-on"
+                  }`}>
+                    <span className="saved-schedule-status-dot" />
+                    {commandText}
+                  </div>
+
+                  <div className="saved-schedule-time">
+                    {timeText}
+                  </div>
+
+                  <div className="saved-schedule-days">
+                    {item.scheduledDate
+                      ? `Only Once: ${item.scheduledDate}`
+                      : `Repeats: ${dayText}`}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className={`saved-schedule-toggle ${
+                    item.enabled ? "is-on" : "is-off"
+                  }`}
+                  onClick={() => toggleSchedule(item)}
+                  aria-label={
+                    item.enabled
+                      ? "Disable schedule"
+                      : "Enable schedule"
+                  }
+                  title={
+                    item.enabled
+                      ? "Disable schedule"
+                      : "Enable schedule"
+                  }
+                >
+                  <span className="saved-schedule-toggle-knob" />
+                </button>
+
               </div>
 
-              <p style={{ margin: "7px 0" }}>
-                ⏰ <b>समय:</b> {timeText}
-              </p>
-
-              <p style={{ margin: "7px 0" }}>
-                📅 <b>दिन:</b> {dayText}
-              </p>
-
-              {item.scheduledDate && (
-                <p style={{ margin: "7px 0" }}>
-                  📆 <b>तारीख:</b> {item.scheduledDate}
-                </p>
-              )}
-
-              <p style={{ margin: "7px 0" }}>
-                <b>स्थिति:</b>{" "}
-                {item.enabled
-                  ? "🟢 चालू है"
-                  : "⏸️ बंद है"}
-              </p>
-
-              <div style={{ marginTop: "12px" }}>
+              <div className="saved-schedule-actions">
 
                 <button
-                  onClick={() => toggleSchedule(item)}
-                  style={{
-                    marginRight: "8px",
-                    padding: "8px 12px",
-                    borderRadius: "7px",
-                    border: "1px solid #aaa"
-                  }}
-                >
-                  {item.enabled
-                    ? "⏸️ Schedule बंद करें"
-                    : "▶️ Schedule चालू करें"}
-                </button>
-
-                <button
+                  type="button"
+                  className="saved-schedule-icon-button"
                   onClick={() => editSchedule(item)}
-                  style={{
-                    marginRight: "8px",
-                    padding: "8px 12px",
-                    borderRadius: "7px",
-                    border: "1px solid #aaa"
-                  }}
+                  aria-label="Edit schedule"
+                  title="Edit schedule"
                 >
-                  ✏️ बदलें
+                  <Icon name="edit" size={17} />
                 </button>
 
                 <button
+                  type="button"
+                  className="saved-schedule-icon-button delete"
                   onClick={() => {
                     if (
                       window.confirm(
@@ -776,26 +758,38 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
                       removeSchedule(item.$id);
                     }
                   }}
-                  style={{
-                    padding: "8px 12px",
-                    borderRadius: "7px",
-                    border: "1px solid #d32f2f",
-                    color: "#d32f2f",
-                    background: "white"
-                  }}
+                  aria-label="Delete schedule"
+                  title="Delete schedule"
                 >
-                  🗑️ Delete करें
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M3 6h18" />
+                    <path d="M8 6V4h8v2" />
+                    <path d="M19 6l-1 14H6L5 6" />
+                    <path d="M10 11v5" />
+                    <path d="M14 11v5" />
+                  </svg>
                 </button>
 
               </div>
-
             </div>
-          );
 
+          );
         })
 
       )}
 
+        </div>
+      </div>
     </div>
 
   );

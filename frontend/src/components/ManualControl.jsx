@@ -1,22 +1,107 @@
 import { useEffect, useState } from "react";
 import { authFetch, getDevice } from "../api";
+import VoiceControl from "./VoiceControl";
+import Icon from "./Icon";
 
 const ONLINE_TIMEOUT = 60000;
 
-function ManualControl({ onCommandSent, deviceName, selectedDeviceId }) {
+function DeviceStatusIcon({ online }) {
+  return (
+    <span
+      className={`device-status-icon ${
+        online ? "device-status-online" : "device-status-offline"
+      }`}
+      aria-label={online ? "Device connected" : "Device disconnected"}
+      title={online ? "Device connected" : "Device disconnected"}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        width="20"
+        height="20"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <rect x="6" y="3" width="12" height="18" rx="3" />
+        <path d="M9 7h6" />
+        <path d="M10 17h4" />
+      </svg>
+    </span>
+  );
+}
 
+function ManualControl({
+  onCommandSent,
+  deviceName,
+  selectedDeviceId
+}) {
   const displayName = deviceName || "Pump";
 
   const [isOn, setIsOn] = useState(false);
   const [deviceOnline, setDeviceOnline] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [newDeviceName, setNewDeviceName] = useState("");
+  const [savingName, setSavingName] = useState(false);
+  const [nameMessage, setNameMessage] = useState("");
+
+  async function saveDeviceName() {
+    const name = newDeviceName.trim();
+
+    if (!name) {
+      setNameMessage("Device name खाली नहीं हो सकता");
+      return;
+    }
+
+    try {
+      setSavingName(true);
+      setNameMessage("");
+
+      const res = await authFetch(
+        `/api/device/${selectedDeviceId}/name`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            deviceName: name
+          })
+        }
+      );
+
+      const result = await res.json();
+
+      if (!res.ok || !result.success) {
+        throw new Error(
+          result.error || "Name update failed"
+        );
+      }
+
+      setEditingName(false);
+      setNameMessage("Device name updated successfully");
+
+      if (onCommandSent) {
+        onCommandSent();
+      }
+    } catch (err) {
+      console.error("Device name update error:", err);
+      setNameMessage(err.message);
+    } finally {
+      setSavingName(false);
+    }
+  }
+
 
   // =========================================
   // Check ESP32 connection
   // =========================================
 
-  // Device switch होते ही पुराना status तुरंत साफ करें
   useEffect(() => {
     setIsOn(false);
     setDeviceOnline(false);
@@ -25,9 +110,7 @@ function ManualControl({ onCommandSent, deviceName, selectedDeviceId }) {
   }, [selectedDeviceId]);
 
   async function loadDeviceStatus() {
-
     try {
-
       const data = await getDevice(selectedDeviceId);
 
       console.log(
@@ -42,7 +125,6 @@ function ManualControl({ onCommandSent, deviceName, selectedDeviceId }) {
       }
 
       if (!data.lastSeen) {
-
         setDeviceOnline(false);
 
         setMessage(
@@ -88,9 +170,7 @@ function ManualControl({ onCommandSent, deviceName, selectedDeviceId }) {
           "RMU FW Update available or Pump is not connected to network"
         );
       }
-
     } catch (err) {
-
       console.error(
         "Manual Control Device Error:",
         err
@@ -101,11 +181,8 @@ function ManualControl({ onCommandSent, deviceName, selectedDeviceId }) {
       setMessage(
         "RMU FW Update available or Pump is not connected to network"
       );
-
     }
-
   }
-
 
   // =========================================
   // Current pump status
@@ -113,13 +190,11 @@ function ManualControl({ onCommandSent, deviceName, selectedDeviceId }) {
   // =========================================
 
   async function loadPumpStatus() {
-
     if (!deviceOnline) {
       return;
     }
 
     try {
-
       const res = await authFetch(
         `/api/status/${selectedDeviceId}`,
         { cache: "no-store" }
@@ -134,25 +209,19 @@ function ManualControl({ onCommandSent, deviceName, selectedDeviceId }) {
       if (data.status === "OFF") {
         setIsOn(false);
       }
-
     } catch (err) {
-
       console.log(
         "Pump status error:",
         err
       );
-
     }
-
   }
-
 
   // =========================================
   // Device heartbeat/status polling
   // =========================================
 
   useEffect(() => {
-
     if (!selectedDeviceId) {
       setDeviceOnline(false);
       return;
@@ -166,50 +235,37 @@ function ManualControl({ onCommandSent, deviceName, selectedDeviceId }) {
     );
 
     return () => clearInterval(timer);
-
   }, [selectedDeviceId]);
-
 
   // =========================================
   // Pump status polling
   // =========================================
 
   useEffect(() => {
-
     if (deviceOnline) {
       loadPumpStatus();
     }
 
     const timer = setInterval(() => {
-
       if (deviceOnline) {
         loadPumpStatus();
       }
-
     }, 5000);
 
     return () => clearInterval(timer);
-
   }, [deviceOnline]);
-
 
   // =========================================
   // Send Manual Command
   // =========================================
 
   async function sendCommand(command) {
-
-    // IMPORTANT:
-    // Manual command cannot be sent while offline.
-
     if (!deviceOnline) {
-
       setMessage(
         "RMU FW Update available or Pump is not connected to network"
       );
 
       return;
-
     }
 
     if (loading) return;
@@ -218,13 +274,11 @@ function ManualControl({ onCommandSent, deviceName, selectedDeviceId }) {
 
     setMessage(
       command === "ON"
-        ? `🟢 ${displayName} Starting...`
-        : `🔴 ${displayName} Stopping...`
+        ? `${displayName} Starting...`
+        : `${displayName} Stopping...`
     );
 
-
     try {
-
       const res = await authFetch(
         "/api/command/send",
         {
@@ -241,19 +295,16 @@ function ManualControl({ onCommandSent, deviceName, selectedDeviceId }) {
         }
       );
 
-
       const data = await res.json();
-
 
       // Already same state
       if (data.ignored) {
-
         setIsOn(data.status === "ON");
 
         setMessage(
           data.status === "ON"
-            ? `🟢 ${displayName} is already ON`
-            : `🔴 ${displayName} is already OFF`
+            ? `${displayName} is already ON`
+            : `${displayName} is already OFF`
         );
 
         setLoading(false);
@@ -261,286 +312,337 @@ function ManualControl({ onCommandSent, deviceName, selectedDeviceId }) {
         return;
       }
 
-
       // Command successfully created
       if (data.$id) {
-
         setIsOn(command === "ON");
 
         setMessage(
           command === "ON"
-            ? `✅ ${displayName} ON Command Sent`
-            : `✅ ${displayName} OFF Command Sent`
+            ? `${displayName} ON Command Sent`
+            : `${displayName} OFF Command Sent`
         );
-
 
         if (onCommandSent) {
-
           setTimeout(() => {
-
             onCommandSent();
-
           }, 3000);
-
         }
-
       } else {
-
         setMessage(
-          "❌ Command Failed"
+          "Command Failed"
         );
-
       }
-
-
     } catch (err) {
-
       console.log(
         "Command error:",
         err
       );
 
       setMessage(
-        "❌ Server Error"
+        "Server Error"
       );
-
     }
 
-
     setLoading(false);
-
   }
-
 
   // =========================================
   // Manual Toggle
   // =========================================
 
   function togglePump() {
-
-    // Extra protection
     if (!deviceOnline) {
-
       setMessage(
         "RMU FW Update available or Pump is not connected to network"
       );
 
       return;
-
     }
 
     const nextCommand =
       isOn ? "OFF" : "ON";
 
     sendCommand(nextCommand);
-
   }
 
-
   return (
-
-    <div
-      style={{
-        border: "1px solid #ddd",
-        borderRadius: "15px",
-        padding: "25px",
-        marginTop: "20px",
-        textAlign: "center"
-      }}
-    >
-
-      <h2>🎮 {displayName} Manual Control</h2>
-
+    <>
+      <div className="manual-control-card">
 
       {/* =====================================
-          OFFLINE MESSAGE
+          HEADER
       ===================================== */}
 
-      {!deviceOnline && (
+      <div className="manual-control-header">
 
-        <div
-          style={{
-            marginBottom: "20px",
-            padding: "15px",
-            borderRadius: "10px",
-            background: "#fff7ed",
-            border: "1px solid #fed7aa",
-            color: "#c2410c",
-            fontWeight: "bold",
-            lineHeight: "1.5"
-          }}
-        >
-          RMU FW Update available or Pump is not connected to network
+        <div className="manual-control-title">
+          <div className="manual-control-title-main">
+            Control
+          </div>
+
+          <div className="manual-control-device-name">
+            {displayName}
+          </div>
         </div>
 
-      )}
-
-
-      {/* =====================================
-          DIGITAL TOGGLE
-      ===================================== */}
-
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: "12px"
-        }}
-      >
-
-        <button
-
-          onClick={togglePump}
-
-          disabled={
-            loading ||
-            !deviceOnline
-          }
-
-          aria-label={
-            !deviceOnline
-              ? `${displayName} disconnected`
-              : isOn
-                ? `Turn ${displayName} OFF`
-                : `Turn ${displayName} ON`
-          }
-
-          style={{
-            width: "120px",
-            height: "60px",
-            border: "none",
-            borderRadius: "35px",
-            padding: "5px",
-
-            cursor:
-              loading || !deviceOnline
-                ? "not-allowed"
-                : "pointer",
-
-            background:
-              !deviceOnline
-                ? "#d1d5db"
-                : isOn
-                  ? "#16a34a"
-                  : "#6b7280",
-
-            boxShadow:
-              deviceOnline && isOn
-                ? "0 0 18px rgba(22,163,74,0.45)"
-                : "0 3px 10px rgba(0,0,0,0.2)",
-
-            transition:
-              "all 0.25s ease",
-
-            opacity:
-              !deviceOnline
-                ? 0.55
-                : loading
-                  ? 0.7
-                  : 1
-          }}
-        >
-
-          <span
-            style={{
-              display: "block",
-              width: "50px",
-              height: "50px",
-              borderRadius: "50%",
-              background: "white",
-
-              transform:
-                isOn
-                  ? "translateX(60px)"
-                  : "translateX(0px)",
-
-              transition:
-                "transform 0.25s ease",
-
-              boxShadow:
-                "0 2px 6px rgba(0,0,0,0.25)"
-            }}
+        <div className="manual-control-header-actions">
+          <DeviceStatusIcon
+            online={deviceOnline}
           />
 
-        </button>
-
-
-        {/* =====================================
-            MOTOR STATUS
-            ONLY WHEN ONLINE
-        ===================================== */}
-
-        {deviceOnline && (
-
-          <div
-            style={{
-              fontSize: "20px",
-              fontWeight: "bold",
-              color:
-                isOn
-                  ? "#15803d"
-                  : "#dc2626"
+          <button
+            type="button"
+            className="device-settings-button"
+            onClick={() => {
+              setNewDeviceName(displayName);
+              setNameMessage("");
+              setEditingName(false);
+              setShowSettings(true);
             }}
+            aria-label="Device settings"
+            title="Device settings"
           >
-
-            {loading
-              ? "Processing..."
-              : isOn
-                ? `🟢 ${displayName} RUNNING`
-                : `🔴 ${displayName} STOPPED`}
-
-          </div>
-
-        )}
-
-
-        {/* =====================================
-            SWITCH DESCRIPTION
-        ===================================== */}
-
-        {deviceOnline && (
-
-          <div
-            style={{
-              fontSize: "13px",
-              color: "#666"
-            }}
-          >
-
-            Tap switch to control {displayName}{" "}
-            {isOn ? "OFF" : "ON"}
-
-          </div>
-
-        )}
+            <Icon name="settings" size={20} />
+          </button>
+        </div>
 
       </div>
 
 
       {/* =====================================
-          COMMAND MESSAGE
+          BODY
       ===================================== */}
 
-      {deviceOnline && (
+      <div className="manual-control-body">
 
-        <p
-          style={{
-            fontWeight: "bold",
-            fontSize: "16px",
-            minHeight: "24px"
-          }}
-        >
-          {message}
-        </p>
+        {/* =====================================
+            OFFLINE MESSAGE
+        ===================================== */}
 
-      )}
+        {!deviceOnline && (
+          <div className="manual-control-notice">
+            RMU FW Update available or Pump is not connected to network
+          </div>
+        )}
+
+
+        {/* =====================================
+            INNER CONTROL BOX
+        ===================================== */}
+
+        <div className="manual-control-box">
+
+          <div className="manual-control-box-left">
+
+            <div className="manual-control-box-title">
+              Mobile ON/OFF Control
+            </div>
+
+          </div>
+
+
+          <div className="manual-control-toggle-area">
+
+            <button
+              type="button"
+              onClick={togglePump}
+              disabled={
+                loading ||
+                !deviceOnline
+              }
+              aria-label={
+                !deviceOnline
+                  ? `${displayName} disconnected`
+                  : isOn
+                    ? `Turn ${displayName} OFF`
+                    : `Turn ${displayName} ON`
+              }
+              className={`manual-toggle ${
+                isOn
+                  ? "manual-toggle-on"
+                  : "manual-toggle-off"
+              } ${
+                !deviceOnline
+                  ? "manual-toggle-disabled"
+                  : ""
+              } ${
+                loading
+                  ? "manual-toggle-loading"
+                  : ""
+              }`}
+            >
+              <span
+                className={`manual-toggle-knob ${
+                  isOn
+                    ? "manual-toggle-knob-on"
+                    : ""
+                }`}
+              />
+            </button>
+
+            <div className="manual-toggle-labels">
+              <span
+                className={
+                  !isOn
+                    ? "toggle-label-active"
+                    : ""
+                }
+              >
+                OFF
+              </span>
+
+              <span
+                className={
+                  isOn
+                    ? "toggle-label-active"
+                    : ""
+                }
+              >
+                ON
+              </span>
+            </div>
+
+          </div>
+
+        </div>
+
+
+                <div className="manual-voice-control">
+          <VoiceControl
+            onCommandSent={onCommandSent}
+            deviceName={deviceName}
+            selectedDeviceId={selectedDeviceId}
+          />
+        </div>
+
+{/* =====================================
+            COMMAND MESSAGE
+        ===================================== */}
+
+        {deviceOnline && message && (
+          <div
+            className={`manual-command-message ${
+              message.includes("Failed") ||
+              message.includes("Error")
+                ? "manual-command-error"
+                : "manual-command-success"
+            }`}
+          >
+            {message}
+          </div>
+        )}
+
+      </div>
 
     </div>
 
+      {showSettings && (
+              <div
+                className="device-settings-overlay"
+                onClick={() => {
+                  if (!savingName) {
+                    setShowSettings(false);
+                    setEditingName(false);
+                    setNameMessage("");
+                  }
+                }}
+              >
+                <div
+                  className="device-settings-modal"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="device-settings-header">
+                    <strong>Device Settings</strong>
+
+                    <button
+                      type="button"
+                      className="device-settings-close"
+                      onClick={() => {
+                        if (!savingName) {
+                          setShowSettings(false);
+                          setEditingName(false);
+                          setNameMessage("");
+                        }
+                      }}
+                      disabled={savingName}
+                      aria-label="Close settings"
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  <div className="device-settings-row">
+                    <span>Device ID</span>
+                    <strong>{selectedDeviceId}</strong>
+                  </div>
+
+                  <div className="device-settings-row device-settings-name">
+                    <span>Device Name</span>
+
+                    {!editingName ? (
+                      <div className="device-settings-name-value">
+                        <strong>{displayName}</strong>
+
+                        <button
+                          type="button"
+                          className="device-settings-edit"
+                          onClick={() => {
+                            setNewDeviceName(displayName);
+                            setNameMessage("");
+                            setEditingName(true);
+                          }}
+                        >
+                          <Icon name="edit" size={16} />
+                          Edit
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="device-settings-edit-area">
+                        <input
+                          value={newDeviceName}
+                          onChange={(e) =>
+                            setNewDeviceName(e.target.value)
+                          }
+                          placeholder="Device name"
+                          autoFocus
+                        />
+
+                        <div className="device-settings-edit-buttons">
+                          <button
+                            type="button"
+                            className="device-settings-save"
+                            onClick={saveDeviceName}
+                            disabled={savingName}
+                          >
+                            {savingName ? "Saving..." : "Save"}
+                          </button>
+
+                          <button
+                            type="button"
+                            className="device-settings-cancel"
+                            onClick={() => {
+                              setEditingName(false);
+                              setNameMessage("");
+                            }}
+                            disabled={savingName}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+
+                        {nameMessage && (
+                          <div className="device-settings-message">
+                            {nameMessage}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+    </>
   );
-
 }
-
 
 export default ManualControl;

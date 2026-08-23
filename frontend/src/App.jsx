@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 
 import Header from "./components/Header";
-import StatusCard from "./components/StatusCard";
 import ManualControl from "./components/ManualControl";
-import VoiceControl from "./components/VoiceControl";
 import Schedule from "./components/Schedule";
 import HistoryCard from "./components/HistoryCard";
 import StatsCard from "./components/StatsCard";
@@ -20,6 +18,7 @@ function App() {
   const [refresh, setRefresh] = useState(false);
   const [selectedDeviceId, setSelectedDeviceId] = useState("PUMP001");
   const [deviceName, setDeviceName] = useState("PUMP001");
+  const [deviceLoading, setDeviceLoading] = useState(false);
 
   async function loadDeviceName(deviceId = selectedDeviceId) {
     if (!deviceId) return;
@@ -51,13 +50,20 @@ function App() {
     loadDeviceName(selectedDeviceId);
   }
 
-  function handleDeviceChange(deviceId) {
+  async function handleDeviceChange(deviceId) {
+    if (!deviceId) return;
+
+    // Purane device ka data turant hide karke skeleton dikhao
+    setDeviceLoading(true);
+    setDeviceName("");
     setSelectedDeviceId(deviceId);
-    setDeviceName(deviceId || "Device");
     setRefresh(prev => !prev);
 
-    if (deviceId) {
-      loadDeviceName(deviceId);
+    try {
+      await loadDeviceName(deviceId);
+    } finally {
+      // Naye device ka naam/data load hone ke baad skeleton hatao
+      setDeviceLoading(false);
     }
   }
 
@@ -75,7 +81,11 @@ function App() {
   }, [user, selectedDeviceId]);
 
   if (!user) {
-    return <Login onLogin={setUser} />;
+    return (
+      <ErrorBoundary>
+        <Login onLogin={setUser} />
+      </ErrorBoundary>
+    );
   }
 
   return (
@@ -89,63 +99,71 @@ function App() {
         onDeviceChange={handleDeviceChange}
       />
 
-      <div className="grid">
+      {deviceLoading ? (
+        <div className="device-switch-skeleton" aria-label="Loading device">
+          <div className="skeleton-card">
+            <div className="skeleton-line skeleton-title" />
+            <div className="skeleton-block" />
+            <div className="skeleton-line skeleton-short" />
+            <div className="skeleton-button" />
+          </div>
 
-        <div className="card">
-          <StatusCard
-            refresh={refresh}
-            deviceName={deviceName}
-            selectedDeviceId={selectedDeviceId}
-          />
+          <div className="skeleton-card">
+            <div className="skeleton-line skeleton-title" />
+            <div className="skeleton-block skeleton-chart" />
+            <div className="skeleton-line" />
+            <div className="skeleton-line skeleton-short" />
+          </div>
+
+          <div className="skeleton-card">
+            <div className="skeleton-line skeleton-title" />
+            <div className="skeleton-block skeleton-form" />
+            <div className="skeleton-line" />
+            <div className="skeleton-line skeleton-short" />
+          </div>
+
+          <div className="skeleton-card skeleton-full">
+            <div className="skeleton-line skeleton-title" />
+            <div className="skeleton-block skeleton-history" />
+            <div className="skeleton-line" />
+          </div>
         </div>
+      ) : (
+        <div className="grid">
 
-        <div className="card">
-          <DeviceConnection
-            selectedDeviceId={selectedDeviceId}
-            onNameChanged={() => loadDeviceName(selectedDeviceId)}
-          />
+          <div className="card">
+            <ManualControl
+              onCommandSent={refreshStatus}
+              deviceName={deviceName}
+              selectedDeviceId={selectedDeviceId}
+            />
+          </div>
+
+          <div className="card">
+            <StatsCard
+              refresh={refresh}
+              deviceName={deviceName}
+              selectedDeviceId={selectedDeviceId}
+            />
+          </div>
+
+          <div className="card">
+            <Schedule
+              refresh={refresh}
+              deviceName={deviceName}
+              selectedDeviceId={selectedDeviceId}
+            />
+          </div>
+
+          <div className="card full">
+            <HistoryCard
+              deviceName={deviceName}
+              selectedDeviceId={selectedDeviceId}
+            />
+          </div>
+
         </div>
-
-        <div className="card">
-          <ManualControl
-            onCommandSent={refreshStatus}
-            deviceName={deviceName}
-            selectedDeviceId={selectedDeviceId}
-          />
-        </div>
-
-        <div className="card">
-          <VoiceControl
-            onCommandSent={refreshStatus}
-            deviceName={deviceName}
-            selectedDeviceId={selectedDeviceId}
-          />
-        </div>
-
-        <div className="card">
-          <StatsCard
-            refresh={refresh}
-            deviceName={deviceName}
-            selectedDeviceId={selectedDeviceId}
-          />
-        </div>
-
-        <div className="card">
-          <Schedule
-            refresh={refresh}
-            deviceName={deviceName}
-            selectedDeviceId={selectedDeviceId}
-          />
-        </div>
-
-        <div className="card full">
-          <HistoryCard
-            deviceName={deviceName}
-            selectedDeviceId={selectedDeviceId}
-          />
-        </div>
-
-      </div>
+      )}
 
       </div>
     </ErrorBoundary>

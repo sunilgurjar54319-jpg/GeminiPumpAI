@@ -1,21 +1,20 @@
 import { useEffect, useState } from "react";
 import { getHistory, clearHistory } from "../api";
+import Icon from "./Icon";
 
 function HistoryCard({ deviceName, selectedDeviceId }) {
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const name = deviceName || "Pump";
 
   async function loadHistory() {
+    if (!selectedDeviceId) return;
+
     try {
       const data = await getHistory(selectedDeviceId);
-
-      if (Array.isArray(data)) {
-        setHistory(data);
-      } else {
-        setHistory([]);
-      }
+      setHistory(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("History Error:", err);
       setHistory([]);
@@ -24,7 +23,7 @@ function HistoryCard({ deviceName, selectedDeviceId }) {
 
   async function deleteHistory() {
     const ok = window.confirm(
-      `क्या आप पूरी ${name} History delete करना चाहते हैं?`
+      `क्या आप पूरी $History delete करना चाहते हैं?`
     );
 
     if (!ok) return;
@@ -49,7 +48,9 @@ function HistoryCard({ deviceName, selectedDeviceId }) {
 
     const d = new Date(date);
 
-    if (Number.isNaN(d.getTime())) return String(date);
+    if (Number.isNaN(d.getTime())) {
+      return String(date);
+    }
 
     return d.toLocaleString("en-IN", {
       day: "2-digit",
@@ -63,134 +64,146 @@ function HistoryCard({ deviceName, selectedDeviceId }) {
   }
 
   useEffect(() => {
-
-    // Device बदलते ही पुराने device की history हटाएँ
     setHistory([]);
-
     loadHistory();
 
     const timer = setInterval(loadHistory, 5000);
 
     return () => clearInterval(timer);
-
   }, [selectedDeviceId]);
 
   return (
-    <div style={{ padding: "20px" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: "10px",
-          flexWrap: "wrap"
-        }}
-      >
-        <h2>📜 {name} History</h2>
+      <div style={{ padding: "20px" }}>
 
         <button
-          onClick={deleteHistory}
-          disabled={loading || history.length === 0}
-          style={{
-            background: history.length === 0 ? "#ccc" : "#d32f2f",
-            color: "white",
-            border: "none",
-            borderRadius: "20px",
-            padding: "10px 18px",
-            fontSize: "15px",
-            cursor: history.length === 0 ? "not-allowed" : "pointer"
-          }}
+          type="button"
+          className="accordion-header history-accordion-header"
+          onClick={() => setHistoryOpen((v) => !v)}
+          aria-expanded={historyOpen}
         >
-          {loading ? "⏳ Clearing..." : "🗑 Clear History"}
+          <span className="accordion-title">
+            <Icon name="history" size={20} />
+            History
+          </span>
+
+          <span
+            className={`premium-accordion-arrow ${historyOpen ? "is-open" : ""}`}
+            aria-hidden="true"
+          />
         </button>
-      </div>
 
-      <p style={{ color: "#666", marginTop: "5px" }}>
-        Latest {name} ON/OFF activity
-      </p>
-
-      <hr />
-
-      {history.length === 0 ? (
         <div
-          style={{
-            textAlign: "center",
-            padding: "30px",
-            color: "#777"
-          }}
+          className={`accordion-content history-accordion-content ${
+            historyOpen
+              ? "accordion-content-open"
+              : "accordion-content-closed"
+          }`}
         >
-          <div style={{ fontSize: "45px" }}>📭</div>
-          <p>No {name} History Found</p>
-        </div>
-      ) : (
-        <div>
-          {history.map((item, index) => {
-            const isOn =
-              String(item.command || "").toUpperCase() === "ON";
 
-            return (
-              <div
-                key={item.$id || `${item.createdAt}-${index}`}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "15px",
-                  padding: "14px 10px",
-                  marginBottom: "8px",
-                  borderRadius: "10px",
-                  background: isOn ? "#f1f8f3" : "#fff3f3",
-                  border: isOn
-                    ? "1px solid #c8e6c9"
-                    : "1px solid #ffcdd2"
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "30px",
-                    minWidth: "40px",
-                    textAlign: "center"
-                  }}
-                >
-                  {isOn ? "🟢" : "🔴"}
-                </div>
+          <div className="history-clear-action">
+            <button
+              type="button"
+              onClick={deleteHistory}
+              disabled={loading || history.length === 0}
+              style={{
+                background: history.length === 0 ? "#ccc" : "#d32f2f",
+                color: "white",
+                border: "none",
+                borderRadius: "20px",
+                padding: "10px 18px",
+                fontSize: "15px",
+                cursor:
+                  history.length === 0 ? "not-allowed" : "pointer"
+              }}
+            >
+              {loading ? "Clearing..." : "Clear History"}
+            </button>
+          </div>
 
-                <div style={{ flex: 1 }}>
+          <div style={{ marginTop: "18px" }}>
+          <p style={{ color: "#666", marginTop: 0 }}>
+            Latest {name} ON/OFF activity
+          </p>
+
+          <hr />
+
+          {history.length === 0 ? (
+            <div className="history-empty-state">
+              <p>No History Found</p>
+            </div>
+          ) : (
+            <div>
+              {history.map((item, index) => {
+                const isOn =
+                  String(item.command || "").toUpperCase() === "ON";
+
+                return (
                   <div
+                    key={
+                      item.$id ||
+                      `${item.createdAt}-${index}`
+                    }
                     style={{
-                      fontSize: "18px",
-                      fontWeight: "bold"
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "15px",
+                      padding: "14px 10px",
+                      marginBottom: "8px",
+                      borderRadius: "10px",
+                      background: isOn
+                        ? "#f1f8f3"
+                        : "#fff3f3",
+                      border: isOn
+                        ? "1px solid #c8e6c9"
+                        : "1px solid #ffcdd2"
                     }}
                   >
-                    {name} {isOn ? "ON" : "OFF"}
-                  </div>
+                    <Icon
+                      name="power"
+                      size={28}
+                    />
 
-                  <div
-                    style={{
-                      color: "#666",
-                      fontSize: "14px",
-                      marginTop: "4px"
-                    }}
-                  >
-                    {formatDate(item.createdAt)}
-                  </div>
-                </div>
+                    <div style={{ flex: 1 }}>
+                      <div
+                        style={{
+                          fontSize: "18px",
+                          fontWeight: "bold"
+                        }}
+                      >
+                        {name} {isOn ? "ON" : "OFF"}
+                      </div>
 
-                <div
-                  style={{
-                    fontSize: "13px",
-                    fontWeight: "bold",
-                    color: "#2e7d32"
-                  }}
-                >
-                  {item.result === "Completed"
-                    ? "✓ Completed"
-                    : item.result || "—"}
-                </div>
-              </div>
-            );
-          })}
+                      <div
+                        style={{
+                          color: "#666",
+                          fontSize: "14px",
+                          marginTop: "4px"
+                        }}
+                      >
+                        {formatDate(item.createdAt)}
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        fontSize: "13px",
+                        fontWeight: "bold",
+                        color: isOn
+                          ? "#2e7d32"
+                          : "#c62828"
+                      }}
+                    >
+                      {item.result === "Completed"
+                        ? "Completed"
+                        : item.result || "—"}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
