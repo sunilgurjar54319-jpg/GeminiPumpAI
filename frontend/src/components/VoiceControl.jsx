@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { sendVoice } from "../api";
 
+// CACHE_VERSION_20260823_VOICE_FIX
 function VoiceControl({ onCommandSent, deviceName, selectedDeviceId }) {
 
   const displayName = deviceName || "Pump";
