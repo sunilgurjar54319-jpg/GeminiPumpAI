@@ -96,7 +96,7 @@ function App() {
 
       <DeviceSelector
         selectedDeviceId={selectedDeviceId}
-        onDeviceChange={handleDeviceChange}
+        onDeviceChange={handleDeviceChange} refresh={refresh}
       />
 
       {deviceLoading ? (
