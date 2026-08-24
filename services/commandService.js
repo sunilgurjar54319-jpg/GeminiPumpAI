@@ -5,6 +5,59 @@ const { updateStatus, getStatus } = require("./statusService");
 
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID;
 const COMMAND_COLLECTION = "commands";
+// ==================================
+// PERSIST MANUAL OVERRIDE — PER DEVICE
+// ==================================
+async function updateManualOverride(deviceId, command) {
+
+  const normalizedCommand =
+    String(command || "").toUpperCase();
+
+  if (
+    normalizedCommand !== "ON" &&
+    normalizedCommand !== "OFF"
+  ) {
+    return;
+  }
+
+  const devicesCollection =
+    process.env.APPWRITE_DEVICES_COLLECTION_ID || "devices";
+
+  const result =
+    await databases.listDocuments(
+      DATABASE_ID,
+      devicesCollection,
+      [
+        Query.equal("deviceId", deviceId),
+        Query.limit(1)
+      ]
+    );
+
+  if (result.documents.length === 0) {
+    throw new Error(
+      "Device not found while updating manual override: " +
+      deviceId
+    );
+  }
+
+  const device = result.documents[0];
+
+  await databases.updateDocument(
+    DATABASE_ID,
+    devicesCollection,
+    device.$id,
+    {
+      isManualOverride:
+        normalizedCommand === "OFF"
+    }
+  );
+
+  console.log(
+    `🔐 MANUAL OVERRIDE: ${deviceId} -> ` +
+    `${normalizedCommand === "OFF" ? "true" : "false"}`
+  );
+}
+
 
 
 // ==================================// SEND NEW COMMAND
@@ -21,39 +74,57 @@ async function sendCommand(deviceId, command, source = "MANUAL") {
 
 
     // =========================================
-    // CENTRAL MANUAL OFF SAFETY LOCK
+    // PERSISTENT MANUAL OVERRIDE CHECK
     // =========================================
-    // Latest MANUAL OFF blocks every automatic ON.
-    // A later MANUAL ON automatically releases the lock.
+    // MANUAL OFF  -> isManualOverride = true
+    // Schedule END -> isManualOverride = false
+    // MANUAL ON   -> isManualOverride = false
+    //
+    // Only the current device state is checked.
+    // Old MANUAL OFF command history does NOT
+    // block future schedules.
     // =========================================
     if (
       command === "ON" &&
       source !== "MANUAL"
     ) {
 
+      const devicesCollection =
+        process.env.APPWRITE_DEVICES_COLLECTION_ID || "devices";
+
       try {
 
-        const latestManual =
+        const deviceResult =
           await databases.listDocuments(
             DATABASE_ID,
-            COMMAND_COLLECTION,
+            devicesCollection,
             [
               Query.equal("deviceId", deviceId),
-              Query.equal("source", "MANUAL"),
-              Query.orderDesc("$createdAt"),
               Query.limit(1)
             ]
           );
 
-        if (
-          latestManual.documents.length > 0 &&
-          String(
-            latestManual.documents[0].command || ""
-          ).toUpperCase() === "OFF"
-        ) {
+        if (!deviceResult.documents.length) {
 
           console.log(
-            `🛑 CENTRAL MANUAL OFF LOCK: ${deviceId} → ${source} ON blocked`
+            `⚠️ Manual override check: device not found | ${deviceId}`
+          );
+
+          return {
+            ignored: true,
+            manualOff: true,
+            status: "UNKNOWN",
+            message: "Device manual override state could not be verified"
+          };
+        }
+
+        const device =
+          deviceResult.documents[0];
+
+        if (device.isManualOverride === true) {
+
+          console.log(
+            `🛑 MANUAL OVERRIDE LOCK: ${deviceId} → ${source} ON blocked`
           );
 
           return {
@@ -64,26 +135,26 @@ async function sendCommand(deviceId, command, source = "MANUAL") {
           };
         }
 
+        console.log(
+          `✅ MANUAL OVERRIDE CLEAR: ${deviceId} → ${source} ON allowed`
+        );
+
       } catch (error) {
 
         console.log(
-          `⚠️ Central manual OFF check failed: ${deviceId} | ${error.message}`
+          `⚠️ Manual override check failed: ${deviceId} | ${error.message}`
         );
 
-        // Safety-first:
-        // If manual state cannot be verified,
-        // do not allow automatic ON.
         return {
           ignored: true,
           manualOff: true,
           status: "UNKNOWN",
-          message: "Manual OFF state could not be verified"
+          message: "Manual override state could not be verified"
         };
       }
     }
 
-
-    // ================================    // Get pending commands
+    // Get pending commands
     // ================================
     const pending =
       await databases.listDocuments(
@@ -237,6 +308,18 @@ const STALE_AFTER_MS = 5 * 60 * 1000;
 
     // ================================    // Create command
     // ================================
+    // ==================================
+    // Persist MANUAL override state
+    // Only the selected device is changed.
+    // Scheduled/recovery commands do not change it.
+    // ==================================
+    if (source === "MANUAL") {
+      await updateManualOverride(
+        deviceId,
+        command
+      );
+    }
+
     const result =
       await databases.createDocument(
         DATABASE_ID,
@@ -247,7 +330,6 @@ const STALE_AFTER_MS = 5 * 60 * 1000;
           command,
           executed: false,
           source,
-          manualOff: source === "MANUAL" && command === "OFF",
           createdAt: new Date().toISOString()
         }
       );
@@ -326,42 +408,71 @@ async function getCommand(deviceId) {
 
 
     // ==================================
-    // MANUAL OFF PROTECTION AT DEVICE QUEUE
+    // PERSISTENT MANUAL OVERRIDE CHECK
     // ==================================
-    // Latest MANUAL OFF must also block any
-    // already-queued automatic SCHEDULED ON.
-    // This is the final protection before the
-    // command is delivered to the device.
+    // Only the current device state controls
+    // whether automatic ON may reach firmware.
+    //
+    // MANUAL OFF  -> isManualOverride = true
+    // Schedule END -> isManualOverride = false
+    // MANUAL ON   -> isManualOverride = false
+    //
+    // Old MANUAL OFF command history is NOT used.
     // ==================================
+
+    const devicesCollection =
+      process.env.APPWRITE_DEVICES_COLLECTION_ID || "devices";
+
     let manualOffActive = false;
 
     try {
-      const latestManual = await databases.listDocuments(
-        DATABASE_ID,
-        COMMAND_COLLECTION,
-        [
-          Query.equal("deviceId", deviceId),
-          Query.equal("source", "MANUAL"),
-          Query.orderDesc("$createdAt"),
-          Query.limit(1)
-        ]
-      );
 
-      if (latestManual.documents.length > 0) {
+      const deviceResult =
+        await databases.listDocuments(
+          DATABASE_ID,
+          devicesCollection,
+          [
+            Query.equal("deviceId", deviceId),
+            Query.limit(1)
+          ]
+        );
+
+      if (!deviceResult.documents.length) {
+
+        console.log(
+          `⚠️ GET COMMAND: device not found | ${deviceId}`
+        );
+
+        // Safety-first:
+        // Cannot verify manual state, so block automatic ON.
+        manualOffActive = true;
+
+      } else {
+
+        const device =
+          deviceResult.documents[0];
+
         manualOffActive =
-          String(
-            latestManual.documents[0].command || ""
-          ).toUpperCase() === "OFF";
+          device.isManualOverride === true;
+
+        console.log(
+          `🔐 GET COMMAND MANUAL OVERRIDE: ${deviceId} | ` +
+          `isManualOverride=${manualOffActive}`
+        );
       }
+
     } catch (error) {
+
       console.log(
-        `⚠️ GET COMMAND manual OFF check failed: ${deviceId} | ${error.message}`
+        `⚠️ GET COMMAND manual override check failed: ` +
+        `${deviceId} | ${error.message}`
       );
 
-      // Safety-first: if manual state cannot be verified,
-      // do NOT allow an automatic ON to reach the device.
+      // Safety-first:
+      // Cannot verify manual state, so block automatic ON.
       manualOffActive = true;
     }
+
     for (const pendingCommand of result.documents) {
 
       // ==================================
@@ -434,7 +545,7 @@ async function getCommand(deviceId) {
       }
 
       console.log(
-        `📤 GET COMMAND: ${deviceId} | command=${pendingCommand.command} | source=${pendingCommand.source} | manualOff=${pendingCommand.manualOff} | id=${pendingCommand.$id}`
+        `📤 GET COMMAND: ${deviceId} | command=${pendingCommand.command} | source=${pendingCommand.source} | id=${pendingCommand.$id}`
       );
 
       return pendingCommand;

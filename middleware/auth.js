@@ -117,59 +117,46 @@ async function requireDeviceOwner(req, res, next) {
     );
 
     // =========================================
-    // LEGACY / SINGLE-USER DEVICE AUTO LINK
-    // =========================================
-    //
-    // PUMP001 is the existing device of this
-    // GeminiPumpAI installation.
-    //
-    // If ownerId is missing OR this legacy device
-    // has an old ownerId, link it to the currently
-    // authenticated account.
-    //
-    // This keeps the existing PUMP001 usable
-    // after the authentication system was added.
-    //
-    if (
-      !device.ownerId ||
-      device.ownerId !== req.userId
-    ) {
+  // =========================================
+  // STRICT DEVICE OWNER CHECK
+  // =========================================
+  //
+  // Device owner missing -> reject.
+  // Device owner different -> reject.
+  // ONLY exact owner is allowed.
+  // =========================================
 
-      console.log(
-        "DEVICE OWNER AUTO-LINK:",
-        {
-          deviceId: device.deviceId,
-          oldOwnerId: device.ownerId || "(missing)",
-          newOwnerId: req.userId
-        }
-      );
+  if (!device.ownerId) {
 
-      try {
+    console.log(
+      `🛑 DEVICE OWNER MISSING: ${device.deviceId}`
+    );
 
-        device = await databases.updateDocument(
-          DATABASE_ID,
-          DEVICES_COLLECTION,
-          device.$id,
-          {
-            ownerId: req.userId
-          }
-        );
+    return res.status(403).json({
+      success: false,
+      error: "Device owner is not configured",
+      deviceId
+    });
+  }
 
-      } catch (ownerErr) {
+  if (device.ownerId !== req.userId) {
 
-        console.error(
-          "DEVICE OWNER AUTO-LINK ERROR:",
-          ownerErr.message
-        );
+    console.log(
+      `🛑 DEVICE OWNER MISMATCH: ${device.deviceId} | ` +
+      `owner=${device.ownerId} | user=${req.userId}`
+    );
 
-        return res.status(500).json({
-          success: false,
-          error: "Unable to link device ownership"
-        });
+    return res.status(403).json({
+      success: false,
+      error: "You do not own this device",
+      deviceId
+    });
+  }
 
-      }
-
-    }
+  console.log(
+    `✅ DEVICE OWNER VERIFIED: ${device.deviceId} | ` +
+    `owner=${device.ownerId}`
+  );
 
     req.device = device;
 

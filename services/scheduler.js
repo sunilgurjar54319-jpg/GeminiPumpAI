@@ -194,37 +194,112 @@ function getIndiaDateString(indiaDate) {
 // =========================================
 // MANUAL OFF PROTECTION
 // =========================================
+
+// =========================================
+// CLEAR MANUAL OVERRIDE
+// =========================================
+// Called when the schedule that was being
+// manually overridden reaches its END.
+//
+// This allows the next schedule to operate normally.
+// =========================================
+async function clearManualOverride(deviceId) {
+
+  try {
+
+    const devicesCollection =
+      process.env.APPWRITE_DEVICES_COLLECTION_ID || "devices";
+
+    const result =
+      await databases.listDocuments(
+        DATABASE_ID,
+        devicesCollection,
+        [
+          Query.equal("deviceId", deviceId),
+          Query.limit(1)
+        ]
+      );
+
+    if (!result.documents.length) {
+      console.log(
+        `⚠️ Manual override reset: device not found | ${deviceId}`
+      );
+      return;
+    }
+
+    const device = result.documents[0];
+
+    if (device.isManualOverride !== true) {
+      return;
+    }
+
+    await databases.updateDocument(
+      DATABASE_ID,
+      devicesCollection,
+      device.$id,
+      {
+        isManualOverride: false
+      }
+    );
+
+    console.log(
+      `🔓 MANUAL OVERRIDE RESET: ${deviceId} -> false | schedule ended`
+    );
+
+  } catch (error) {
+
+    console.log(
+      `⚠️ Manual override reset failed: ${deviceId} | ${error.message}`
+    );
+
+  }
+}
+
 async function isManualOffActive(deviceId) {
   try {
+    const devicesCollection =
+      process.env.APPWRITE_DEVICES_COLLECTION_ID || "devices";
+
     const result = await databases.listDocuments(
       DATABASE_ID,
-      COMMAND_COLLECTION,
+      devicesCollection,
       [
         Query.equal("deviceId", deviceId),
-        Query.equal("source", "MANUAL"),
-        Query.orderDesc("$createdAt"),
         Query.limit(1)
       ]
     );
 
     if (!result.documents.length) {
-      return false;
+      console.log(
+        `⚠️ Manual override check: device not found | ${deviceId}`
+      );
+
+      // Safety-first:
+      // Device state cannot be verified, so automatic ON is blocked.
+      return true;
     }
 
-    const latestManualCommand = result.documents[0];
+    const device = result.documents[0];
 
-    return (
-      String(latestManualCommand.command || "").toUpperCase() === "OFF"
+    const manualOverride =
+      device.isManualOverride === true;
+
+    console.log(
+      `🔐 MANUAL OVERRIDE CHECK: ${deviceId} | ` +
+      `isManualOverride=${manualOverride}`
     );
 
+    return manualOverride;
+
   } catch (error) {
+
     console.log(
-      `⚠️ Manual OFF check failed: ${deviceId} | ${error.message}`
+      `⚠️ Manual override check failed: ${deviceId} | ${error.message}`
     );
 
     // Safety-first:
-    // अगर manual state verify नहीं हो सके,
-    // तो automatic recovery मत करो.
+    // If manual state cannot be verified,
+    // automatic recovery/start must NOT turn the pump ON.
     return true;
   }
 }

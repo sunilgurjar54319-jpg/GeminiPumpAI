@@ -26,6 +26,10 @@ async function registerDevice(deviceId, deviceName, ownerId) {
                 wifiStatus: "DISCONNECTED",
                 lastSeen: new Date().toISOString(),
 
+                // Persistent per-device manual override state.
+                // Missing/undefined on old devices is treated as false.
+                isManualOverride: false,
+
                 deviceType: "GENERIC",
                 sensorEnabled: false,
 
