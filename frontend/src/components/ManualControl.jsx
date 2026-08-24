@@ -49,6 +49,7 @@ function ManualControl({
   const [newDeviceName, setNewDeviceName] = useState("");
   const [savingName, setSavingName] = useState(false);
   const [nameMessage, setNameMessage] = useState("");
+  const [deletingDevice, setDeletingDevice] = useState(false);
 
   async function saveDeviceName() {
     const name = newDeviceName.trim();
@@ -94,6 +95,63 @@ function ManualControl({
       setNameMessage(err.message);
     } finally {
       setSavingName(false);
+    }
+  }
+
+
+  async function deleteSelectedDevice() {
+    if (!selectedDeviceId || deletingDevice || savingName) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete device "${displayName}" (${selectedDeviceId})?\n\nOnly this selected device will be deleted.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setDeletingDevice(true);
+      setNameMessage("");
+
+      const res = await authFetch(
+        `/api/device/${encodeURIComponent(selectedDeviceId)}`,
+        {
+          method: "DELETE"
+        }
+      );
+
+      const result = await res.json();
+
+      if (!res.ok || !result.success) {
+        throw new Error(
+          result.error || "Device delete failed"
+        );
+      }
+
+      setShowSettings(false);
+      setEditingName(false);
+      setNameMessage("");
+
+      if (onCommandSent) {
+        onCommandSent();
+      }
+
+    } catch (err) {
+
+      console.error(
+        "Device delete error:",
+        err
+      );
+
+      setNameMessage(
+        err.message || "Device delete failed"
+      );
+
+    } finally {
+      setDeletingDevice(false);
     }
   }
 
@@ -557,7 +615,7 @@ function ManualControl({
               <div
                 className="device-settings-overlay"
                 onClick={() => {
-                  if (!savingName) {
+                  if (!savingName && !deletingDevice) {
                     setShowSettings(false);
                     setEditingName(false);
                     setNameMessage("");
@@ -575,13 +633,13 @@ function ManualControl({
                       type="button"
                       className="device-settings-close"
                       onClick={() => {
-                        if (!savingName) {
+                        if (!savingName && !deletingDevice) {
                           setShowSettings(false);
                           setEditingName(false);
                           setNameMessage("");
                         }
                       }}
-                      disabled={savingName}
+                      disabled={savingName || deletingDevice}
                       aria-label="Close settings"
                     >
                       ×
@@ -654,6 +712,42 @@ function ManualControl({
                         )}
                       </div>
                     )}
+                  </div>
+                  <div
+                    className="device-settings-row"
+                    style={{
+                      marginTop: "18px",
+                      paddingTop: "16px",
+                      borderTop: "1px solid #eee"
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={deleteSelectedDevice}
+                      disabled={deletingDevice || savingName}
+                      style={{
+                        width: "100%",
+                        padding: "11px 14px",
+                        borderRadius: "9px",
+                        border: "1px solid #dc3545",
+                        background: "#fff",
+                        color: "#dc3545",
+                        fontSize: "14px",
+                        fontWeight: "700",
+                        cursor:
+                          deletingDevice || savingName
+                            ? "not-allowed"
+                            : "pointer",
+                        opacity:
+                          deletingDevice || savingName
+                            ? 0.6
+                            : 1
+                      }}
+                    >
+                      {deletingDevice
+                        ? "Deleting..."
+                        : "Delete Selected Device"}
+                    </button>
                   </div>
                 </div>
               </div>

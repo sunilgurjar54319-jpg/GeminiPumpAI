@@ -55,6 +55,39 @@ async function registerDevice(deviceId, deviceName, ownerId) {
 
 
 // =========================================
+// Delete Device
+// =========================================
+
+async function deleteDevice(documentId) {
+    try {
+
+        if (!documentId) {
+            throw new Error("documentId is required");
+        }
+
+        await databases.deleteDocument(
+            DATABASE_ID,
+            DEVICES_COLLECTION,
+            documentId
+        );
+
+        return {
+            documentId
+        };
+
+    } catch (err) {
+
+        console.error(
+            "deleteDevice Error:",
+            err.message
+        );
+
+        throw err;
+    }
+}
+
+
+// =========================================
 // List Devices for Logged-in User
 // =========================================
 async function listDevices(ownerId) {
@@ -326,6 +359,7 @@ module.exports = {
     registerDevice,
     listDevices,
     heartbeatDevice,
-    updateDeviceName
+    updateDeviceName,
+    deleteDevice
 
 };

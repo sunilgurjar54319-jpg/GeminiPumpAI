@@ -13,6 +13,7 @@ const {
     heartbeatDevice,
     getDevice,
     updateDeviceName,
+    deleteDevice,
     listDevices
 } = require("../services/deviceService");
 
@@ -240,6 +241,44 @@ router.put(
     }
 
 });
+
+
+
+// =========================================
+// Delete Device
+// =========================================
+
+router.delete(
+    "/:deviceId",
+    requireAuth,
+    requireDeviceOwner,
+    async (req, res) => {
+        try {
+
+            const device = req.device;
+
+            await deleteDevice(device.$id);
+
+            res.json({
+                success: true,
+                deviceId: device.deviceId,
+                deviceName: device.deviceName
+            });
+
+        } catch (err) {
+
+            console.error(
+                "Delete Device Error:",
+                err.message
+            );
+
+            res.status(400).json({
+                success: false,
+                error: err.message
+            });
+        }
+    }
+);
 
 
 // =========================================
