@@ -842,6 +842,7 @@ async function checkSchedules() {
           );
 
 
+            await clearManualOverride(schedule.deviceId);
           continue;
         }
 
@@ -1106,6 +1107,7 @@ async function checkSchedules() {
         );
 
 
+          await clearManualOverride(schedule.deviceId);
         continue;
       }
 
