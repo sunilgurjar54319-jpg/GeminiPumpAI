@@ -297,6 +297,23 @@ function ManualControl({
 
       const data = await res.json();
 
+      console.log("MANUAL COMMAND RESPONSE:", {
+        status: res.status,
+        ok: res.ok,
+        data
+      });
+
+      // Show backend authentication/owner errors clearly
+      if (!res.ok) {
+        setMessage(
+          data?.error
+            ? `Command failed (${res.status}): ${data.error}`
+            : `Command failed (${res.status})`
+        );
+        setLoading(false);
+        return;
+      }
+
       // Already same state
       if (data.ignored) {
         setIsOn(data.status === "ON");
