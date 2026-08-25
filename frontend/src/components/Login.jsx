@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { account } from "../appwrite";
 
-function Login({ onLogin }) {
+function Login({ onLogin, onRegister }) {
   const params = new URLSearchParams(window.location.search);
   const recoveryUserId = params.get("userId");
   const recoverySecret = params.get("secret");
@@ -154,7 +154,7 @@ function Login({ onLogin }) {
   }
 
   return (
-    <div
+    <div className="auth-screen"
       style={{
         minHeight: "100vh",
         display: "flex",
@@ -163,7 +163,7 @@ function Login({ onLogin }) {
         padding: "20px"
       }}
     >
-      <form
+      <form className="auth-card"
         onSubmit={
           isRecovery
             ? handleResetPassword
@@ -341,6 +341,27 @@ function Login({ onLogin }) {
                 ? "Logging in..."
                 : "Login"}
             </button>
+
+            {onRegister && (
+              <button
+                type="button"
+                onClick={onRegister}
+                disabled={loading}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  marginTop: "10px",
+                  background: "transparent",
+                  border: "none",
+                  textDecoration: "underline",
+                  cursor: loading
+                    ? "not-allowed"
+                    : "pointer"
+                }}
+              >
+                New user? Create account
+              </button>
+            )}
           </>
         )}
       </form>

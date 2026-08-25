@@ -3431,3 +3431,102 @@ button[type="submit"] {
     border-radius: 16px;
   }
 }
+
+
+/* =========================================================
+   AUTH SCREEN — HIGH CONTRAST / MOBILE SAFE
+   Scoped only to Login + Register screens.
+========================================================= */
+
+.auth-screen {
+  min-height: 100vh;
+  width: 100%;
+  box-sizing: border-box;
+  background: #f4f7fb !important;
+  color: #172033 !important;
+}
+
+.auth-screen .auth-card {
+  color: #172033 !important;
+}
+
+.auth-screen .auth-card h1,
+.auth-screen .auth-card h2,
+.auth-screen .auth-card h3,
+.auth-screen .auth-card p,
+.auth-screen .auth-card label,
+.auth-screen .auth-card span {
+  color: #172033 !important;
+  opacity: 1 !important;
+}
+
+.auth-screen .auth-card input,
+.auth-screen .auth-card textarea,
+.auth-screen .auth-card select {
+  color: #172033 !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 10px !important;
+  outline: none !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #172033 !important;
+}
+
+.auth-screen .auth-card input::placeholder,
+.auth-screen .auth-card textarea::placeholder {
+  color: #64748b !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #64748b !important;
+}
+
+.auth-screen .auth-card input:focus,
+.auth-screen .auth-card textarea:focus,
+.auth-screen .auth-card select:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+}
+
+.auth-screen .auth-card button[type="submit"] {
+  color: #ffffff !important;
+  background: #2563eb !important;
+  border: 1px solid #2563eb !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  opacity: 1 !important;
+}
+
+.auth-screen .auth-card button[type="submit"]:disabled {
+  color: #ffffff !important;
+  background: #94a3b8 !important;
+  border-color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+
+.auth-screen .auth-card button[type="button"] {
+  color: #2563eb !important;
+  opacity: 1 !important;
+}
+
+.auth-screen .auth-card button[type="button"]:disabled {
+  color: #64748b !important;
+  opacity: 1 !important;
+}
+
+.auth-screen .auth-card p[style*="color: red"] {
+  color: #b42318 !important;
+  opacity: 1 !important;
+}
+
+.auth-screen .auth-card p[style*="color: green"] {
+  color: #176b35 !important;
+  opacity: 1 !important;
+}
+
+/* Prevent inherited dark-theme input rules from winning */
+.auth-screen input:-webkit-autofill,
+.auth-screen input:-webkit-autofill:hover,
+.auth-screen input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #172033 !important;
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+  transition: background-color 9999s ease-in-out 0s;
+}

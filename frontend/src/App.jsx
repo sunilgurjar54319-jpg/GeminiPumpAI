@@ -7,6 +7,7 @@ import HistoryCard from "./components/HistoryCard";
 import StatsCard from "./components/StatsCard";
 import DeviceConnection from "./components/DeviceConnection";
 import Login from "./components/Login";
+import Register from "./components/Register";
 import "./App.css";
 
 import { authFetch } from "./api";
@@ -15,6 +16,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 
 function App() {
   const [user, setUser] = useState(null);
+  const [showRegister, setShowRegister] = useState(false);
   const [refresh, setRefresh] = useState(false);
   const [selectedDeviceId, setSelectedDeviceId] = useState("PUMP001");
   const [deviceName, setDeviceName] = useState("PUMP001");
@@ -83,7 +85,17 @@ function App() {
   if (!user) {
     return (
       <ErrorBoundary>
-        <Login onLogin={setUser} />
+        {showRegister ? (
+          <Register
+            onRegistered={() => setShowRegister(false)}
+            onBackToLogin={() => setShowRegister(false)}
+          />
+        ) : (
+          <Login
+            onLogin={setUser}
+            onRegister={() => setShowRegister(true)}
+          />
+        )}
       </ErrorBoundary>
     );
   }

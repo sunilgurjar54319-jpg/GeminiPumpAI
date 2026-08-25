@@ -1,0 +1,219 @@
+import { useState } from "react";
+import { ID } from "appwrite";
+import { account } from "../appwrite";
+
+function Register({ onRegistered, onBackToLogin }) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+
+  async function handleRegister(e) {
+    e.preventDefault();
+
+    setError("");
+    setMessage("");
+
+    const cleanName = name.trim();
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanName) {
+      setError("नाम डालना जरूरी है।");
+      return;
+    }
+
+    if (!cleanEmail) {
+      setError("Email डालना जरूरी है।");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password कम से कम 8 characters का होना चाहिए।");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("दोनों passwords match नहीं कर रहे हैं।");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Register directly with Appwrite.
+      await account.create(
+        ID.unique(),
+        cleanEmail,
+        password,
+        cleanName
+      );
+
+      setMessage(
+        "Registration सफल हुआ। अब अपने email और password से login करें।"
+      );
+
+      setTimeout(() => {
+        if (onRegistered) {
+          onRegistered(cleanEmail);
+        } else if (onBackToLogin) {
+          onBackToLogin();
+        }
+      }, 1000);
+
+    } catch (err) {
+      console.error("Registration Error:", err);
+
+      if (err?.code === 409) {
+        setError("इस email से account पहले से मौजूद है।");
+      } else {
+        setError(
+          err?.message || "Registration failed"
+        );
+      }
+
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="auth-screen"
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px"
+      }}
+    >
+      <form
+        onSubmit={handleRegister}
+        style={{
+          width: "100%",
+          maxWidth: "380px",
+          padding: "30px",
+          borderRadius: "16px",
+          background: "#fff",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.12)"
+        }}
+      >
+        <h2>Gemini Pump AI</h2>
+
+        <p style={{ marginBottom: "24px" }}>
+          नया account बनाएं
+        </p>
+
+        <input
+          type="text"
+          placeholder="Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+          autoComplete="name"
+          style={{
+            width: "100%",
+            padding: "12px",
+            marginBottom: "12px",
+            boxSizing: "border-box"
+          }}
+        />
+
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          autoComplete="email"
+          style={{
+            width: "100%",
+            padding: "12px",
+            marginBottom: "12px",
+            boxSizing: "border-box"
+          }}
+        />
+
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          minLength={8}
+          autoComplete="new-password"
+          style={{
+            width: "100%",
+            padding: "12px",
+            marginBottom: "12px",
+            boxSizing: "border-box"
+          }}
+        />
+
+        <input
+          type="password"
+          placeholder="Confirm Password"
+          value={confirmPassword}
+          onChange={(e) =>
+            setConfirmPassword(e.target.value)
+          }
+          required
+          minLength={8}
+          autoComplete="new-password"
+          style={{
+            width: "100%",
+            padding: "12px",
+            marginBottom: "16px",
+            boxSizing: "border-box"
+          }}
+        />
+
+        {error && (
+          <p style={{ color: "red", marginBottom: "12px" }}>
+            {error}
+          </p>
+        )}
+
+        {message && (
+          <p style={{ color: "green", marginBottom: "12px" }}>
+            {message}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            width: "100%",
+            padding: "12px",
+            cursor: loading ? "not-allowed" : "pointer"
+          }}
+        >
+          {loading ? "Registering..." : "Register"}
+        </button>
+
+        <button
+          type="button"
+          onClick={onBackToLogin}
+          disabled={loading}
+          style={{
+            width: "100%",
+            padding: "12px",
+            marginTop: "10px",
+            background: "transparent",
+            border: "none",
+            textDecoration: "underline",
+            cursor: loading ? "not-allowed" : "pointer"
+          }}
+        >
+          Already have an account? Login
+        </button>
+      </form>
+    </div>
+  );
+}
+
+export default Register;
