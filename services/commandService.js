@@ -6,6 +6,104 @@ const { updateStatus, getStatus } = require("./statusService");
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID;
 const COMMAND_COLLECTION = "commands";
 // ==================================
+// CHECK WHETHER A SCHEDULE IS ACTIVE
+// ==================================
+async function isScheduleActiveNow(deviceId) {
+
+  const SCHEDULE_COLLECTION = "schedules";
+
+  const now = new Date();
+
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  }).formatToParts(now);
+
+  const values = {};
+  for (const part of parts) {
+    if (part.type !== "literal") {
+      values[part.type] = part.value;
+    }
+  }
+
+  const currentDate =
+    `${values.year}-${values.month}-${values.day}`;
+
+  const currentTime =
+    `${values.hour}:${values.minute}`;
+
+  const dayName =
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Kolkata",
+      weekday: "long"
+    }).format(now);
+
+  const result =
+    await databases.listDocuments(
+      DATABASE_ID,
+      SCHEDULE_COLLECTION,
+      [
+        Query.equal("deviceId", deviceId),
+        Query.equal("enabled", true),
+        Query.limit(100)
+      ]
+    );
+
+  for (const schedule of result.documents) {
+
+    if (
+      schedule.command !== "ON" ||
+      !schedule.startTime ||
+      !schedule.endTime
+    ) {
+      continue;
+    }
+
+    // One-time schedule
+    if (schedule.scheduledDate) {
+
+      if (
+        schedule.scheduledDate === currentDate &&
+        currentTime >= schedule.startTime &&
+        currentTime < schedule.endTime
+      ) {
+        return true;
+      }
+
+      continue;
+    }
+
+    // Recurring schedule
+    if (!schedule.days) {
+      continue;
+    }
+
+    const days = schedule.days
+      .split(",")
+      .map(day => day.trim());
+
+    if (!days.includes(dayName)) {
+      continue;
+    }
+
+    if (
+      currentTime >= schedule.startTime &&
+      currentTime < schedule.endTime
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+// ==================================
 // PERSIST MANUAL OVERRIDE — PER DEVICE
 // ==================================
 async function updateManualOverride(deviceId, command) {
@@ -42,19 +140,33 @@ async function updateManualOverride(deviceId, command) {
 
   const device = result.documents[0];
 
+  let manualOverride = false;
+
+  if (normalizedCommand === "OFF") {
+
+    // Manual OFF protection is only valid while an ON schedule
+    // is currently active. Outside a schedule, manual OFF must
+    // NOT block the next scheduled start.
+    manualOverride =
+      await isScheduleActiveNow(deviceId);
+
+    console.log(
+      `🔎 MANUAL OFF SCHEDULE CHECK: ${deviceId} | ` +
+      `active=${manualOverride}`
+    );
+  }
+
   await databases.updateDocument(
     DATABASE_ID,
     devicesCollection,
     device.$id,
     {
-      isManualOverride:
-        normalizedCommand === "OFF"
+      isManualOverride: manualOverride
     }
   );
 
   console.log(
-    `🔐 MANUAL OVERRIDE: ${deviceId} -> ` +
-    `${normalizedCommand === "OFF" ? "true" : "false"}`
+    `🔐 MANUAL OVERRIDE: ${deviceId} -> ${manualOverride}`
   );
 }
 
