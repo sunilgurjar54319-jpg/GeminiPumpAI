@@ -18,8 +18,8 @@ function App() {
   const [user, setUser] = useState(null);
   const [showRegister, setShowRegister] = useState(false);
   const [refresh, setRefresh] = useState(false);
-  const [selectedDeviceId, setSelectedDeviceId] = useState("PUMP001");
-  const [deviceName, setDeviceName] = useState("PUMP001");
+  const [selectedDeviceId, setSelectedDeviceId] = useState(null);
+  const [deviceName, setDeviceName] = useState(null);
   const [deviceLoading, setDeviceLoading] = useState(false);
 
   async function loadDeviceName(deviceId = selectedDeviceId) {

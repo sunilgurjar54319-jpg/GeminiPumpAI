@@ -24,21 +24,24 @@ function Login({ onLogin, onRegister }) {
     setLoading(true);
 
     try {
-      let user;
-
-      // Check existing Appwrite session first
+      // IMPORTANT:
+      // Remove any previous Appwrite session first.
+      // Otherwise a previous user's session can be reused and
+      // the email/password entered in this login form is ignored.
       try {
-        user = await account.get();
-        console.log("Existing Appwrite session:", user.$id);
+        await account.deleteSession("current");
       } catch {
-        // No session → create a new email/password session
-        await account.createEmailPasswordSession(
-          email.trim(),
-          password
-        );
-
-        user = await account.get();
+        // No active session — continue normally.
       }
+
+      // Always authenticate using the credentials entered here.
+      await account.createEmailPasswordSession(
+        email.trim(),
+        password
+      );
+
+      // Get the newly authenticated user.
+      const user = await account.get();
 
       // Create fresh JWT for backend authentication
       const jwtResult = await account.createJWT();
