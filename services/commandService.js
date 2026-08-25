@@ -233,22 +233,62 @@ async function sendCommand(deviceId, command, source = "MANUAL") {
         const device =
           deviceResult.documents[0];
 
-        if (device.isManualOverride === true) {
+        // CENTRAL DEVICE-LEVEL MANUAL OFF LOCK
+        //
+        // Automatic ON is blocked only when:
+        //   1. this exact device has manual OFF protection, AND
+        //   2. an ON schedule is currently active for this device.
+        //
+        // This prevents:
+        //   - overlapping schedule END from clearing another active lock
+        //   - stale manual-off state from blocking future schedules
+        //   - one device's lock affecting another device
+        const activeOnSchedule =
+          await isScheduleActiveNow(deviceId);
+
+        if (
+          device.isManualOverride === true &&
+          activeOnSchedule
+        ) {
 
           console.log(
-            `🛑 MANUAL OVERRIDE LOCK: ${deviceId} → ${source} ON blocked`
+            `🛑 CENTRAL MANUAL OFF LOCK: ${deviceId} → ` +
+            `${source} ON blocked | active ON schedule`
           );
 
           return {
             ignored: true,
             manualOff: true,
             status: "OFF",
-            message: "Manual OFF protection active"
+            message: "Manual OFF protection active during ON schedule"
           };
         }
 
+        // If the persistent lock is stale and there is no active ON
+        // schedule anymore, clear it so future schedules are unaffected.
+        if (
+          device.isManualOverride === true &&
+          !activeOnSchedule
+        ) {
+
+          await databases.updateDocument(
+            DATABASE_ID,
+            devicesCollection,
+            device.$id,
+            {
+              isManualOverride: false
+            }
+          );
+
+          console.log(
+            `🔓 STALE MANUAL OFF LOCK CLEARED: ${deviceId} | ` +
+            `no active ON schedule`
+          );
+        }
+
         console.log(
-          `✅ MANUAL OVERRIDE CLEAR: ${deviceId} → ${source} ON allowed`
+          `✅ CENTRAL MANUAL OFF CHECK: ${deviceId} → ` +
+          `${source} ON allowed | activeSchedule=${activeOnSchedule}`
         );
 
       } catch (error) {
@@ -569,13 +609,56 @@ async function getCommand(deviceId) {
         const device =
           deviceResult.documents[0];
 
-        manualOffActive =
+        const storedManualOverride =
           device.isManualOverride === true;
 
-        console.log(
-          `🔐 GET COMMAND MANUAL OVERRIDE: ${deviceId} | ` +
-          `isManualOverride=${manualOffActive}`
-        );
+        // Central rule:
+        // A manual-OFF lock is valid only while an ON schedule
+        // is currently active for this device.
+        if (storedManualOverride) {
+
+          const activeOnSchedule =
+            await isScheduleActiveNow(deviceId);
+
+          if (activeOnSchedule) {
+
+            manualOffActive = true;
+
+            console.log(
+              `🔒 GET COMMAND MANUAL OFF LOCK: ${deviceId} | ` +
+              `manualOverride=true | activeOnSchedule=true`
+            );
+
+          } else {
+
+            manualOffActive = false;
+
+            // Self-heal stale device lock so a future schedule
+            // is never affected by an old manual OFF.
+            await databases.updateDocument(
+              DATABASE_ID,
+              devicesCollection,
+              device.$id,
+              {
+                isManualOverride: false
+              }
+            );
+
+            console.log(
+              `🔓 GET COMMAND STALE LOCK CLEARED: ${deviceId} | ` +
+              `no active ON schedule`
+            );
+          }
+
+        } else {
+
+          manualOffActive = false;
+
+          console.log(
+            `🔓 GET COMMAND MANUAL OVERRIDE: ${deviceId} | ` +
+            `isManualOverride=false`
+          );
+        }
       }
 
     } catch (error) {

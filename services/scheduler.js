@@ -229,6 +229,33 @@ async function clearManualOverride(deviceId) {
 
     const device = result.documents[0];
 
+    // IMPORTANT:
+    // Never clear the manual-OFF lock just because ONE schedule ended.
+    // The lock belongs to the DEVICE and remains active while ANY
+    // ON schedule is currently active for this device.
+    const stillActive =
+      await hasAnyActiveOnSchedule(deviceId);
+
+    if (stillActive) {
+
+      console.log(
+        `🔒 MANUAL OFF LOCK KEPT: ${deviceId} | another ON schedule is active`
+      );
+
+      if (device.isManualOverride !== true) {
+        await databases.updateDocument(
+          DATABASE_ID,
+          devicesCollection,
+          device.$id,
+          {
+            isManualOverride: true
+          }
+        );
+      }
+
+      return;
+    }
+
     if (device.isManualOverride !== true) {
       return;
     }
@@ -243,7 +270,7 @@ async function clearManualOverride(deviceId) {
     );
 
     console.log(
-      `🔓 MANUAL OVERRIDE RESET: ${deviceId} -> false | schedule ended`
+      `🔓 MANUAL OVERRIDE RESET: ${deviceId} -> false | no active ON schedule`
     );
 
   } catch (error) {
@@ -255,27 +282,140 @@ async function clearManualOverride(deviceId) {
   }
 }
 
-async function isManualOffActive(deviceId) {
+
+// =========================================
+// CENTRAL ACTIVE ON-SCHEDULE CHECK
+// =========================================
+async function hasAnyActiveOnSchedule(deviceId) {
+
   try {
+
+    const now = new Date();
+
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false
+    }).formatToParts(now);
+
+    const values = {};
+
+    for (const part of parts) {
+      if (part.type !== "literal") {
+        values[part.type] = part.value;
+      }
+    }
+
+    const currentDate =
+      `${values.year}-${values.month}-${values.day}`;
+
+    const currentTime =
+      `${values.hour}:${values.minute}`;
+
+    const dayName =
+      new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Kolkata",
+        weekday: "long"
+      }).format(now);
+
+    const result =
+      await databases.listDocuments(
+        DATABASE_ID,
+        SCHEDULE_COLLECTION,
+        [
+          Query.equal("deviceId", deviceId),
+          Query.equal("enabled", true),
+          Query.limit(100)
+        ]
+      );
+
+    for (const schedule of result.documents) {
+
+      if (
+        schedule.command !== "ON" ||
+        !schedule.startTime ||
+        !schedule.endTime
+      ) {
+        continue;
+      }
+
+      if (schedule.scheduledDate) {
+
+        if (
+          schedule.scheduledDate === currentDate &&
+          currentTime >= schedule.startTime &&
+          currentTime < schedule.endTime
+        ) {
+          return true;
+        }
+
+        continue;
+      }
+
+      if (!schedule.days) {
+        continue;
+      }
+
+      const days =
+        schedule.days
+          .split(",")
+          .map(day => day.trim());
+
+      if (!days.includes(dayName)) {
+        continue;
+      }
+
+      if (
+        currentTime >= schedule.startTime &&
+        currentTime < schedule.endTime
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+
+  } catch (error) {
+
+    console.log(
+      `⚠️ Active ON schedule check failed: ${deviceId} | ${error.message}`
+    );
+
+    // Safety-first: if active schedule state cannot be verified,
+    // do NOT clear the manual-OFF protection.
+    return true;
+  }
+}
+
+async function isManualOffActive(deviceId) {
+
+  try {
+
     const devicesCollection =
       process.env.APPWRITE_DEVICES_COLLECTION_ID || "devices";
 
-    const result = await databases.listDocuments(
-      DATABASE_ID,
-      devicesCollection,
-      [
-        Query.equal("deviceId", deviceId),
-        Query.limit(1)
-      ]
-    );
+    const result =
+      await databases.listDocuments(
+        DATABASE_ID,
+        devicesCollection,
+        [
+          Query.equal("deviceId", deviceId),
+          Query.limit(1)
+        ]
+      );
 
     if (!result.documents.length) {
+
       console.log(
-        `⚠️ Manual override check: device not found | ${deviceId}`
+        `⚠️ MANUAL OVERRIDE CHECK: device not found | ${deviceId}`
       );
 
       // Safety-first:
-      // Device state cannot be verified, so automatic ON is blocked.
+      // Cannot verify device state, so automatic ON is blocked.
       return true;
     }
 
@@ -284,12 +424,58 @@ async function isManualOffActive(deviceId) {
     const manualOverride =
       device.isManualOverride === true;
 
-    console.log(
-      `🔐 MANUAL OVERRIDE CHECK: ${deviceId} | ` +
-      `isManualOverride=${manualOverride}`
+    // -------------------------------------------------
+    // CENTRAL RULE:
+    // Manual-OFF lock is valid ONLY while at least
+    // one ON schedule is currently active for this
+    // device.
+    // -------------------------------------------------
+
+    if (!manualOverride) {
+
+      console.log(
+        `🔓 MANUAL OVERRIDE CHECK: ${deviceId} | lock=false`
+      );
+
+      return false;
+    }
+
+    const activeOnSchedule =
+      await hasAnyActiveOnSchedule(deviceId);
+
+    if (activeOnSchedule) {
+
+      console.log(
+        `🔒 MANUAL OFF LOCK ACTIVE: ${deviceId} | ` +
+        `manualOverride=true | activeOnSchedule=true`
+      );
+
+      return true;
+    }
+
+    // -------------------------------------------------
+    // STALE LOCK SELF-HEAL
+    //
+    // Manual-OFF lock exists in device state, but no
+    // ON schedule is active anymore. Clear it now so
+    // future schedules/recovery are not affected.
+    // -------------------------------------------------
+
+    await databases.updateDocument(
+      DATABASE_ID,
+      devicesCollection,
+      device.$id,
+      {
+        isManualOverride: false
+      }
     );
 
-    return manualOverride;
+    console.log(
+      `🔓 STALE MANUAL OFF LOCK CLEARED: ${deviceId} | ` +
+      `manualOverride=true but no active ON schedule`
+    );
+
+    return false;
 
   } catch (error) {
 
@@ -298,8 +484,8 @@ async function isManualOffActive(deviceId) {
     );
 
     // Safety-first:
-    // If manual state cannot be verified,
-    // automatic recovery/start must NOT turn the pump ON.
+    // If the lock/schedule state cannot be verified,
+    // automatic ON must NOT be allowed.
     return true;
   }
 }
