@@ -319,7 +319,7 @@ async function hasAnyActiveOnSchedule(deviceId) {
     const dayName =
       new Intl.DateTimeFormat("en-US", {
         timeZone: "Asia/Kolkata",
-        weekday: "long"
+        weekday: "short"
       }).format(now);
 
     const result =
