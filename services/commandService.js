@@ -266,6 +266,23 @@ async function sendCommand(deviceId, command, source = "MANUAL") {
       }
     }
 
+    // =========================================
+    // PERSIST MANUAL OVERRIDE IMMEDIATELY
+    // =========================================
+    // Manual OFF must activate protection even
+    // when the pump is already OFF or another
+    // command is pending.
+    //
+    // Manual ON clears the protection.
+    // Scheduled/recovery commands never change it.
+    // =========================================
+    if (source === "MANUAL") {
+      await updateManualOverride(
+        deviceId,
+        command
+      );
+    }
+
     // Get pending commands
     // ================================
     const pending =
@@ -420,18 +437,6 @@ const STALE_AFTER_MS = 5 * 60 * 1000;
 
     // ================================    // Create command
     // ================================
-    // ==================================
-    // Persist MANUAL override state
-    // Only the selected device is changed.
-    // Scheduled/recovery commands do not change it.
-    // ==================================
-    if (source === "MANUAL") {
-      await updateManualOverride(
-        deviceId,
-        command
-      );
-    }
-
     const result =
       await databases.createDocument(
         DATABASE_ID,
