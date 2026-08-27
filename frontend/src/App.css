@@ -4894,3 +4894,150 @@ html body .manual-control-card .manual-control-body .manual-control-notice {
 .profile-menu button:active {
   background: #f2f2f7;
 }
+
+/* ================================
+   Profile Image Crop Modal
+   ================================ */
+
+.image-crop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.65);
+}
+
+.image-crop-modal {
+  width: min(100%, 430px);
+  max-height: calc(100svh - 32px);
+  box-sizing: border-box;
+  overflow: hidden;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.35);
+  color: #1d1d1f;
+  display: flex;
+  flex-direction: column;
+}
+
+.image-crop-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid #e5e5ea;
+  flex-shrink: 0;
+}
+
+.image-crop-header h3 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.image-crop-header button {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #f2f2f7;
+  color: #1d1d1f;
+  font-size: 25px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.image-crop-container {
+  position: relative;
+  width: 100%;
+  height: min(62vw, 330px);
+  min-height: 260px;
+  background: #111111;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.image-crop-controls {
+  padding: 14px 18px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.image-crop-controls label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.image-crop-controls input[type="range"] {
+  flex: 1;
+  min-width: 0;
+  accent-color: #007aff;
+}
+
+.image-crop-actions {
+  display: flex;
+  gap: 10px;
+  padding: 14px 18px 18px;
+  flex-shrink: 0;
+}
+
+.image-crop-actions button {
+  flex: 1;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.image-crop-actions button:first-child {
+  background: #f2f2f7;
+  color: #1d1d1f;
+}
+
+.image-crop-actions button:last-child {
+  background: #007aff;
+  color: #ffffff;
+}
+
+@media (max-width: 480px) {
+  .image-crop-overlay {
+    padding: 10px;
+  }
+
+  .image-crop-modal {
+    width: 100%;
+    max-height: calc(100svh - 20px);
+    border-radius: 20px;
+  }
+
+  .image-crop-container {
+    height: 72vw;
+    min-height: 250px;
+    max-height: 330px;
+  }
+
+  .image-crop-header {
+    padding: 14px 16px;
+  }
+
+  .image-crop-controls {
+    padding: 12px 16px 2px;
+  }
+
+  .image-crop-actions {
+    padding: 12px 16px 16px;
+  }
+}

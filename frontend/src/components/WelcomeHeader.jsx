@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ID, Permission, Role } from "appwrite";
 import { account, storage } from "../appwrite";
 import Icon from "./Icon";
+import ImageCropModal from "./ImageCropModal";
 
 const PROFILE_BUCKET_ID = "6a9002190009924bfb37";
 
@@ -16,6 +17,7 @@ function WelcomeHeader({ user, onLogout, onUserUpdate }) {
     user?.prefs?.profilePicture || ""
   );
   const [uploadingPicture, setUploadingPicture] = useState(false);
+  const [cropImage, setCropImage] = useState(null);
 
   const initial = name.charAt(0).toUpperCase();
 
@@ -41,6 +43,25 @@ function WelcomeHeader({ user, onLogout, onUserUpdate }) {
       return;
     }
 
+    setError("");
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      setCropImage(reader.result);
+      setMenuOpen(false);
+    };
+
+    reader.onerror = () => {
+      setError("Image पढ़ने में समस्या हुई।");
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  async function handleCroppedImage(croppedFile) {
+    if (!croppedFile) return;
+
     setUploadingPicture(true);
     setError("");
 
@@ -48,7 +69,7 @@ function WelcomeHeader({ user, onLogout, onUserUpdate }) {
       const uploaded = await storage.createFile(
         PROFILE_BUCKET_ID,
         ID.unique(),
-        file,
+        croppedFile,
         [
           Permission.read(Role.any())
         ]
@@ -62,18 +83,17 @@ function WelcomeHeader({ user, onLogout, onUserUpdate }) {
         profilePicture: pictureUrl,
       });
 
-      // Appwrite se fresh user profile load karo
       const freshUser = await account.get();
 
-      console.log("FRESH USER PREFS:", freshUser.prefs);
-
-      setProfilePicture(freshUser?.prefs?.profilePicture || pictureUrl);
+      setProfilePicture(
+        freshUser?.prefs?.profilePicture || pictureUrl
+      );
 
       if (onUserUpdate) {
         onUserUpdate(freshUser);
       }
 
-      setMenuOpen(false);
+      setCropImage(null);
     } catch (err) {
       console.error("Profile picture upload error:", err);
       setError(err?.message || "Profile picture upload failed.");
@@ -198,6 +218,14 @@ function WelcomeHeader({ user, onLogout, onUserUpdate }) {
           )}
         </div>
       </div>
+
+      {cropImage && (
+        <ImageCropModal
+          image={cropImage}
+          onCancel={() => setCropImage(null)}
+          onApply={handleCroppedImage}
+        />
+      )}
 
       {editOpen && (
         <div className="edit-profile-overlay">
