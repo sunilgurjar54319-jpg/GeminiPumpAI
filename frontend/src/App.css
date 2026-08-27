@@ -5041,3 +5041,125 @@ html body .manual-control-card .manual-control-body .manual-control-notice {
     padding: 12px 16px 16px;
   }
 }
+
+/* FINAL: Voice Control button content centered */
+.voice-control-button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  gap: 8px !important;
+}
+
+.voice-control-button > span:last-child {
+  flex: 0 0 auto !important;
+  margin: 0 !important;
+  text-align: center !important;
+}
+
+
+/* FINAL: Voice Control icon + text exact alignment */
+.voice-control-button .voice-control-icon,
+.voice-control-button .voice-control-text {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+}
+
+.voice-control-button .voice-control-text {
+  position: relative;
+  top: 0 !important;
+  transform: none !important;
+}
+
+
+/* FINAL FIX: Voice Control text exact button center */
+.voice-control-button {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.voice-control-button .voice-control-text {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: max-content !important;
+  text-align: center !important;
+  line-height: 1 !important;
+}
+
+.voice-control-button .voice-control-icon {
+  position: absolute !important;
+  left: 18px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+
+/* FINAL RESTORE — Voice Control button width + centered text */
+.voice-control-button {
+  position: relative !important;
+  display: flex !important;
+  width: 275px !important;
+  min-width: 275px !important;
+  max-width: calc(100% - 30px) !important;
+  min-height: 42px !important;
+  padding: 10px 18px !important;
+  box-sizing: border-box !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0 !important;
+}
+
+.voice-control-button .voice-control-text {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  width: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: translate(-50%, -50%) !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+  line-height: 1.2 !important;
+}
+
+.voice-control-button .voice-control-icon {
+  position: absolute !important;
+  left: 18px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+@media (max-width: 420px) {
+  .voice-control-button {
+    width: 275px !important;
+    min-width: 275px !important;
+    max-width: calc(100% - 30px) !important;
+  }
+}
+
+
+/* FINAL: Voice Control button compact size */
+.voice-control-button {
+  width: 150px !important;
+  min-width: 150px !important;
+  max-width: 150px !important;
+  padding: 10px 12px !important;
+}
+
+@media (max-width: 420px) {
+  .voice-control-button {
+    width: 150px !important;
+    min-width: 150px !important;
+    max-width: 150px !important;
+  }
+}

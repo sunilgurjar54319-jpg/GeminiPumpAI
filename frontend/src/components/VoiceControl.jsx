@@ -358,7 +358,7 @@ function VoiceControl({ onCommandSent, deviceName, selectedDeviceId }) {
           <Icon name="mic" size={18} />
         </span>
 
-        <span>
+        <span className="voice-control-text">
           {listening
             ? "सुन रहा हूँ..."
             : "Voice Control"}
