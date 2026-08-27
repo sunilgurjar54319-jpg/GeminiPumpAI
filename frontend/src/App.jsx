@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 
-import Header from "./components/Header";
 import ManualControl from "./components/ManualControl";
 import Schedule from "./components/Schedule";
 import HistoryCard from "./components/HistoryCard";
@@ -326,7 +325,6 @@ function App() {
     <ErrorBoundary>
       <div className="dashboard">
 
-      <Header deviceName={deviceName} />
 
       <DeviceSelector
         selectedDeviceId={selectedDeviceId}
