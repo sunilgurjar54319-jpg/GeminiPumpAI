@@ -55,19 +55,12 @@ function WelcomeHeader({ user, onLogout, onUserUpdate }) {
       );
 
       const pictureUrl =
-        storage.getFileView(
-          PROFILE_BUCKET_ID,
-          uploaded.$id
-        ).toString() + `?v=${Date.now()}`;
-
-      console.log("PROFILE IMAGE URL:", pictureUrl);
+        `https://fra.cloud.appwrite.io/v1/storage/buckets/${PROFILE_BUCKET_ID}/files/${uploaded.$id}/view?project=6a6abdb7002586cbab5b&v=${Date.now()}`;
 
       await account.updatePrefs({
         ...user?.prefs,
         profilePicture: pictureUrl,
       });
-
-      console.log("PROFILE PREFS SAVED");
 
       // Appwrite se fresh user profile load karo
       const freshUser = await account.get();
