@@ -95,7 +95,7 @@ function Login({ onLogin, onRegister }) {
       }
 
       const optionsResponse = await fetch(
-        "/api/biometric/login/options",
+        "https://geminipumpai.onrender.com/api/biometric/login/options",
         {
           method: "POST",
           headers: {
@@ -119,7 +119,7 @@ function Login({ onLogin, onRegister }) {
         });
 
       const verifyResponse = await fetch(
-        "/api/biometric/login/verify",
+        "https://geminipumpai.onrender.com/api/biometric/login/verify",
         {
           method: "POST",
           headers: {
