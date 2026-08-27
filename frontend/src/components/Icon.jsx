@@ -141,6 +141,28 @@ function Icon({
       </>
     ),
 
+    camera: (
+      <>
+        <path d="M4 7.5h3l1.5-2h7L17 7.5h3v11H4z" />
+        <circle cx="12" cy="13" r="3.2" />
+      </>
+    ),
+
+    editProfile: (
+      <>
+        <path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3Z" />
+        <path d="m14.5 7.5 3 3" />
+      </>
+    ),
+
+    logout: (
+      <>
+        <path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5" />
+        <path d="M14 8l4 4-4 4" />
+        <path d="M8 12h10" />
+      </>
+    ),
+
 
   };
 
