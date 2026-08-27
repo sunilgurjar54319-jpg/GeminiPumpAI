@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { ID } from "appwrite";
+import { ID, Permission, Role } from "appwrite";
 import { account, storage } from "../appwrite";
 import Icon from "./Icon";
 
 const PROFILE_BUCKET_ID = "6a9002190009924bfb37";
 
-function WelcomeHeader({ user, onLogout }) {
+function WelcomeHeader({ user, onLogout, onUserUpdate }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [name, setName] = useState(user?.name?.trim() || "User");
@@ -48,21 +48,36 @@ function WelcomeHeader({ user, onLogout }) {
       const uploaded = await storage.createFile(
         PROFILE_BUCKET_ID,
         ID.unique(),
-        file
+        file,
+        [
+          Permission.read(Role.any())
+        ]
       );
 
       const pictureUrl =
         storage.getFileView(
           PROFILE_BUCKET_ID,
           uploaded.$id
-        ).toString();
+        ).toString() + `?v=${Date.now()}`;
 
-      await account.updatePrefs({
+      console.log("PROFILE IMAGE URL:", pictureUrl);
+
+      const updatedPrefs = await account.updatePrefs({
         ...user?.prefs,
         profilePicture: pictureUrl,
       });
 
+      console.log("PROFILE PREFS SAVED:", updatedPrefs.prefs);
+
       setProfilePicture(pictureUrl);
+
+      if (onUserUpdate) {
+        onUserUpdate({
+          ...user,
+          prefs: updatedPrefs.prefs,
+        });
+      }
+
       setMenuOpen(false);
     } catch (err) {
       console.error("Profile picture upload error:", err);
@@ -148,14 +163,18 @@ function WelcomeHeader({ user, onLogout }) {
             onClick={() => setMenuOpen(prev => !prev)}
           >
             {profilePicture ? (
-            <img
-              src={profilePicture}
-              alt="Profile"
-              className="profile-avatar-image"
-            />
-          ) : (
-            initial
-          )}
+              <img
+                src={profilePicture}
+                alt="Profile"
+                className="profile-avatar-image"
+                onError={(e) => {
+                  console.error("PROFILE IMAGE LOAD ERROR:", profilePicture);
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            ) : (
+              initial
+            )}
           </button>
 
           {menuOpen && (
