@@ -53,14 +53,7 @@ function AppLoader() {
   }
 
   if (!App) {
-    return (
-      <div style={{
-        padding: "30px",
-        fontFamily: "Arial, sans-serif"
-      }}>
-        Loading Gemini Pump AI...
-      </div>
-    );
+    return null;
   }
 
   return <App />;
