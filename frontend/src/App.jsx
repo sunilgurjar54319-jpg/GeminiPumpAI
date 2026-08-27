@@ -10,6 +10,7 @@ import Register from "./components/Register";
 import "./App.css";
 
 import { authFetch, getDevice } from "./api";
+import WelcomeHeader from "./components/WelcomeHeader";
 import DeviceSelector from "./components/DeviceSelector";
 import QuickControls from "./components/QuickControls";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -325,6 +326,7 @@ function App() {
     <ErrorBoundary>
       <div className="dashboard">
 
+      <WelcomeHeader user={user} onLogout={() => setUser(null)} />
 
       <DeviceSelector
         selectedDeviceId={selectedDeviceId}
