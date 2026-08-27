@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ID } from "appwrite";
 import { account, storage } from "../appwrite";
 import Icon from "./Icon";
@@ -18,6 +18,12 @@ function WelcomeHeader({ user, onLogout }) {
   const [uploadingPicture, setUploadingPicture] = useState(false);
 
   const initial = name.charAt(0).toUpperCase();
+
+  useEffect(() => {
+    setName(user?.name?.trim() || "User");
+    setNewName(user?.name?.trim() || "");
+    setProfilePicture(user?.prefs?.profilePicture || "");
+  }, [user]);
 
   async function handleProfilePictureChange(e) {
     const file = e.target.files?.[0];
