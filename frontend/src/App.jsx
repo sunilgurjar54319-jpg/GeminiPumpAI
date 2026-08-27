@@ -326,7 +326,7 @@ function App() {
     <ErrorBoundary>
       <div className="dashboard">
 
-      <WelcomeHeader user={user} onLogout={() => setUser(null)} />
+      <WelcomeHeader user={user} onLogout={() => setUser(null)} onUserUpdate={setUser} />
 
       <DeviceSelector
         selectedDeviceId={selectedDeviceId}

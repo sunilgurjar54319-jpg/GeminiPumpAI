@@ -62,20 +62,22 @@ function WelcomeHeader({ user, onLogout, onUserUpdate }) {
 
       console.log("PROFILE IMAGE URL:", pictureUrl);
 
-      const updatedPrefs = await account.updatePrefs({
+      await account.updatePrefs({
         ...user?.prefs,
         profilePicture: pictureUrl,
       });
 
-      console.log("PROFILE PREFS SAVED:", updatedPrefs.prefs);
+      console.log("PROFILE PREFS SAVED");
 
-      setProfilePicture(pictureUrl);
+      // Appwrite se fresh user profile load karo
+      const freshUser = await account.get();
+
+      console.log("FRESH USER PREFS:", freshUser.prefs);
+
+      setProfilePicture(freshUser?.prefs?.profilePicture || pictureUrl);
 
       if (onUserUpdate) {
-        onUserUpdate({
-          ...user,
-          prefs: updatedPrefs.prefs,
-        });
+        onUserUpdate(freshUser);
       }
 
       setMenuOpen(false);
