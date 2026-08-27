@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { account } from "../appwrite";
+import { startAuthentication } from "@simplewebauthn/browser";
 
 function Login({ onLogin, onRegister }) {
   const params = new URLSearchParams(window.location.search);
@@ -59,6 +60,131 @@ function Login({ onLogin, onRegister }) {
       setError(
         err?.message || "Login failed"
       );
+
+    } finally {
+      setLoading(false);
+    }
+  }
+
+
+  async function handleBiometricLogin() {
+    setError("");
+    setMessage("");
+    setLoading(true);
+
+    try {
+      if (!window.isSecureContext) {
+        throw new Error(
+          "Biometric Login ke liye secure HTTPS connection required hai."
+        );
+      }
+
+      if (!window.PublicKeyCredential) {
+        throw new Error(
+          "Is device/browser me biometric authentication supported nahi hai."
+        );
+      }
+
+      const available =
+        await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+
+      if (!available) {
+        throw new Error(
+          "Is device me fingerprint/face biometric available nahi hai."
+        );
+      }
+
+      const optionsResponse = await fetch(
+        "/api/biometric/login/options",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          }
+        }
+      );
+
+      const optionsData = await optionsResponse.json();
+
+      if (!optionsResponse.ok || !optionsData.success) {
+        throw new Error(
+          optionsData.error ||
+          "Biometric login options failed."
+        );
+      }
+
+      const authenticationResponse =
+        await startAuthentication({
+          optionsJSON: optionsData.options
+        });
+
+      const verifyResponse = await fetch(
+        "/api/biometric/login/verify",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(authenticationResponse)
+        }
+      );
+
+      const verifyData = await verifyResponse.json();
+
+      if (!verifyResponse.ok || !verifyData.success) {
+        throw new Error(
+          verifyData.error ||
+          "Biometric authentication failed."
+        );
+      }
+
+      if (!verifyData.jwt) {
+        throw new Error(
+          "Biometric login succeeded but backend JWT was not returned."
+        );
+      }
+
+      sessionStorage.setItem(
+        "geminiPumpJWT",
+        verifyData.jwt
+      );
+
+      // Restore the Appwrite browser session using the
+      // authenticated user's JWT.
+      const jwtClientModule = await import("appwrite");
+
+      const jwtClient =
+        new jwtClientModule.Client()
+          .setEndpoint("https://cloud.appwrite.io/v1")
+          .setProject("6a6abdb7002586cbab5b5")
+          .setJWT(verifyData.jwt);
+
+      const jwtAccount =
+        new jwtClientModule.Account(jwtClient);
+
+      const user = await jwtAccount.get();
+
+      onLogin(user);
+
+    } catch (err) {
+      console.error(
+        "Biometric Login Error:",
+        err
+      );
+
+      if (
+        err?.name === "NotAllowedError" ||
+        err?.name === "AbortError"
+      ) {
+        setError(
+          "Biometric login cancel कर दिया गया।"
+        );
+      } else {
+        setError(
+          err?.message ||
+          "Biometric login failed."
+        );
+      }
 
     } finally {
       setLoading(false);
@@ -343,6 +469,24 @@ function Login({ onLogin, onRegister }) {
               {loading
                 ? "Logging in..."
                 : "Login"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleBiometricLogin}
+              disabled={loading}
+              style={{
+                width: "100%",
+                padding: "12px",
+                marginTop: "10px",
+                cursor: loading
+                  ? "not-allowed"
+                  : "pointer"
+              }}
+            >
+              {loading
+                ? "Please wait..."
+                : "🔐 Login with Biometric"}
             </button>
 
             {onRegister && (
