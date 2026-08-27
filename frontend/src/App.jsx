@@ -10,6 +10,7 @@ import Register from "./components/Register";
 import "./App.css";
 
 import { authFetch, getDevice } from "./api";
+import { account } from "./appwrite";
 import WelcomeHeader from "./components/WelcomeHeader";
 import DeviceSelector from "./components/DeviceSelector";
 import QuickControls from "./components/QuickControls";
@@ -17,9 +18,12 @@ import ErrorBoundary from "./components/ErrorBoundary";
 
 function App() {
   const [user, setUser] = useState(null);
+  const [sessionChecking, setSessionChecking] = useState(true);
   const [showRegister, setShowRegister] = useState(false);
   const [refresh, setRefresh] = useState(false);
-  const [selectedDeviceId, setSelectedDeviceId] = useState(null);
+  const [selectedDeviceId, setSelectedDeviceId] = useState(() => {
+    return localStorage.getItem("geminiPumpSelectedDeviceId") || null;
+  });
   const [deviceName, setDeviceName] = useState(null);
   const [deviceLoading, setDeviceLoading] = useState(false);
   const [devices, setDevices] = useState([]);
@@ -241,6 +245,33 @@ function App() {
     }
   }
 
+  // Restore existing Appwrite login session on app start
+  useEffect(() => {
+    let active = true;
+
+    async function restoreSession() {
+      try {
+        const currentUser = await account.get();
+
+        if (active) {
+          setUser(currentUser);
+        }
+      } catch (err) {
+        console.log("No active login session");
+      } finally {
+        if (active) {
+          setSessionChecking(false);
+        }
+      }
+    }
+
+    restoreSession();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   useEffect(() => {
     if (!user || devices.length === 0) {
       return;
@@ -281,6 +312,7 @@ function App() {
     setDeviceLoading(true);
     setDeviceName("");
     setSelectedDeviceId(deviceId);
+    localStorage.setItem("geminiPumpSelectedDeviceId", deviceId);
     setRefresh(prev => !prev);
 
     try {
@@ -303,6 +335,21 @@ function App() {
 
     return () => clearInterval(timer);
   }, [user, selectedDeviceId]);
+
+  if (sessionChecking) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        }}
+      >
+        <div>Loading...</div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
