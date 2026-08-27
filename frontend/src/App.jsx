@@ -10,8 +10,9 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import "./App.css";
 
-import { authFetch } from "./api";
+import { authFetch, getDevice } from "./api";
 import DeviceSelector from "./components/DeviceSelector";
+import QuickControls from "./components/QuickControls";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 function App() {
@@ -21,6 +22,10 @@ function App() {
   const [selectedDeviceId, setSelectedDeviceId] = useState(null);
   const [deviceName, setDeviceName] = useState(null);
   const [deviceLoading, setDeviceLoading] = useState(false);
+  const [devices, setDevices] = useState([]);
+  const [deviceStates, setDeviceStates] = useState({});
+  const [deviceToggleLoading, setDeviceToggleLoading] = useState({});
+  const [deviceOnlineStates, setDeviceOnlineStates] = useState({});
 
   async function loadDeviceName(deviceId = selectedDeviceId) {
     if (!deviceId) return;
@@ -46,6 +51,223 @@ function App() {
       console.error("Device name error:", err);
     }
   }
+
+  async function loadSharedDeviceState(deviceId) {
+    if (!deviceId) return;
+
+    try {
+      const device = await getDevice(deviceId);
+
+      if (!device || device.success === false) {
+        setDeviceOnlineStates(prev => ({
+          ...prev,
+          [deviceId]: false
+        }));
+        return;
+      }
+
+      const lastSeenTime = device.lastSeen
+        ? new Date(device.lastSeen).getTime()
+        : 0;
+
+      const age = Date.now() - lastSeenTime;
+
+      const wifiConnected =
+        String(device.wifiStatus || "").toUpperCase() ===
+        "CONNECTED";
+
+      const online =
+        Boolean(device.lastSeen) &&
+        wifiConnected &&
+        age >= 0 &&
+        age <= 60000;
+
+      setDeviceOnlineStates(prev => ({
+        ...prev,
+        [deviceId]: online
+      }));
+
+      if (!online) return;
+
+      const res = await authFetch(
+        `/api/status/${encodeURIComponent(deviceId)}?t=${Date.now()}`,
+        { cache: "no-store" }
+      );
+
+      if (!res.ok) return;
+
+      const data = await res.json();
+
+      if (data.status === "ON" || data.status === "OFF") {
+        setDeviceStates(prev => ({
+          ...prev,
+          [deviceId]: data.status
+        }));
+      }
+    } catch (err) {
+      console.log("QuickControls status error:", err);
+
+      setDeviceOnlineStates(prev => ({
+        ...prev,
+        [deviceId]: false
+      }));
+    }
+  }
+
+  async function toggleDevice(deviceId) {
+    if (!deviceId) return;
+
+    if (deviceToggleLoading[deviceId]) {
+      return;
+    }
+
+    const currentState =
+      deviceStates[deviceId] === "ON"
+        ? "ON"
+        : "OFF";
+
+    const nextCommand =
+      currentState === "ON"
+        ? "OFF"
+        : "ON";
+
+    try {
+      setDeviceToggleLoading(prev => ({
+        ...prev,
+        [deviceId]: true
+      }));
+
+      // Keep the same online protection used by ManualControl.
+      const device = await getDevice(deviceId);
+
+      if (!device || device.success === false) {
+        throw new Error("Device API failed");
+      }
+
+      if (!device.lastSeen) {
+        console.log(
+          "QuickControls: device offline",
+          deviceId
+        );
+        return;
+      }
+
+      const lastSeenTime =
+        new Date(device.lastSeen).getTime();
+
+      const age =
+        Date.now() - lastSeenTime;
+
+      const wifiConnected =
+        String(device.wifiStatus || "").toUpperCase() ===
+        "CONNECTED";
+
+      const online =
+        wifiConnected &&
+        age >= 0 &&
+        age <= 60000;
+
+      if (!online) {
+        console.log(
+          "QuickControls: device offline",
+          deviceId
+        );
+        return;
+      }
+
+      const res = await authFetch(
+        "/api/command/send",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            deviceId,
+            command: nextCommand
+          })
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error(
+          "QuickControls command failed:",
+          data
+        );
+        return;
+      }
+
+      if (data.ignored) {
+        if (
+          data.status === "ON" ||
+          data.status === "OFF"
+        ) {
+          setDeviceStates(prev => ({
+            ...prev,
+            [deviceId]: data.status
+          }));
+        }
+
+        return;
+      }
+
+      if (data.$id) {
+        // Optimistic update exactly like ManualControl.
+        setDeviceStates(prev => ({
+          ...prev,
+          [deviceId]: nextCommand
+        }));
+
+        // Confirm the real device state shortly after.
+        setTimeout(() => {
+          loadSharedDeviceState(deviceId);
+        }, 3000);
+
+        setRefresh(prev => !prev);
+      }
+    } catch (err) {
+      console.error(
+        "QuickControls toggle error:",
+        err
+      );
+    } finally {
+      setDeviceToggleLoading(prev => {
+        const next = { ...prev };
+        delete next[deviceId];
+        return next;
+      });
+    }
+  }
+
+  useEffect(() => {
+    if (!user || devices.length === 0) {
+      return;
+    }
+
+    devices.forEach(device => {
+      const deviceId =
+        device.deviceId || device.$id;
+
+      if (deviceId) {
+        loadSharedDeviceState(deviceId);
+      }
+    });
+
+    const timer = setInterval(() => {
+      devices.forEach(device => {
+        const deviceId =
+          device.deviceId || device.$id;
+
+        if (deviceId) {
+          loadSharedDeviceState(deviceId);
+        }
+      });
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [user, devices]);
 
   function refreshStatus() {
     setRefresh(prev => !prev);
@@ -108,7 +330,16 @@ function App() {
 
       <DeviceSelector
         selectedDeviceId={selectedDeviceId}
-        onDeviceChange={handleDeviceChange} refresh={refresh}
+        onDeviceChange={handleDeviceChange}
+        refresh={refresh}
+        onDevicesLoaded={setDevices}
+      />
+
+      <QuickControls
+        devices={devices}
+        deviceStates={deviceStates}
+        deviceOnlineStates={deviceOnlineStates}
+        onToggleDevice={toggleDevice}
       />
 
       {deviceLoading ? (
@@ -148,6 +379,8 @@ function App() {
               onCommandSent={refreshStatus}
               deviceName={deviceName}
               selectedDeviceId={selectedDeviceId}
+              sharedIsOn={deviceStates[selectedDeviceId] === "ON"}
+              onSharedToggle={toggleDevice}
             />
           </div>
 

@@ -396,34 +396,24 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
   return (
 
-    <div
-      style={{
-        border: "1px solid #ddd",
-        borderRadius: "15px",
-        padding: "20px",
-        marginTop: "20px"
-      }}
-    >
-
+    <div className="schedule-card">
       <button
         type="button"
         className="accordion-header schedule-accordion-header"
         onClick={() => setScheduleOpen(v => !v)}
         aria-expanded={scheduleOpen}
       >
-        <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <span className="accordion-title">
           <Icon name="clock" size={20} />
-          Schedule
+          <span>Schedule</span>
         </span>
 
         <span
-          className={`accordion-chevron ${
+          className={`premium-accordion-arrow ${
             scheduleOpen ? "is-open" : ""
           }`}
           aria-hidden="true"
-        >
-          ▾
-        </span>
+        />
       </button>
 
       <div

@@ -2,7 +2,12 @@ import { useEffect, useState } from "react";
 import { authFetch } from "../api";
 import { Html5Qrcode } from "html5-qrcode";
 
-function DeviceSelector({ selectedDeviceId, onDeviceChange, refresh }) {
+function DeviceSelector({
+  selectedDeviceId,
+  onDeviceChange,
+  refresh,
+  onDevicesLoaded
+}) {
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,6 +38,10 @@ function DeviceSelector({ selectedDeviceId, onDeviceChange, refresh }) {
         : [];
 
       setDevices(list);
+
+      if (onDevicesLoaded) {
+        onDevicesLoaded(list);
+      }
 
       if (list.length > 0) {
         const currentExists = list.some(

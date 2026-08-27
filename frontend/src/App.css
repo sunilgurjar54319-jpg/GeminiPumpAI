@@ -430,7 +430,7 @@ input {
   border-radius: 50%;
   background: #ffffff;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.20);
-  transition: transform 0.3s ease;
+  transition: transform 120ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .manual-toggle-labels {
@@ -581,20 +581,59 @@ input {
   line-height: 1.3;
 }
 
-/* Toggle states */
+/* =========================================================
+   Main Dashboard Toggle — Neon Breathing States
+   Existing size, position and behaviour remain unchanged.
+   ========================================================= */
+
 .manual-toggle-on {
-  background: #16a34a !important;
-  box-shadow: 0 0 12px rgba(22, 163, 74, 0.30) !important;
+  background: #34C759 !important;
+  animation: mainToggleGreenBreathing 3.2s ease-in-out infinite;
+  transition: background 120ms ease-out, box-shadow 120ms ease-out !important;
+}
+
+@keyframes mainToggleGreenBreathing {
+  0%, 100% {
+    box-shadow:
+      0 0 4px rgba(52, 199, 89, 0.14),
+      0 0 9px rgba(52, 199, 89, 0.07),
+      inset 0 0 3px rgba(52, 199, 89, 0.08);
+  }
+
+  50% {
+    box-shadow:
+      0 0 7px rgba(52, 199, 89, 0.24),
+      0 0 14px rgba(52, 199, 89, 0.11),
+      inset 0 0 5px rgba(52, 199, 89, 0.14);
+  }
 }
 
 .manual-toggle-off {
-  background: #94a3b8 !important;
-  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.16) !important;
+  background: #FF3B30 !important;
+  animation: mainToggleRedBreathing 3.2s ease-in-out infinite;
+  transition: background 120ms ease-out, box-shadow 120ms ease-out !important;
+}
+
+@keyframes mainToggleRedBreathing {
+  0%, 100% {
+    box-shadow:
+      0 0 4px rgba(255, 59, 48, 0.12),
+      0 0 9px rgba(255, 59, 48, 0.06),
+      inset 0 0 3px rgba(255, 59, 48, 0.07);
+  }
+
+  50% {
+    box-shadow:
+      0 0 7px rgba(255, 59, 48, 0.22),
+      0 0 14px rgba(255, 59, 48, 0.10),
+      inset 0 0 5px rgba(255, 59, 48, 0.13);
+  }
 }
 
 .manual-toggle-disabled {
   background: #cbd5e1 !important;
   box-shadow: none !important;
+  animation: none !important;
   opacity: 0.65;
 }
 
@@ -933,7 +972,7 @@ input {
 
 
 /* =========================================
-   VOICE CONTROL - PILL + LISTENING RIPPLE
+   VOICE CONTROL - BLUE MIC BUTTON
 ========================================= */
 
 .voice-control {
@@ -943,6 +982,11 @@ input {
   flex-direction: column;
   align-items: center;
   text-align: center;
+
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
 }
 
 .voice-control-button {
@@ -951,64 +995,102 @@ input {
   align-items: center;
   justify-content: center;
   gap: 8px;
+
   min-height: 42px;
   padding: 10px 18px;
-  border: none;
+
+  border: none !important;
+  outline: none !important;
   border-radius: 999px;
-  background: #e5e7eb;
-  color: #475569;
+
+  background: #2563eb !important;
+  color: #ffffff !important;
+
   font-size: 14px;
   font-weight: 650;
   cursor: pointer;
+
+  box-shadow:
+    0 5px 12px rgba(37, 99, 235, 0.25);
+
   transition:
     background 0.2s ease,
-    color 0.2s ease,
+    box-shadow 0.2s ease,
     transform 0.2s ease;
+
   overflow: visible;
 }
 
 .voice-control-button:hover:not(:disabled) {
-  background: #dbe0e6;
-  color: #334155;
+  background: #1d4ed8 !important;
+  color: #ffffff !important;
+
+  box-shadow:
+    0 7px 16px rgba(37, 99, 235, 0.32);
+
+  transform: translateY(-1px);
 }
 
 .voice-control-button:active:not(:disabled) {
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 
-.voice-control-button:disabled {
-  cursor: default;
+.voice-control-button:focus,
+.voice-control-button:focus-visible {
+  outline: none !important;
+  border: none !important;
 }
 
-/* Mic icon */
 .voice-control-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  color: #ffffff !important;
   line-height: 1;
 }
 
-/* Listening state */
 .voice-control-listening {
-  background: #d1d5db;
-  color: #374151;
+  background: #2563eb !important;
+  color: #ffffff !important;
+
+  box-shadow:
+    0 0 0 4px rgba(37, 99, 235, 0.12),
+    0 6px 18px rgba(37, 99, 235, 0.35);
+
+  animation: voice-button-pulse 1.5s ease-in-out infinite;
 }
 
-/* Ripple 1 */
 .voice-control-listening::before,
 .voice-control-listening::after {
   content: "";
   position: absolute;
-  inset: -5px;
-  border: 2px solid rgba(100, 116, 139, 0.35);
+  inset: -6px;
+
+  border: 2px solid rgba(37, 99, 235, 0.45);
   border-radius: 999px;
+
   pointer-events: none;
+
   animation: voice-ripple 1.5s ease-out infinite;
 }
 
-/* Ripple 2 */
 .voice-control-listening::after {
   animation-delay: 0.75s;
+}
+
+@keyframes voice-button-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px rgba(37, 99, 235, 0.10),
+      0 6px 18px rgba(37, 99, 235, 0.28);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 7px rgba(37, 99, 235, 0.16),
+      0 8px 24px rgba(37, 99, 235, 0.42);
+  }
 }
 
 @keyframes voice-ripple {
@@ -1031,7 +1113,8 @@ input {
 .voice-control-message {
   min-height: 20px;
   margin: 8px 4px 0;
-  color: #64748b;
+
+  color: #2563eb !important;
   font-size: 12px;
   font-weight: 600;
 }
@@ -3529,4 +3612,1096 @@ button[type="submit"] {
   -webkit-text-fill-color: #172033 !important;
   box-shadow: 0 0 0 1000px #ffffff inset !important;
   transition: background-color 9999s ease-in-out 0s;
+}
+
+/* =========================================================
+   DASHBOARD LOWER CARDS — PREMIUM FROSTED SURFACES
+   Visual-only override.
+   Does not change layout, sizing, state or functionality.
+   ========================================================= */
+
+.dashboard .grid > .card {
+  position: relative;
+  isolation: isolate;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.94),
+      rgba(248, 250, 253, 0.82)
+    ) !important;
+
+  border: 1px solid rgba(255, 255, 255, 0.92) !important;
+  border-radius: 24px !important;
+
+  box-shadow:
+    0 2px 4px rgba(15, 23, 42, 0.025),
+    0 10px 28px rgba(15, 23, 42, 0.055),
+    0 24px 55px rgba(15, 23, 42, 0.035),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+
+  backdrop-filter: blur(18px) saturate(125%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(125%) !important;
+
+  overflow: hidden;
+}
+
+/* Very subtle inner highlight.
+   Keeps the card visibly separate from the dashboard background. */
+.dashboard .grid > .card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  border-radius: inherit;
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.34),
+      transparent 42%
+    );
+
+  opacity: 0.75;
+  z-index: -1;
+}
+
+/* Full-width cards get the same premium surface treatment. */
+.dashboard .grid > .card.full {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.95),
+      rgba(248, 250, 253, 0.84)
+    ) !important;
+}
+
+/* Keep component content visually clean without changing
+   their existing internal design. */
+.dashboard .grid > .card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Premium hover only on devices that actually support hover.
+   No mobile interaction behaviour is changed. */
+@media (hover: hover) and (pointer: fine) {
+  .dashboard .grid > .card {
+    transition:
+      box-shadow 180ms ease-out,
+      transform 180ms ease-out;
+  }
+
+  .dashboard .grid > .card:hover {
+    box-shadow:
+      0 3px 7px rgba(15, 23, 42, 0.03),
+      0 14px 32px rgba(15, 23, 42, 0.065),
+      0 28px 60px rgba(15, 23, 42, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.98);
+  }
+}
+
+
+/* =========================================================
+   ALL DASHBOARD CARDS — SAME PREMIUM NEON BORDER
+   Visual-only. Existing layout and functionality untouched.
+   ========================================================= */
+
+.dashboard .grid > .card {
+  border: 1px solid rgba(92, 172, 255, 0.34) !important;
+
+  box-shadow:
+    0 0 0 1px rgba(92, 172, 255, 0.08),
+    0 0 7px rgba(92, 172, 255, 0.16),
+    0 10px 28px rgba(15, 23, 42, 0.055),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
+
+  animation: dashboardCardNeonBreathing 3.6s ease-in-out infinite;
+}
+
+@keyframes dashboardCardNeonBreathing {
+  0%,
+  100% {
+    border-color: rgba(92, 172, 255, 0.28);
+
+    box-shadow:
+      0 0 0 1px rgba(92, 172, 255, 0.06),
+      0 0 6px rgba(92, 172, 255, 0.12),
+      0 10px 28px rgba(15, 23, 42, 0.05),
+      inset 0 1px 0 rgba(255, 255, 255, 0.96);
+  }
+
+  50% {
+    border-color: rgba(92, 172, 255, 0.48);
+
+    box-shadow:
+      0 0 0 1px rgba(92, 172, 255, 0.10),
+      0 0 11px rgba(92, 172, 255, 0.22),
+      0 10px 30px rgba(15, 23, 42, 0.055),
+      inset 0 1px 0 rgba(255, 255, 255, 0.98);
+  }
+}
+
+/* Keep the same neon treatment on full-width cards. */
+.dashboard .grid > .card.full {
+  border-color: rgba(92, 172, 255, 0.34) !important;
+}
+
+/* Avoid hover overriding the breathing glow. */
+@media (hover: hover) and (pointer: fine) {
+  .dashboard .grid > .card:hover {
+    border-color: rgba(92, 172, 255, 0.48) !important;
+  }
+}
+
+/* Respect reduced-motion accessibility settings. */
+@media (prefers-reduced-motion: reduce) {
+  .dashboard .grid > .card {
+    animation: none;
+  }
+}
+
+
+/* =========================================================
+   SCHEDULE INNER BORDER — PREMIUM OUTER CARD ONLY
+   Removes the extra inner outline so Schedule matches
+   Statistics / History / Control card surfaces.
+   No layout or functionality changes.
+   ========================================================= */
+
+/* The Schedule component should visually belong to the
+   already-glowing outer dashboard card. */
+.dashboard .grid > .card .schedule-card,
+.dashboard .grid > .card .schedule-container,
+.dashboard .grid > .card .schedule-section {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* If Schedule uses a generic direct wrapper, prevent an
+   additional outline while preserving its existing surface. */
+.dashboard .grid > .card.full > .schedule-card,
+.dashboard .grid > .card.full > .schedule-container,
+.dashboard .grid > .card.full > .schedule-section {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Keep the premium neon border exclusively on the
+   dashboard-level card. */
+.dashboard .grid > .card.full {
+  border: 1px solid rgba(92, 172, 255, 0.34) !important;
+}
+
+
+/* =========================================================
+   UNIFIED DASHBOARD CARD SURFACE — HISTORY STYLE
+   Same premium outer card treatment for Statistics,
+   Schedule and History.
+
+   Layout/functionality unchanged.
+   ========================================================= */
+
+/* All dashboard cards use the same premium outer surface */
+.dashboard .grid > .card {
+  position: relative !important;
+  box-sizing: border-box !important;
+
+  border: 1px solid rgba(92, 172, 255, 0.34) !important;
+  border-radius: 28px !important;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.96),
+      rgba(248, 251, 255, 0.94)
+    ) !important;
+
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.82),
+    0 8px 26px rgba(65, 135, 210, 0.10),
+    0 0 18px rgba(92, 172, 255, 0.10) !important;
+
+  overflow: hidden !important;
+}
+
+/* History keeps exactly the same surface */
+.dashboard .grid > .card.full {
+  border: 1px solid rgba(92, 172, 255, 0.34) !important;
+  border-radius: 28px !important;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.96),
+      rgba(248, 251, 255, 0.94)
+    ) !important;
+
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.82),
+    0 8px 26px rgba(65, 135, 210, 0.10),
+    0 0 18px rgba(92, 172, 255, 0.10) !important;
+}
+
+/* Schedule: remove every unnecessary inner outline.
+   The outer .card above is the only premium border. */
+.dashboard .grid > .card .schedule-card,
+.dashboard .grid > .card .schedule-container,
+.dashboard .grid > .card .schedule-section,
+.dashboard .grid > .card .schedule-accordion-header + .accordion-content {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Statistics: do not introduce another box around the
+   already-premium outer card. */
+.dashboard .grid > .card .stats-card,
+.dashboard .grid > .card .stats-container,
+.dashboard .grid > .card .stats-section {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* History: same rule for any internal wrapper */
+.dashboard .grid > .card.full .history-card,
+.dashboard .grid > .card.full .history-container,
+.dashboard .grid > .card.full .history-section {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Keep accordion headers visually clean inside the card */
+.dashboard .grid > .card .accordion-header,
+.dashboard .grid > .card .stats-header,
+.dashboard .grid > .card .schedule-accordion-header,
+.dashboard .grid > .card .history-accordion-header {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* Mobile: same premium family, slightly tighter radius */
+@media (max-width: 600px) {
+  .dashboard .grid > .card,
+  .dashboard .grid > .card.full {
+    border-radius: 24px !important;
+  }
+}
+
+/* =========================================================
+   FINAL SCHEDULE INNER BORDER FIX
+   Remove only Schedule component's old inner outline.
+   Outer dashboard premium card remains untouched.
+   ========================================================= */
+
+.dashboard .grid > .card:has(.schedule-accordion-header) > div:first-child {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+
+/* =========================================================
+   QUICK ACCESS / SIDEBAR MANUAL SWITCHES
+   Remove ONLY outer neon breathing animation.
+   Keep switch colors and all other UI unchanged.
+   ========================================================= */
+
+.quick-controls button {
+  animation: none !important;
+  box-shadow: none !important;
+}
+
+/* =========================================================
+   AUTH CARD — SUBTLE 3D LOOK
+   Login + Register
+========================================================= */
+
+.auth-card {
+  border: 1px solid rgba(255, 255, 255, 0.9) !important;
+
+  box-shadow:
+    0 4px 8px rgba(15, 23, 42, 0.08),
+    0 14px 28px rgba(15, 23, 42, 0.12),
+    0 28px 55px rgba(15, 23, 42, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+
+  transform: translateY(-2px);
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.auth-card:hover {
+  transform: translateY(-5px);
+
+  box-shadow:
+    0 6px 12px rgba(15, 23, 42, 0.08),
+    0 20px 38px rgba(15, 23, 42, 0.14),
+    0 35px 65px rgba(15, 23, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+}
+
+/* =========================================================
+   GLOBAL 3D BOX SYSTEM
+   Consistent depth for website cards / panels / controls
+   Does NOT change layout or functionality.
+========================================================= */
+
+.card,
+.status-card,
+.manual-control-card,
+.manual-control-box,
+.device-control-card,
+.device-connection-card,
+.stats-card,
+.stats-item,
+.stat-item,
+.history-card,
+.history-item,
+.saved-schedule-card,
+.skeleton-card,
+.auth-card,
+.voice-control,
+.device-sensor-item,
+.device-settings-modal {
+  box-shadow:
+    0 2px 4px rgba(15, 23, 42, 0.06),
+    0 8px 18px rgba(15, 23, 42, 0.08),
+    0 18px 38px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+/* Main cards — stronger depth */
+.card,
+.status-card,
+.manual-control-card,
+.device-control-card,
+.device-connection-card,
+.stats-card,
+.history-card,
+.saved-schedule-card,
+.auth-card {
+  border-color: rgba(203, 213, 225, 0.9);
+  transform: translateY(-1px);
+}
+
+/* Inner control boxes — subtle raised surface */
+.manual-control-box,
+.stats-item,
+.stat-item,
+.history-item,
+.device-sensor-item {
+  box-shadow:
+    0 2px 4px rgba(15, 23, 42, 0.05),
+    0 7px 16px rgba(15, 23, 42, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+/* Saved schedule cards */
+.saved-schedule-card {
+  box-shadow:
+    0 3px 6px rgba(15, 23, 42, 0.06),
+    0 10px 24px rgba(15, 23, 42, 0.10),
+    0 20px 42px rgba(15, 23, 42, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+/* Auth box */
+.auth-card {
+  box-shadow:
+    0 4px 8px rgba(15, 23, 42, 0.08),
+    0 14px 28px rgba(15, 23, 42, 0.12),
+    0 28px 55px rgba(15, 23, 42, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+/* Hover depth — only where hover is meaningful */
+.card:hover,
+.status-card:hover,
+.manual-control-card:hover,
+.device-control-card:hover,
+.device-connection-card:hover,
+.stats-card:hover,
+.history-card:hover,
+.saved-schedule-card:hover,
+.auth-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 5px 10px rgba(15, 23, 42, 0.07),
+    0 16px 32px rgba(15, 23, 42, 0.12),
+    0 30px 55px rgba(15, 23, 42, 0.09),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+/* Keep disabled / skeleton states visually appropriate */
+.manual-toggle-disabled,
+.quick-control-card.is-offline,
+.skeleton-card {
+  transform: none;
+}
+
+.manual-toggle-disabled {
+  box-shadow: none !important;
+}
+
+/* Preserve existing animated state shadows.
+   These states already have their own animation. */
+.quick-control-card.is-connected.is-on,
+.quick-control-card.is-connected.is-off,
+.manual-toggle-on,
+.manual-toggle-off {
+  transform: none;
+}
+
+/* =========================================
+   VOICE CONTROL - TEXT VISIBILITY FIX
+========================================= */
+
+.voice-control-button,
+.voice-control-button span,
+.voice-control-button .voice-control-icon {
+  color: #ffffff !important;
+}
+
+.voice-control-button span:not(.voice-control-icon) {
+  color: #ffffff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.voice-control-button svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+.voice-control-listening,
+.voice-control-listening span,
+.voice-control-listening .voice-control-icon {
+  color: #ffffff !important;
+}
+
+
+
+/* =========================================================
+   FINAL USER UI FIX — COMPACT ACCORDION HEADERS
+   Statistics / Schedule / History
+   UI ONLY — logic untouched.
+========================================================= */
+
+.stats-header,
+.schedule-accordion-header,
+.history-accordion-header {
+  box-sizing: border-box !important;
+  min-height: 72px !important;
+  height: 72px !important;
+  padding: 12px 18px !important;
+  margin: 0 !important;
+}
+
+/* Closed accordion = no empty height */
+.accordion-content-closed {
+  display: none !important;
+  max-height: 0 !important;
+  min-height: 0 !important;
+  height: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  opacity: 0 !important;
+}
+
+.accordion-content-open {
+  display: block !important;
+}
+
+/* =========================================================
+   STATISTICS — CSS ICON, NO EMOJI
+========================================================= */
+
+.stats-header .accordion-title {
+  font-size: 0 !important;
+  color: transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.stats-header .accordion-title > * {
+  display: none !important;
+}
+
+.stats-header .accordion-title::before {
+  content: "";
+  width: 26px !important;
+  height: 26px !important;
+  flex: 0 0 26px !important;
+  display: block !important;
+  border-radius: 7px !important;
+
+  background:
+    linear-gradient(currentColor, currentColor) 5px 14px / 4px 7px no-repeat,
+    linear-gradient(currentColor, currentColor) 11px 10px / 4px 11px no-repeat,
+    linear-gradient(currentColor, currentColor) 17px 6px / 4px 15px no-repeat;
+
+  color: #31506b !important;
+}
+
+.stats-header .accordion-title::after {
+  content: "Statistics";
+  display: block !important;
+  color: #172033 !important;
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+}
+
+/* =========================================================
+   SCHEDULE — CSS CALENDAR ICON, NO EMOJI
+========================================================= */
+
+.schedule-accordion-header .accordion-title {
+  font-size: 0 !important;
+  color: transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.schedule-accordion-header .accordion-title > * {
+  display: none !important;
+}
+
+.schedule-accordion-header .accordion-title::before {
+  content: "";
+  width: 26px !important;
+  height: 26px !important;
+  flex: 0 0 26px !important;
+  display: block !important;
+  box-sizing: border-box !important;
+
+  border: 2px solid #31506b !important;
+  border-radius: 6px !important;
+
+  background:
+    linear-gradient(#31506b, #31506b) 0 7px / 100% 2px no-repeat,
+    linear-gradient(#31506b, #31506b) 6px 4px / 2px 5px no-repeat,
+    linear-gradient(#31506b, #31506b) 18px 4px / 2px 5px no-repeat;
+}
+
+.schedule-accordion-header .accordion-title::after {
+  content: "Schedule";
+  display: block !important;
+  color: #172033 !important;
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .stats-header,
+  .schedule-accordion-header,
+  .history-accordion-header {
+    height: 64px !important;
+    min-height: 64px !important;
+    padding: 10px 14px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .stats-header .accordion-title::before,
+  .schedule-accordion-header .accordion-title::before {
+    width: 24px !important;
+    height: 24px !important;
+    flex-basis: 24px !important;
+  }
+
+  .stats-header .accordion-title::after,
+  .schedule-accordion-header .accordion-title::after {
+    font-size: 18px !important;
+  }
+}
+
+/* =========================================================
+   SCHEDULE FINAL UI FIX
+   Same arrow style as Statistics + Calendar icon
+   UI ONLY — no logic changes
+========================================================= */
+
+/* Schedule header — same compact size as Statistics */
+.schedule-accordion-header {
+  box-sizing: border-box !important;
+  height: 72px !important;
+  min-height: 72px !important;
+  padding: 12px 18px !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* Schedule title area */
+.schedule-accordion-header .accordion-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  color: #172033 !important;
+}
+
+/* Remove old/incorrect title icon if present */
+.schedule-accordion-header .accordion-title > svg,
+.schedule-accordion-header .accordion-title > img,
+.schedule-accordion-header .accordion-title > span:first-child {
+  display: none !important;
+}
+
+/* Proper CALENDAR icon for Schedule */
+.schedule-accordion-header .accordion-title::before {
+  content: "" !important;
+  display: inline-block !important;
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  box-sizing: border-box !important;
+
+  border: 2.5px solid #31506b !important;
+  border-radius: 5px !important;
+
+  background:
+    linear-gradient(#31506b, #31506b)
+      0 7px / 100% 2px no-repeat,
+
+    linear-gradient(#31506b, #31506b)
+      5px 3px / 2.5px 6px no-repeat,
+
+    linear-gradient(#31506b, #31506b)
+      18px 3px / 2.5px 6px no-repeat,
+
+    radial-gradient(circle, #31506b 1.4px, transparent 1.5px)
+      6px 12px / 7px 7px no-repeat,
+
+    radial-gradient(circle, #31506b 1.4px, transparent 1.5px)
+      13px 12px / 7px 7px no-repeat,
+
+    radial-gradient(circle, #31506b 1.4px, transparent 1.5px)
+      6px 18px / 7px 7px no-repeat,
+
+    radial-gradient(circle, #31506b 1.4px, transparent 1.5px)
+      13px 18px / 7px 7px no-repeat !important;
+}
+
+/* Keep Schedule text normal */
+.schedule-accordion-header .accordion-title::after {
+  content: none !important;
+}
+
+/* =========================================================
+   SCHEDULE ARROW
+   Match Statistics arrow appearance
+========================================================= */
+
+/* Whatever button contains the Schedule arrow */
+.schedule-accordion-header button,
+.schedule-accordion-header .accordion-toggle,
+.schedule-accordion-header .accordion-arrow,
+.schedule-accordion-header .toggle-button {
+  width: 72px !important;
+  height: 72px !important;
+  min-width: 72px !important;
+  min-height: 72px !important;
+  border-radius: 50% !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.06) !important;
+
+  margin-left: auto !important;
+}
+
+/* Hide old arrow characters/icons */
+.schedule-accordion-header button::before,
+.schedule-accordion-header .accordion-toggle::before,
+.schedule-accordion-header .accordion-arrow::before,
+.schedule-accordion-header .toggle-button::before {
+  content: none !important;
+}
+
+/* Same clean downward chevron as Statistics */
+.schedule-accordion-header button::after,
+.schedule-accordion-header .accordion-toggle::after,
+.schedule-accordion-header .accordion-arrow::after,
+.schedule-accordion-header .toggle-button::after {
+  content: "" !important;
+  width: 14px !important;
+  height: 14px !important;
+
+  border-right: 4px solid #7c8794 !important;
+  border-bottom: 4px solid #7c8794 !important;
+
+  transform: rotate(45deg) translate(-2px, -2px) !important;
+  display: block !important;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .schedule-accordion-header {
+    height: 64px !important;
+    min-height: 64px !important;
+    padding: 10px 14px !important;
+  }
+
+  .schedule-accordion-header button,
+  .schedule-accordion-header .accordion-toggle,
+  .schedule-accordion-header .accordion-arrow,
+  .schedule-accordion-header .toggle-button {
+    width: 64px !important;
+    height: 64px !important;
+    min-width: 64px !important;
+    min-height: 64px !important;
+  }
+
+  .schedule-accordion-header .accordion-title::before {
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+  }
+}
+
+
+/* =========================================================
+   FINAL SCHEDULE HEADER — MATCH STATISTICS
+   UI ONLY — no schedule logic changes
+========================================================= */
+
+/* Same header sizing/alignment */
+.schedule-accordion-header {
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+/* Schedule title */
+.schedule-accordion-header .accordion-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  color: #172033 !important;
+}
+
+/* Use the real Calendar icon from Icon.jsx */
+.schedule-accordion-header .accordion-title > svg {
+  display: block !important;
+  width: 26px !important;
+  height: 26px !important;
+  flex: 0 0 26px !important;
+  color: #31506b !important;
+}
+
+/* Remove old CSS-generated Schedule icon */
+.schedule-accordion-header .accordion-title::before {
+  content: none !important;
+}
+
+/* Remove old generated Schedule text */
+.schedule-accordion-header .accordion-title::after {
+  content: none !important;
+}
+
+/* Remove old ▾ / old arrow implementations */
+.schedule-accordion-header > .accordion-chevron,
+.schedule-accordion-header > .schedule-premium-arrow,
+.schedule-accordion-header > svg {
+  display: none !important;
+}
+
+/* EXACT same arrow component as Statistics */
+.schedule-accordion-header .premium-accordion-arrow {
+  position: absolute !important;
+  right: 4px !important;
+  top: 50% !important;
+
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+  flex: 0 0 28px !important;
+
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  border-radius: 50% !important;
+  background: #f4f6f8 !important;
+
+  box-shadow:
+    0 2px 7px rgba(15, 23, 42, 0.08),
+    inset 0 0 0 1px rgba(148, 163, 184, 0.12) !important;
+
+  transform: translateY(-50%) !important;
+  transition:
+    transform 0.28s cubic-bezier(.4,0,.2,1),
+    background 0.2s ease,
+    box-shadow 0.2s ease !important;
+}
+
+/* EXACT same V-shaped chevron as Statistics */
+.schedule-accordion-header .premium-accordion-arrow::before,
+.schedule-accordion-header .premium-accordion-arrow::after {
+  content: "" !important;
+  position: absolute !important;
+
+  width: 7px !important;
+  height: 1.7px !important;
+  top: 13px !important;
+
+  background: #8b95a1 !important;
+  border-radius: 999px !important;
+
+  transition:
+    background 0.2s ease,
+    transform 0.28s cubic-bezier(.4,0,.2,1) !important;
+}
+
+.schedule-accordion-header .premium-accordion-arrow::before {
+  left: 7px !important;
+  transform: rotate(45deg) !important;
+  transform-origin: right center !important;
+}
+
+.schedule-accordion-header .premium-accordion-arrow::after {
+  right: 7px !important;
+  transform: rotate(-45deg) !important;
+  transform-origin: left center !important;
+}
+
+/* Open = same upward arrow as Statistics */
+.schedule-accordion-header .premium-accordion-arrow.is-open {
+  transform: translateY(-50%) rotate(180deg) !important;
+}
+
+/* Same hover */
+.schedule-accordion-header:hover .premium-accordion-arrow {
+  background: #eef1f4 !important;
+  box-shadow:
+    0 3px 9px rgba(15, 23, 42, 0.11),
+    inset 0 0 0 1px rgba(148, 163, 184, 0.15) !important;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .schedule-accordion-header .premium-accordion-arrow {
+    right: 4px !important;
+  }
+
+  .schedule-accordion-header .accordion-title > svg {
+    width: 24px !important;
+    height: 24px !important;
+    flex-basis: 24px !important;
+  }
+}
+
+/* FINAL FIX — Schedule title text visibility */
+.schedule-accordion-header .accordion-title > span {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  color: #172033 !important;
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+}
+
+.schedule-accordion-header .accordion-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Manual Control — match Statistics border only */
+.manual-control-card {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 16px !important;
+}
+
+/* =========================================================
+   DEVICE SETTINGS — FINAL UI PATCH
+   UI ONLY — existing logic untouched
+========================================================= */
+
+/* Mobile + Settings icons: horizontal, clean spacing */
+.manual-control-header-actions {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  flex-wrap: nowrap !important;
+}
+
+/* Settings button — clean gear button */
+.manual-control-header-actions .device-settings-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 auto !important;
+}
+
+/* Settings overlay — dim + blur dashboard */
+.device-settings-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1000 !important;
+
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
+
+  padding: 0 !important;
+
+  background: rgba(15, 23, 42, 0.42) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+
+  animation: deviceSettingsOverlayIn 0.25s ease-out both;
+}
+
+/* Bottom sheet */
+.device-settings-modal {
+  width: 100% !important;
+  max-width: 520px !important;
+
+  max-height: 50vh !important;
+  overflow-y: auto !important;
+
+  box-sizing: border-box !important;
+
+  margin: 0 !important;
+  padding: 20px !important;
+
+  border-radius: 22px 22px 0 0 !important;
+
+  background: #fff !important;
+
+  box-shadow:
+    0 -10px 35px rgba(15, 23, 42, 0.18),
+    0 -2px 10px rgba(15, 23, 42, 0.08) !important;
+
+  animation: deviceSettingsSheetUp 0.32s cubic-bezier(.22,1,.36,1) both;
+}
+
+/* Small grab handle */
+.device-settings-modal::before {
+  content: "" !important;
+  display: block !important;
+
+  width: 42px !important;
+  height: 4px !important;
+
+  margin: -7px auto 14px !important;
+
+  border-radius: 999px !important;
+  background: #d1d5db !important;
+}
+
+/* Bottom-sheet animations */
+@keyframes deviceSettingsSheetUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0.7;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes deviceSettingsOverlayIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .manual-control-header-actions {
+    gap: 8px !important;
+  }
+
+  .device-settings-modal {
+    max-height: 55vh !important;
+    border-radius: 20px 20px 0 0 !important;
+    padding: 18px !important;
+  }
+}
+
+
+/* =========================================================
+   MANUAL CONTROL — HEADER & WARNING FINAL FIX
+   ONLY requested UI changes
+========================================================= */
+
+/* Single Mobile ON/OFF heading */
+.manual-control-title-main {
+  font-size: 19px !important;
+  font-weight: 750 !important;
+  line-height: 1.2 !important;
+}
+
+/* Pure red warning text — remove yellow warning appearance */
+.manual-control-notice {
+  color: #D32F2F !important;
+  font-weight: 600 !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+/* ONLY: RMU warning text color */
+.manual-control-notice {
+  color: #D32F2F !important;
+}
+
+
+/* FINAL — ONLY RMU FW WARNING TEXT COLOR */
+html body .manual-control-card .manual-control-body .manual-control-notice {
+  color: #D32F2F !important;
+  -webkit-text-fill-color: #D32F2F !important;
+}
+
+/* ONLY: Center Voice Control text */
+.voice-control-button {
+  text-align: center !important;
+}
+
+
+/* ONLY: Voice Control content exact center */
+.voice-control-button {
+  justify-content: center !important;
+  align-items: center !important;
+  text-align: center !important;
+}
+
+.voice-control-button > span {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }

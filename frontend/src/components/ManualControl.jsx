@@ -36,7 +36,9 @@ function DeviceStatusIcon({ online }) {
 function ManualControl({
   onCommandSent,
   deviceName,
-  selectedDeviceId
+  selectedDeviceId,
+  sharedIsOn,
+  onSharedToggle
 }) {
   const displayName = deviceName || "Pump";
 
@@ -50,6 +52,12 @@ function ManualControl({
   const [savingName, setSavingName] = useState(false);
   const [nameMessage, setNameMessage] = useState("");
   const [deletingDevice, setDeletingDevice] = useState(false);
+
+  useEffect(() => {
+    if (typeof sharedIsOn === "boolean") {
+      setIsOn(sharedIsOn);
+    }
+  }, [sharedIsOn, selectedDeviceId]);
 
   async function saveDeviceName() {
     const name = newDeviceName.trim();
@@ -426,6 +434,11 @@ function ManualControl({
   // =========================================
 
   function togglePump() {
+    if (onSharedToggle && selectedDeviceId) {
+      onSharedToggle(selectedDeviceId);
+      return;
+    }
+
     if (!deviceOnline) {
       setMessage(
         "RMU FW Update available or Pump is not connected to network"
@@ -452,11 +465,7 @@ function ManualControl({
 
         <div className="manual-control-title">
           <div className="manual-control-title-main">
-            Control
-          </div>
-
-          <div className="manual-control-device-name">
-            {displayName}
+            Mobile ON/OFF
           </div>
         </div>
 
@@ -496,7 +505,7 @@ function ManualControl({
 
         {!deviceOnline && (
           <div className="manual-control-notice">
-            RMU FW Update available or Pump is not connected to network
+            RMU FW Update available or {displayName} is not connected to network
           </div>
         )}
 

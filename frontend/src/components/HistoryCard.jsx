@@ -73,7 +73,7 @@ function HistoryCard({ deviceName, selectedDeviceId }) {
   }, [selectedDeviceId]);
 
   return (
-      <div style={{ padding: "20px" }}>
+      <div className="history-card">
 
         <button
           type="button"

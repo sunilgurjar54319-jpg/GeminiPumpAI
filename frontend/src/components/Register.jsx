@@ -91,6 +91,7 @@ function Register({ onRegistered, onBackToLogin }) {
       }}
     >
       <form
+        className="auth-card"
         onSubmit={handleRegister}
         style={{
           width: "100%",
