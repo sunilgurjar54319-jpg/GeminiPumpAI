@@ -15,6 +15,7 @@ import WelcomeHeader from "./components/WelcomeHeader";
 import DeviceSelector from "./components/DeviceSelector";
 import QuickControls from "./components/QuickControls";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { startAuthentication } from "@simplewebauthn/browser";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -246,6 +247,7 @@ function App() {
   }
 
   // Restore existing Appwrite login session on app start
+  // If biometric login is enabled, require biometric verification first.
   useEffect(() => {
     let active = true;
 
@@ -253,11 +255,117 @@ function App() {
       try {
         const currentUser = await account.get();
 
+        if (!active) return;
+
+        const biometricEnabled =
+          currentUser?.prefs?.biometricEnabled === true;
+
+        // Biometric disabled: keep the existing behavior.
+        if (!biometricEnabled) {
+          setUser(currentUser);
+          return;
+        }
+
+        // Biometric enabled: verify the device before opening Dashboard.
+        if (!window.isSecureContext) {
+          console.error(
+            "Biometric startup login requires HTTPS."
+          );
+          await account.deleteSession("current").catch(() => {});
+          return;
+        }
+
+        if (!window.PublicKeyCredential) {
+          console.error(
+            "WebAuthn is not supported on this device/browser."
+          );
+          await account.deleteSession("current").catch(() => {});
+          return;
+        }
+
+        const available =
+          await PublicKeyCredential
+            .isUserVerifyingPlatformAuthenticatorAvailable();
+
+        if (!available) {
+          console.error(
+            "No platform biometric authenticator available."
+          );
+          await account.deleteSession("current").catch(() => {});
+          return;
+        }
+
+        const optionsResponse = await fetch(
+          "https://geminipumpai.onrender.com/api/biometric/login/options",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            }
+          }
+        );
+
+        const optionsData =
+          await optionsResponse.json();
+
+        if (
+          !optionsResponse.ok ||
+          !optionsData.success
+        ) {
+          throw new Error(
+            optionsData.error ||
+            "Biometric login options failed."
+          );
+        }
+
+        const authenticationResponse =
+          await startAuthentication({
+            optionsJSON: optionsData.options
+          });
+
+        const verifyResponse = await fetch(
+          "https://geminipumpai.onrender.com/api/biometric/login/verify",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(authenticationResponse)
+          }
+        );
+
+        const verifyData =
+          await verifyResponse.json();
+
+        if (
+          !verifyResponse.ok ||
+          !verifyData.success ||
+          !verifyData.jwt
+        ) {
+          throw new Error(
+            verifyData.error ||
+            "Biometric authentication failed."
+          );
+        }
+
+        // Store the fresh backend JWT returned by biometric login.
+        sessionStorage.setItem(
+          "geminiPumpJWT",
+          verifyData.jwt
+        );
+
         if (active) {
           setUser(currentUser);
         }
+
       } catch (err) {
-        console.log("No active login session");
+        console.error(
+          "Startup biometric login failed:",
+          err
+        );
+
+        // Do not open Dashboard when biometric verification fails/cancels.
+        await account.deleteSession("current").catch(() => {});
       } finally {
         if (active) {
           setSessionChecking(false);
