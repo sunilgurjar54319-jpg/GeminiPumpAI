@@ -172,7 +172,7 @@ function WelcomeHeader({ user, onLogout, onUserUpdate }) {
       }
 
       const optionsResponse = await fetch(
-        "/api/biometric/register/options",
+        "https://geminipumpai.onrender.com/api/biometric/register/options",
         {
           method: "POST",
           headers: {
@@ -198,7 +198,7 @@ function WelcomeHeader({ user, onLogout, onUserUpdate }) {
 
       // Send signed credential back to backend
       const verifyResponse = await fetch(
-        "/api/biometric/register/verify",
+        "https://geminipumpai.onrender.com/api/biometric/register/verify",
         {
           method: "POST",
           headers: {
