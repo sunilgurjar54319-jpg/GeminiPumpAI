@@ -38,14 +38,16 @@ function ManualControl({
   deviceName,
   selectedDeviceId,
   sharedIsOn,
-  onSharedToggle
+  onSharedToggle,
+  toggleLoading = false,
+  toggleError = "",
+  pendingDeviceState = ""
 }) {
   const displayName = deviceName || "Pump";
 
   const [isOn, setIsOn] = useState(false);
   const [deviceOnline, setDeviceOnline] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [newDeviceName, setNewDeviceName] = useState("");
@@ -172,7 +174,6 @@ function ManualControl({
     setIsOn(false);
     setDeviceOnline(false);
     setLoading(false);
-    setMessage("");
   }, [selectedDeviceId]);
 
   async function loadDeviceStatus() {
@@ -192,10 +193,6 @@ function ManualControl({
 
       if (!data.lastSeen) {
         setDeviceOnline(false);
-
-        setMessage(
-          "RMU FW Update available or Pump is not connected to network"
-        );
 
         return;
       }
@@ -230,11 +227,7 @@ function ManualControl({
       setDeviceOnline(online);
 
       if (online) {
-        setMessage("");
       } else {
-        setMessage(
-          "RMU FW Update available or Pump is not connected to network"
-        );
       }
     } catch (err) {
       console.error(
@@ -244,9 +237,6 @@ function ManualControl({
 
       setDeviceOnline(false);
 
-      setMessage(
-        "RMU FW Update available or Pump is not connected to network"
-      );
     }
   }
 
@@ -267,6 +257,16 @@ function ManualControl({
       );
 
       const data = await res.json();
+
+      // Do not let an old server status overwrite the optimistic
+      // state while the requested device state is still settling.
+      if (
+        pendingDeviceState &&
+        (data.status === "ON" || data.status === "OFF") &&
+        data.status !== pendingDeviceState
+      ) {
+        return;
+      }
 
       if (data.status === "ON") {
         setIsOn(true);
@@ -307,19 +307,8 @@ function ManualControl({
   // Pump status polling
   // =========================================
 
-  useEffect(() => {
-    if (deviceOnline) {
-      loadPumpStatus();
-    }
-
-    const timer = setInterval(() => {
-      if (deviceOnline) {
-        loadPumpStatus();
-      }
-    }, 5000);
-
-    return () => clearInterval(timer);
-  }, [deviceOnline]);
+  // ManualControl status is driven by App.jsx sharedIsOn.
+  // Do not run a second /api/status polling loop here.
 
   // =========================================
   // Send Manual Command
@@ -327,9 +316,6 @@ function ManualControl({
 
   async function sendCommand(command) {
     if (!deviceOnline) {
-      setMessage(
-        "RMU FW Update available or Pump is not connected to network"
-      );
 
       return;
     }
@@ -338,11 +324,6 @@ function ManualControl({
 
     setLoading(true);
 
-    setMessage(
-      command === "ON"
-        ? `${displayName} Starting...`
-        : `${displayName} Stopping...`
-    );
 
     try {
       const res = await authFetch(
@@ -371,24 +352,14 @@ function ManualControl({
 
       // Show backend authentication/owner errors clearly
       if (!res.ok) {
-        setMessage(
-          data?.error
-            ? `Command failed (${res.status}): ${data.error}`
-            : `Command failed (${res.status})`
-        );
         setLoading(false);
         return;
       }
 
       // Already same state
       if (data.ignored) {
-        setIsOn(data.status === "ON");
 
-        setMessage(
-          data.status === "ON"
-            ? `${displayName} is already ON`
-            : `${displayName} is already OFF`
-        );
+
 
         setLoading(false);
 
@@ -397,13 +368,8 @@ function ManualControl({
 
       // Command successfully created
       if (data.$id) {
-        setIsOn(command === "ON");
 
-        setMessage(
-          command === "ON"
-            ? `${displayName} ON Command Sent`
-            : `${displayName} OFF Command Sent`
-        );
+
 
         if (onCommandSent) {
           setTimeout(() => {
@@ -411,9 +377,6 @@ function ManualControl({
           }, 3000);
         }
       } else {
-        setMessage(
-          "Command Failed"
-        );
       }
     } catch (err) {
       console.log(
@@ -421,9 +384,6 @@ function ManualControl({
         err
       );
 
-      setMessage(
-        "Server Error"
-      );
     }
 
     setLoading(false);
@@ -440,9 +400,6 @@ function ManualControl({
     }
 
     if (!deviceOnline) {
-      setMessage(
-        "RMU FW Update available or Pump is not connected to network"
-      );
 
       return;
     }
@@ -532,6 +489,7 @@ function ManualControl({
               onClick={togglePump}
               disabled={
                 loading ||
+                toggleLoading ||
                 !deviceOnline
               }
               aria-label={
@@ -550,7 +508,7 @@ function ManualControl({
                   ? "manual-toggle-disabled"
                   : ""
               } ${
-                loading
+                loading || toggleLoading
                   ? "manual-toggle-loading"
                   : ""
               }`}
@@ -562,6 +520,15 @@ function ManualControl({
                     : ""
                 }`}
               />
+
+              {(loading || toggleLoading) && (
+                <span
+                  className="manual-toggle-spinner"
+                  aria-label="Command processing"
+                >
+                  ...
+                </span>
+              )}
             </button>
 
             <div className="manual-toggle-labels">
@@ -599,22 +566,6 @@ function ManualControl({
           />
         </div>
 
-{/* =====================================
-            COMMAND MESSAGE
-        ===================================== */}
-
-        {deviceOnline && message && (
-          <div
-            className={`manual-command-message ${
-              message.includes("Failed") ||
-              message.includes("Error")
-                ? "manual-command-error"
-                : "manual-command-success"
-            }`}
-          >
-            {message}
-          </div>
-        )}
 
       </div>
 

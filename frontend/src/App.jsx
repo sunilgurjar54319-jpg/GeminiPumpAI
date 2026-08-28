@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import ManualControl from "./components/ManualControl";
 import Schedule from "./components/Schedule";
@@ -29,7 +29,26 @@ function App() {
   const [devices, setDevices] = useState([]);
   const [deviceStates, setDeviceStates] = useState({});
   const [deviceToggleLoading, setDeviceToggleLoading] = useState({});
+  const [deviceToggleError, setDeviceToggleError] = useState({});
   const [deviceOnlineStates, setDeviceOnlineStates] = useState({});
+  const [pendingDeviceState, setPendingDeviceState] = useState({});
+  // Global floating Toast notification
+  const [toast, setToast] = useState(null);
+
+  // Auto-hide Toast after exactly 3 seconds.
+  useEffect(() => {
+    if (!toast) return;
+
+    const timer = setTimeout(() => {
+      setToast(null);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+
+  // Keeps the desired state while a command is settling on the device.
+  const pendingDeviceStates = useRef({});
 
   async function loadDeviceName(deviceId = selectedDeviceId) {
     if (!deviceId) return;
@@ -102,11 +121,31 @@ function App() {
 
       const data = await res.json();
 
-      if (data.status === "ON" || data.status === "OFF") {
-        setDeviceStates(prev => ({
-          ...prev,
-          [deviceId]: data.status
-        }));
+      // Do not let stale status overwrite the optimistic toggle.
+      const pendingState = pendingDeviceStates.current[deviceId];
+
+      if (
+        data.status === "ON" ||
+        data.status === "OFF"
+      ) {
+        if (pendingState) {
+          // The device has reached the state we requested.
+          if (data.status === pendingState) {
+            delete pendingDeviceStates.current[deviceId];
+
+            setDeviceStates(prev => ({
+              ...prev,
+              [deviceId]: data.status
+            }));
+          }
+
+          // Ignore the old opposite state while command is settling.
+        } else {
+          setDeviceStates(prev => ({
+            ...prev,
+            [deviceId]: data.status
+          }));
+        }
       }
     } catch (err) {
       console.log("QuickControls status error:", err);
@@ -135,6 +174,28 @@ function App() {
         ? "OFF"
         : "ON";
 
+    // Optimistic UI: switch changes immediately on tap.
+    // Keep the original state so failed commands can be reverted.
+    const originalState = currentState;
+
+    // Remember the state this command is trying to reach.
+    pendingDeviceStates.current[deviceId] = nextCommand;
+    setPendingDeviceState(prev => ({
+      ...prev,
+      [deviceId]: nextCommand
+    }));
+
+    // Clear any previous toggle error for this device.
+    setDeviceToggleError(prev => ({
+      ...prev,
+      [deviceId]: ""
+    }));
+
+    setDeviceStates(prev => ({
+      ...prev,
+      [deviceId]: nextCommand
+    }));
+
     try {
       setDeviceToggleLoading(prev => ({
         ...prev,
@@ -153,6 +214,24 @@ function App() {
           "QuickControls: device offline",
           deviceId
         );
+
+        setDeviceStates(prev => ({
+          ...prev,
+          [deviceId]: originalState
+        }));
+
+        setDeviceToggleError(prev => ({
+          ...prev,
+          [deviceId]: "Device offline or command failed"
+        }));
+delete pendingDeviceStates.current[deviceId];
+        setPendingDeviceState(prev => {
+          const next = { ...prev };
+          delete next[deviceId];
+          return next;
+        });
+        setToast("Device offline or command failed");
+
         return;
       }
 
@@ -176,22 +255,53 @@ function App() {
           "QuickControls: device offline",
           deviceId
         );
+
+        setDeviceStates(prev => ({
+          ...prev,
+          [deviceId]: originalState
+        }));
+
+        setDeviceToggleError(prev => ({
+          ...prev,
+          [deviceId]: "Device offline or command failed"
+        }));
+delete pendingDeviceStates.current[deviceId];
+        setPendingDeviceState(prev => {
+          const next = { ...prev };
+          delete next[deviceId];
+          return next;
+        });
+        setToast("Device offline or command failed");
+
         return;
       }
 
-      const res = await authFetch(
-        "/api/command/send",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            deviceId,
-            command: nextCommand
-          })
-        }
-      );
+      // Give the command request a maximum of 5 seconds.
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, 5000);
+
+      let res;
+
+      try {
+        res = await authFetch(
+          "/api/command/send",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              deviceId,
+              command: nextCommand
+            }),
+            signal: controller.signal
+          }
+        );
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       const data = await res.json();
 
@@ -200,6 +310,30 @@ function App() {
           "QuickControls command failed:",
           data
         );
+
+        setDeviceStates(prev => ({
+          ...prev,
+          [deviceId]: originalState
+        }));
+
+        setDeviceToggleError(prev => ({
+          ...prev,
+          [deviceId]: "Device offline or command failed"
+        }));
+delete pendingDeviceStates.current[deviceId];
+          setPendingDeviceState(prev => {
+            const next = { ...prev };
+            delete next[deviceId];
+            return next;
+          });
+delete pendingDeviceStates.current[deviceId];
+                    setPendingDeviceState(prev => {
+                      const next = { ...prev };
+                      delete next[deviceId];
+                      return next;
+                    });
+                    setToast("Device offline or command failed");
+
         return;
       }
 
@@ -208,6 +342,13 @@ function App() {
           data.status === "ON" ||
           data.status === "OFF"
         ) {
+          delete pendingDeviceStates.current[deviceId];
+          setPendingDeviceState(prev => {
+            const next = { ...prev };
+            delete next[deviceId];
+            return next;
+          });
+
           setDeviceStates(prev => ({
             ...prev,
             [deviceId]: data.status
@@ -218,7 +359,7 @@ function App() {
       }
 
       if (data.$id) {
-        // Optimistic update exactly like ManualControl.
+        // Keep the requested state visible while the device settles.
         setDeviceStates(prev => ({
           ...prev,
           [deviceId]: nextCommand
@@ -229,6 +370,14 @@ function App() {
           loadSharedDeviceState(deviceId);
         }, 3000);
 
+        // Safety timeout: never keep a pending state forever.
+        setTimeout(() => {
+          if (pendingDeviceStates.current[deviceId] === nextCommand) {
+            delete pendingDeviceStates.current[deviceId];
+            loadSharedDeviceState(deviceId);
+          }
+        }, 10000);
+
         setRefresh(prev => !prev);
       }
     } catch (err) {
@@ -236,6 +385,23 @@ function App() {
         "QuickControls toggle error:",
         err
       );
+
+      setDeviceStates(prev => ({
+        ...prev,
+        [deviceId]: originalState
+      }));
+
+      setDeviceToggleError(prev => ({
+        ...prev,
+        [deviceId]: "Device offline or command failed"
+      }));
+delete pendingDeviceStates.current[deviceId];
+        setPendingDeviceState(prev => {
+          const next = { ...prev };
+          delete next[deviceId];
+          return next;
+        });
+        setToast("Device offline or command failed");
     } finally {
       setDeviceToggleLoading(prev => {
         const next = { ...prev };
@@ -373,6 +539,15 @@ function App() {
     <ErrorBoundary>
       <div className="dashboard">
 
+      {toast && (
+        <div className="global-toast" role="alert">
+          <span className="global-toast-icon" aria-hidden="true">
+            !
+          </span>
+          <span>{toast}</span>
+        </div>
+      )}
+
       <WelcomeHeader user={user} onLogout={() => setUser(null)} onUserUpdate={setUser} />
 
       <DeviceSelector
@@ -428,6 +603,9 @@ function App() {
               selectedDeviceId={selectedDeviceId}
               sharedIsOn={deviceStates[selectedDeviceId] === "ON"}
               onSharedToggle={toggleDevice}
+              toggleLoading={!!deviceToggleLoading[selectedDeviceId]}
+              toggleError={deviceToggleError[selectedDeviceId] || ""}
+              pendingDeviceState={pendingDeviceState[selectedDeviceId] || ""}
             />
           </div>
 
