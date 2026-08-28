@@ -44,7 +44,8 @@ router.post(
     try {
       const options = await generateAuthenticationOptions({
         rpID: RP_ID,
-        userVerification: "required"
+        userVerification: "required",
+        allowCredentials: []
       });
 
       authenticationChallenges.set(options.challenge, {
@@ -242,6 +243,13 @@ router.post(
         "Biometric Login Verify Error:",
         err.message
       );
+      console.error(
+        "Biometric Login Verify Details:",
+        {
+          name: err?.name,
+          stack: err?.stack
+        }
+      );
 
       res.status(401).json({
         success: false,
@@ -286,7 +294,7 @@ router.post(
         attestationType: "none",
         excludeCredentials,
         authenticatorSelection: {
-          residentKey: "preferred",
+          residentKey: "required",
           userVerification: "required"
         },
         supportedAlgorithmIDs: [-7, -257]
