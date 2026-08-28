@@ -129,27 +129,7 @@ function Login({ onLogin, onRegister }) {
         }
       );
 
-      const verifyText = await verifyResponse.text();
-
-      console.log(
-        "BIOMETRIC VERIFY HTTP:",
-        verifyResponse.status
-      );
-
-      console.log(
-        "BIOMETRIC VERIFY RAW:",
-        verifyText
-      );
-
-      let verifyData;
-
-      try {
-        verifyData = JSON.parse(verifyText);
-      } catch {
-        throw new Error(
-          `Biometric server returned invalid JSON (HTTP ${verifyResponse.status}): ${verifyText.slice(0, 200)}`
-        );
-      }
+      const verifyData = await verifyResponse.json();
 
       if (!verifyResponse.ok || !verifyData.success) {
         throw new Error(
