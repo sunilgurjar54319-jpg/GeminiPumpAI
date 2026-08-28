@@ -8,7 +8,6 @@ const geminiRoutes = require("./routes/gemini");
 const scheduleRoutes = require("./routes/schedule");
 const recoveryRoutes = require("./routes/recovery");
 const authRoutes = require("./routes/auth");
-const biometricRoutes = require("./routes/biometric");
 const express = require("express");
 const cors = require("cors");
 const statusRoutes = require("./routes/status");
@@ -34,7 +33,6 @@ app.get("/api/test", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
-app.use("/api/biometric", biometricRoutes);
 
 app.use("/api/device", deviceRoutes);
 

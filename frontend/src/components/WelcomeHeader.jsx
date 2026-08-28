@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { ID, Permission, Role } from "appwrite";
 import { account, storage } from "../appwrite";
-import { startRegistration } from "@simplewebauthn/browser";
 import Icon from "./Icon";
 import ImageCropModal from "./ImageCropModal";
 
@@ -19,9 +18,6 @@ function WelcomeHeader({ user, onLogout, onUserUpdate }) {
   );
   const [uploadingPicture, setUploadingPicture] = useState(false);
   const [cropImage, setCropImage] = useState(null);
-  const [biometricEnabled, setBiometricEnabled] = useState(
-    user?.prefs?.biometricEnabled === true
-  );
 
   const initial = name.charAt(0).toUpperCase();
 
@@ -29,9 +25,6 @@ function WelcomeHeader({ user, onLogout, onUserUpdate }) {
     setName(user?.name?.trim() || "User");
     setNewName(user?.name?.trim() || "");
     setProfilePicture(user?.prefs?.profilePicture || "");
-    setBiometricEnabled(
-      user?.prefs?.biometricEnabled === true
-    );
   }, [user]);
 
   async function handleProfilePictureChange(e) {
@@ -146,168 +139,6 @@ function WelcomeHeader({ user, onLogout, onUserUpdate }) {
     }
   }
 
-  async function handleBiometricSetup() {
-    setMenuOpen(false);
-    setError("");
-
-    // If biometric is already enabled, disable it.
-    if (biometricEnabled) {
-      try {
-        const updatedUser = await account.updatePrefs({
-          ...user?.prefs,
-          biometricEnabled: false
-        });
-
-        setBiometricEnabled(false);
-
-        if (onUserUpdate) {
-          onUserUpdate(updatedUser);
-        }
-
-        alert("Biometric Login disabled.");
-      } catch (err) {
-        console.error("Disable biometric error:", err);
-        alert(
-          err?.message ||
-          "Biometric disable failed."
-        );
-      }
-
-      return;
-    }
-
-    // Otherwise start biometric registration.
-    try {
-      if (!window.isSecureContext) {
-        alert(
-          "Biometric Login ke liye secure HTTPS connection required hai."
-        );
-        return;
-      }
-
-      if (!window.PublicKeyCredential) {
-        alert(
-          "Is device/browser me biometric authentication supported nahi hai."
-        );
-        return;
-      }
-
-      const available =
-        await PublicKeyCredential
-          .isUserVerifyingPlatformAuthenticatorAvailable();
-
-      if (!available) {
-        alert(
-          "Is device me fingerprint/face biometric available nahi hai."
-        );
-        return;
-      }
-
-      const jwt =
-        sessionStorage.getItem("geminiPumpJWT");
-
-      if (!jwt) {
-        alert(
-          "Session expired. कृपया दोबारा login करें।"
-        );
-        return;
-      }
-
-      const optionsResponse = await fetch(
-        "https://geminipumpai.onrender.com/api/biometric/register/options",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${jwt}`
-          }
-        }
-      );
-
-      const optionsData =
-        await optionsResponse.json();
-
-      if (
-        !optionsResponse.ok ||
-        !optionsData.success
-      ) {
-        throw new Error(
-          optionsData.error ||
-          "Biometric registration options failed."
-        );
-      }
-
-      const registrationResponse =
-        await startRegistration({
-          optionsJSON: optionsData.options
-        });
-
-      const verifyResponse = await fetch(
-        "https://geminipumpai.onrender.com/api/biometric/register/verify",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${jwt}`
-          },
-          body: JSON.stringify(
-            registrationResponse
-          )
-        }
-      );
-
-      const verifyData =
-        await verifyResponse.json();
-
-      if (
-        !verifyResponse.ok ||
-        !verifyData.success
-      ) {
-        throw new Error(
-          verifyData.error ||
-          "Biometric verification failed."
-        );
-      }
-
-      // Save biometric preference only after
-      // successful WebAuthn registration.
-      const updatedUser =
-        await account.updatePrefs({
-          ...user?.prefs,
-          biometricEnabled: true
-        });
-
-      setBiometricEnabled(true);
-
-      if (onUserUpdate) {
-        onUserUpdate(updatedUser);
-      }
-
-      alert("Biometric Login Enabled successfully.");
-
-    } catch (err) {
-      console.error(
-        "Biometric registration error:",
-        err
-      );
-
-      if (
-        err?.name === "NotAllowedError" ||
-        err?.name === "AbortError"
-      ) {
-        alert(
-          "Biometric setup cancel कर दिया गया।"
-        );
-        return;
-      }
-
-      alert(
-        err?.message ||
-        "Biometric setup failed."
-      );
-    }
-  }
-
   async function handleLogout() {
     try {
       await account.deleteSession("current");
@@ -377,62 +208,6 @@ function WelcomeHeader({ user, onLogout, onUserUpdate }) {
               <button type="button" onClick={handleEditProfile}>
                 <Icon name="editProfile" size={19} strokeWidth={2} />
                 <span>Edit Profile</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleBiometricSetup}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  width: "100%"
-                }}
-              >
-                <span
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px"
-                  }}
-                >
-                  <Icon
-                    name="fingerprint"
-                    size={19}
-                    strokeWidth={2}
-                  />
-                  <span>Biometric Login</span>
-                </span>
-
-                <span
-                  style={{
-                    width: "42px",
-                    height: "24px",
-                    borderRadius: "999px",
-                    background: biometricEnabled
-                      ? "#22c55e"
-                      : "#9ca3af",
-                    display: "flex",
-                    alignItems: "center",
-                    padding: "3px",
-                    boxSizing: "border-box",
-                    transition: "background 0.2s ease"
-                  }}
-                >
-                  <span
-                    style={{
-                      width: "18px",
-                      height: "18px",
-                      borderRadius: "50%",
-                      background: "#fff",
-                      transform: biometricEnabled
-                        ? "translateX(18px)"
-                        : "translateX(0)",
-                      transition: "transform 0.2s ease",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.25)"
-                    }}
-                  />
-                </span>
               </button>
 
               <button type="button" onClick={handleLogout}>
