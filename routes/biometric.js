@@ -21,8 +21,8 @@ const RP_NAME = "Gemini Pump AI";
 // IMPORTANT:
 // This must match the domain from which the frontend is actually opened.
 // For now use your Render domain.
-const RP_ID = "geminipumpai.onrender.com";
-const ORIGIN = "https://geminipumpai.onrender.com";
+const RP_ID = "gemini-pump-ai.vercel.app";
+const ORIGIN = "https://gemini-pump-ai.vercel.app";
 
 // Temporary in-memory challenge store.
 // Challenge is short-lived and is only used during registration.
