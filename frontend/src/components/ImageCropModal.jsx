@@ -6,6 +6,17 @@ function ImageCropModal({ image, onCancel, onApply }) {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [closing, setClosing] = useState(false);
+
+  function handleCancel() {
+    if (closing) return;
+
+    setClosing(true);
+
+    window.setTimeout(() => {
+      onCancel();
+    }, 320);
+  }
 
   const onCropComplete = useCallback((_, areaPixels) => {
     setCroppedAreaPixels(areaPixels);
@@ -24,11 +35,11 @@ function ImageCropModal({ image, onCancel, onApply }) {
   }
 
   return (
-    <div className="image-crop-overlay">
-      <div className="image-crop-modal">
+    <div className={`image-crop-overlay${closing ? " image-crop-closing" : ""}`}>
+      <div className={`image-crop-modal${closing ? " image-crop-closing" : ""}`}>
         <div className="image-crop-header">
           <h3>Adjust Profile Picture</h3>
-          <button type="button" onClick={onCancel}>
+          <button type="button" onClick={handleCancel}>
             ×
           </button>
         </div>
@@ -76,7 +87,7 @@ function ImageCropModal({ image, onCancel, onApply }) {
         </div>
 
         <div className="image-crop-actions">
-          <button type="button" onClick={onCancel}>
+          <button type="button" onClick={handleCancel}>
             Cancel
           </button>
 

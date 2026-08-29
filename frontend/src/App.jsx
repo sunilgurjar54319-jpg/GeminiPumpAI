@@ -25,7 +25,7 @@ function App() {
     return localStorage.getItem("geminiPumpSelectedDeviceId") || null;
   });
   const [deviceName, setDeviceName] = useState(null);
-  const [deviceLoading, setDeviceLoading] = useState(false);
+  const [deviceLoading, setDeviceLoading] = useState(true);
   const [devices, setDevices] = useState([]);
   const [deviceStates, setDeviceStates] = useState({});
   const [deviceToggleLoading, setDeviceToggleLoading] = useState({});
@@ -474,7 +474,7 @@ delete pendingDeviceStates.current[deviceId];
   async function handleDeviceChange(deviceId) {
     if (!deviceId) return;
 
-    // Purane device ka data turant hide karke skeleton dikhao
+    // Keep the complete dashboard skeleton visible while switching devices.
     setDeviceLoading(true);
     setDeviceName("");
     setSelectedDeviceId(deviceId);
@@ -484,7 +484,7 @@ delete pendingDeviceStates.current[deviceId];
     try {
       await loadDeviceName(deviceId);
     } finally {
-      // Naye device ka naam/data load hone ke baad skeleton hatao
+      // Existing dashboard skeleton is removed only after the new device name loads.
       setDeviceLoading(false);
     }
   }
@@ -504,15 +504,17 @@ delete pendingDeviceStates.current[deviceId];
 
   if (sessionChecking) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center"
-        }}
-      >
-        <div>Loading...</div>
+      <div className="premium-session-loading">
+        <div className="premium-session-loader">
+          <div className="premium-session-orbit premium-session-orbit-1" />
+          <div className="premium-session-orbit premium-session-orbit-2" />
+          <div className="premium-session-core">
+            <div className="premium-session-shine" />
+          </div>
+        </div>
+
+        <div className="premium-session-text">SUNIL</div>
+        <div className="premium-session-subtext">Preparing your experience</div>
       </div>
     );
   }
@@ -554,7 +556,10 @@ delete pendingDeviceStates.current[deviceId];
         selectedDeviceId={selectedDeviceId}
         onDeviceChange={handleDeviceChange}
         refresh={refresh}
-        onDevicesLoaded={setDevices}
+        onDevicesLoaded={(list) => {
+          setDevices(list);
+          setDeviceLoading(false);
+        }}
       />
 
       <QuickControls
@@ -562,6 +567,7 @@ delete pendingDeviceStates.current[deviceId];
         deviceStates={deviceStates}
         deviceOnlineStates={deviceOnlineStates}
         onToggleDevice={toggleDevice}
+        loading={deviceLoading}
       />
 
       {deviceLoading ? (

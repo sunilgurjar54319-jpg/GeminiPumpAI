@@ -9,6 +9,7 @@ const PROFILE_BUCKET_ID = "6a9002190009924bfb37";
 function WelcomeHeader({ user, onLogout, onUserUpdate }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [closingEditProfile, setClosingEditProfile] = useState(false);
   const [name, setName] = useState(user?.name?.trim() || "User");
   const [newName, setNewName] = useState(user?.name?.trim() || "");
   const [saving, setSaving] = useState(false);
@@ -110,9 +111,16 @@ function WelcomeHeader({ user, onLogout, onUserUpdate }) {
   }
 
   function handleCancel() {
+    if (closingEditProfile || saving) return;
+
     setNewName(name);
     setError("");
-    setEditOpen(false);
+    setClosingEditProfile(true);
+
+    window.setTimeout(() => {
+      setEditOpen(false);
+      setClosingEditProfile(false);
+    }, 240);
   }
 
   async function handleSave() {
@@ -228,8 +236,12 @@ function WelcomeHeader({ user, onLogout, onUserUpdate }) {
       )}
 
       {editOpen && (
-        <div className="edit-profile-overlay">
-          <div className="edit-profile-sheet">
+        <div
+          className={`edit-profile-overlay${closingEditProfile ? " edit-profile-closing" : ""}`}
+        >
+          <div
+            className={`edit-profile-sheet${closingEditProfile ? " edit-profile-closing" : ""}`}
+          >
             <h3>Edit Profile</h3>
 
             <label htmlFor="profile-name">Name</label>

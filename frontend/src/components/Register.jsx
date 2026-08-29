@@ -52,9 +52,7 @@ function Register({ onRegistered, onBackToLogin }) {
         cleanName
       );
 
-      setMessage(
-        "Registration सफल हुआ। अब अपने email और password से login करें।"
-      );
+      setMessage("Account created successfully! Please login.");
 
       setTimeout(() => {
         if (onRegistered) {
@@ -62,7 +60,7 @@ function Register({ onRegistered, onBackToLogin }) {
         } else if (onBackToLogin) {
           onBackToLogin();
         }
-      }, 1000);
+      }, 1200);
 
     } catch (err) {
       console.error("Registration Error:", err);
@@ -92,6 +90,7 @@ function Register({ onRegistered, onBackToLogin }) {
     >
       <form
         className="auth-card"
+        noValidate
         onSubmit={handleRegister}
         style={{
           width: "100%",
@@ -102,10 +101,10 @@ function Register({ onRegistered, onBackToLogin }) {
           boxShadow: "0 10px 30px rgba(0,0,0,0.12)"
         }}
       >
-        <h2>Gemini Pump AI</h2>
+        <h2>SUNIL</h2>
 
         <p style={{ marginBottom: "24px" }}>
-          नया account बनाएं
+          Create a new account
         </p>
 
         <input
@@ -173,27 +172,32 @@ function Register({ onRegistered, onBackToLogin }) {
         />
 
         {error && (
-          <p style={{ color: "red", marginBottom: "12px" }}>
-            {error}
-          </p>
+          <div className="premium-auth-message premium-auth-error" role="alert">
+            <span className="premium-auth-message-icon">!</span>
+            <span>{error}</span>
+          </div>
         )}
 
         {message && (
-          <p style={{ color: "green", marginBottom: "12px" }}>
-            {message}
-          </p>
+          <div className="premium-auth-message premium-auth-success" role="status">
+            <span className="premium-auth-message-icon">✓</span>
+            <span>{message}</span>
+          </div>
         )}
 
         <button
           type="submit"
           disabled={loading}
-          style={{
-            width: "100%",
-            padding: "12px",
-            cursor: loading ? "not-allowed" : "pointer"
-          }}
+          className={loading ? "premium-auth-submit premium-auth-submit-loading" : "premium-auth-submit"}
         >
-          {loading ? "Registering..." : "Register"}
+          {loading ? (
+            <span className="premium-auth-loading-content">
+              <span className="premium-auth-spinner" />
+              <span>Registering...</span>
+            </span>
+          ) : (
+            "Register"
+          )}
         </button>
 
         <button
@@ -206,7 +210,7 @@ function Register({ onRegistered, onBackToLogin }) {
             marginTop: "10px",
             background: "transparent",
             border: "none",
-            textDecoration: "underline",
+            textDecoration: "none",
             cursor: loading ? "not-allowed" : "pointer"
           }}
         >

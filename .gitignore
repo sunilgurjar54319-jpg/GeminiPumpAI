@@ -19,3 +19,6 @@ services/*_backup.js
 *.LIVE_BACKUP
 *.PREMIUM_BACKUP
 services/voiceScheduleService_before_bajkar_patch.js
+
+# Local backup files
+*.before_*

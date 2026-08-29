@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { authFetch, getDevice } from "../api";
 import VoiceControl from "./VoiceControl";
 import Icon from "./Icon";
@@ -49,11 +50,41 @@ function ManualControl({
   const [deviceOnline, setDeviceOnline] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [closingSettings, setClosingSettings] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [newDeviceName, setNewDeviceName] = useState("");
   const [savingName, setSavingName] = useState(false);
   const [nameMessage, setNameMessage] = useState("");
   const [deletingDevice, setDeletingDevice] = useState(false);
+
+  // Lock background page scroll while Device Settings is open
+  useEffect(() => {
+    if (!showSettings) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const previousTouchAction = document.body.style.touchAction;
+
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.body.style.touchAction = previousTouchAction;
+    };
+  }, [showSettings]);
+
+  const closeSettings = () => {
+    if (savingName || deletingDevice || closingSettings) return;
+
+    setClosingSettings(true);
+
+    window.setTimeout(() => {
+      setShowSettings(false);
+      setClosingSettings(false);
+      setEditingName(false);
+      setNameMessage("");
+    }, 260);
+  };
 
   useEffect(() => {
     if (typeof sharedIsOn === "boolean") {
@@ -571,19 +602,13 @@ function ManualControl({
 
     </div>
 
-      {showSettings && (
+      {showSettings && createPortal(
               <div
                 className="device-settings-overlay"
-                onClick={() => {
-                  if (!savingName && !deletingDevice) {
-                    setShowSettings(false);
-                    setEditingName(false);
-                    setNameMessage("");
-                  }
-                }}
+                onClick={closeSettings}
               >
                 <div
-                  className="device-settings-modal"
+                  className={`device-settings-modal${closingSettings ? " device-settings-modal-closing" : ""}`}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="device-settings-header">
@@ -592,13 +617,7 @@ function ManualControl({
                     <button
                       type="button"
                       className="device-settings-close"
-                      onClick={() => {
-                        if (!savingName && !deletingDevice) {
-                          setShowSettings(false);
-                          setEditingName(false);
-                          setNameMessage("");
-                        }
-                      }}
+                      onClick={closeSettings}
                       disabled={savingName || deletingDevice}
                       aria-label="Close settings"
                     >
@@ -639,7 +658,6 @@ function ManualControl({
                             setNewDeviceName(e.target.value)
                           }
                           placeholder="Device name"
-                          autoFocus
                         />
 
                         <div className="device-settings-edit-buttons">
@@ -710,7 +728,8 @@ function ManualControl({
                     </button>
                   </div>
                 </div>
-              </div>
+              </div>,
+              document.body
             )}
     </>
   );

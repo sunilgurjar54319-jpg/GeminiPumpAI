@@ -4,10 +4,68 @@ function QuickControls({
   devices = [],
   deviceStates = {},
   deviceOnlineStates = {},
-  onToggleDevice
+  onToggleDevice,
+  loading = false
 }) {
+  if (loading) {
+    return (
+      <>
+        <style>{`
+          .quick-controls-loading {
+            display: flex;
+            gap: 12px;
+            overflow: hidden;
+            padding: 4px 2px 10px;
+            margin-top: 12px;
+            min-height: 74px;
+            box-sizing: border-box;
+          }
+
+          .quick-control-skeleton {
+            flex: 0 0 150px;
+            height: 62px;
+            border-radius: 16px;
+            background: linear-gradient(
+              90deg,
+              #eef1f5 25%,
+              #f8fafc 50%,
+              #eef1f5 75%
+            );
+            background-size: 200% 100%;
+            animation: quickControlSkeletonShimmer 1.35s ease-in-out infinite;
+            border: 1px solid rgba(255,255,255,0.8);
+            box-sizing: border-box;
+          }
+
+          @keyframes quickControlSkeletonShimmer {
+            0% {
+              background-position: 200% 0;
+            }
+            100% {
+              background-position: -200% 0;
+            }
+          }
+        `}</style>
+
+        <div
+          className="quick-controls-loading"
+          aria-label="Loading quick controls"
+        >
+          <div className="quick-control-skeleton" />
+          <div className="quick-control-skeleton" />
+          <div className="quick-control-skeleton" />
+        </div>
+      </>
+    );
+  }
+
   if (!devices.length) {
-    return null;
+    return (
+      <div
+        className="quick-controls quick-controls-loading-space"
+        aria-hidden="true"
+      />
+    );
   }
 
   return (
@@ -27,6 +85,15 @@ function QuickControls({
         .quick-controls::-webkit-scrollbar {
           display: none;
         }
+        .quick-controls-loading-space {
+          height: 42px;
+          margin-top: 12px;
+          padding: 0 2px 10px;
+          box-sizing: border-box;
+          visibility: hidden;
+          pointer-events: none;
+        }
+
 
         .quick-control-card {
           flex: 0 0 auto;

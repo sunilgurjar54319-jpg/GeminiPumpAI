@@ -16,11 +16,94 @@ function Login({ onLogin, onRegister }) {
 
   const isRecovery = !!(recoveryUserId && recoverySecret);
 
+    const glassInputStyle = {
+      width: "100%",
+      boxSizing: "border-box",
+      padding: "14px 16px",
+      borderRadius: "16px",
+      border: "1px solid rgba(255,255,255,0.72)",
+      background: "rgba(255,255,255,0.58)",
+      color: "#111827",
+      fontSize: "16px",
+      fontWeight: "500",
+      outline: "none",
+      boxShadow:
+        "inset 0 1px 0 rgba(255,255,255,0.95), 0 6px 20px rgba(15,23,42,0.07)",
+      backdropFilter: "blur(20px) saturate(160%)",
+      WebkitBackdropFilter: "blur(20px) saturate(160%)",
+      transition: "box-shadow 0.2s ease, transform 0.2s ease"
+    };
+
+    const glassPrimaryButtonStyle = {
+      width: "100%",
+      padding: "14px 16px",
+      borderRadius: "16px",
+      border: "1px solid rgba(255,255,255,0.62)",
+      background:
+        "linear-gradient(145deg, rgba(18,54,107,0.96), rgba(30,79,150,0.94))",
+      color: "#ffffff",
+      fontSize: "16px",
+      fontWeight: "700",
+      cursor: loading ? "not-allowed" : "pointer",
+      boxShadow:
+        "inset 0 1px 0 rgba(255,255,255,0.42), 0 10px 30px rgba(10,35,80,0.34)",
+      backdropFilter: "blur(20px) saturate(170%)",
+      WebkitBackdropFilter: "blur(20px) saturate(170%)",
+      transition: "transform 0.18s ease, box-shadow 0.18s ease"
+    };
+
+    const glassSecondaryButtonStyle = {
+      width: "100%",
+      padding: "13px 16px",
+      marginTop: "10px",
+      borderRadius: "16px",
+      border: "1px solid rgba(255,255,255,0.78)",
+      background:
+        "linear-gradient(145deg, rgba(255,255,255,0.68), rgba(235,242,255,0.50))",
+      color: "#2563eb",
+      fontSize: "15px",
+      fontWeight: "650",
+      cursor: loading ? "not-allowed" : "pointer",
+      boxShadow:
+        "inset 0 1px 0 rgba(255,255,255,0.95), 0 7px 22px rgba(15,23,42,0.07)",
+      backdropFilter: "blur(20px) saturate(160%)",
+      WebkitBackdropFilter: "blur(20px) saturate(160%)",
+      transition: "transform 0.18s ease, box-shadow 0.18s ease"
+    };
+
+    const glassLinkButtonStyle = {
+      border: "1px solid rgba(255,255,255,0.72)",
+      background: "rgba(255,255,255,0.42)",
+      color: "#2563eb",
+      padding: "8px 13px",
+      borderRadius: "13px",
+      cursor: loading ? "not-allowed" : "pointer",
+      fontSize: "14px",
+      fontWeight: "600",
+      boxShadow:
+        "inset 0 1px 0 rgba(255,255,255,0.9), 0 5px 16px rgba(15,23,42,0.06)",
+      backdropFilter: "blur(18px) saturate(160%)",
+      WebkitBackdropFilter: "blur(18px) saturate(160%)",
+      transition: "transform 0.18s ease, box-shadow 0.18s ease"
+    };
+
+
   async function handleLogin(e) {
     e.preventDefault();
 
     setError("");
     setMessage("");
+
+    if (!email.trim()) {
+      setError("Email डालना जरूरी है।");
+      return;
+    }
+
+    if (!password) {
+      setError("Password डालना जरूरी है।");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -51,7 +134,10 @@ function Login({ onLogin, onRegister }) {
         jwtResult.jwt
       );
 
-      onLogin(user);
+      setMessage("Login successful! Welcome back.");
+      setTimeout(() => {
+        onLogin(user);
+      }, 900);
 
     } catch (err) {
       console.error("Login Error:", err);
@@ -158,16 +244,22 @@ function Login({ onLogin, onRegister }) {
   }
 
   return (
-    <div className="auth-screen"
+    <div
+      className="auth-screen"
       style={{
         minHeight: "100vh",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "20px"
+        padding: "20px",
+        boxSizing: "border-box",
+        background:
+          "radial-gradient(circle at 8% 12%, rgba(0,238,255,0.95), transparent 27%), radial-gradient(circle at 92% 10%, rgba(255,20,147,0.92), transparent 28%), radial-gradient(circle at 82% 82%, rgba(124,58,237,0.95), transparent 34%), radial-gradient(circle at 18% 88%, rgba(37,99,235,0.92), transparent 32%), radial-gradient(circle at 50% 45%, rgba(168,85,247,0.38), transparent 42%), linear-gradient(135deg, #020617 0%, #071a4a 38%, #240044 68%, #090018 100%)",
+        position: "relative",
+        overflow: "hidden"
       }}
     >
-      <form className="auth-card"
+      <form className="auth-card" noValidate
         onSubmit={
           isRecovery
             ? handleResetPassword
@@ -175,16 +267,21 @@ function Login({ onLogin, onRegister }) {
         }
         style={{
           width: "100%",
-          maxWidth: "380px",
-          padding: "30px",
-          borderRadius: "16px",
-          background: "#fff",
+          maxWidth: "420px",
+          boxSizing: "border-box",
+          padding: "24px",
+          borderRadius: "28px",
+          background:
+            "linear-gradient(145deg, rgba(255,255,255,0.78), rgba(235,242,255,0.58))",
+          border: "1px solid rgba(255,255,255,0.82)",
           boxShadow:
-            "0 10px 30px rgba(0,0,0,0.12)"
+            "0 24px 70px rgba(15,23,42,0.20), inset 0 1px 0 rgba(255,255,255,0.95)",
+          backdropFilter: "blur(30px) saturate(180%)",
+          WebkitBackdropFilter: "blur(30px) saturate(180%)"
         }}
       >
         <h2 style={{ marginBottom: "8px" }}>
-          Gemini Pump AI
+          SUNIL
         </h2>
 
         {isRecovery ? (
@@ -203,41 +300,66 @@ function Login({ onLogin, onRegister }) {
               required
               minLength={8}
               style={{
-                width: "100%",
-                padding: "12px",
-                marginBottom: "16px",
-                boxSizing: "border-box"
+                ...glassInputStyle,
+                marginBottom: "16px"
               }}
             />
 
             {error && (
-              <p
+              <div
+                role="alert"
                 style={{
-                  color: "red",
-                  marginBottom: "12px"
+                  marginBottom: "12px",
+                  padding: "11px 14px",
+                  borderRadius: "14px",
+                  background:
+                    "linear-gradient(145deg, rgba(255,245,245,0.82), rgba(255,230,230,0.62))",
+                  border: "1px solid rgba(239,68,68,0.28)",
+                  color: "#b91c1c",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  textAlign: "center",
+                  boxShadow:
+                    "inset 0 1px 0 rgba(255,255,255,0.9), 0 6px 18px rgba(185,28,28,0.10)",
+                  backdropFilter: "blur(18px) saturate(160%)",
+                  WebkitBackdropFilter: "blur(18px) saturate(160%)",
+                  animation: "authValidationIn 0.25s ease-out both"
                 }}
               >
                 {error}
-              </p>
+              </div>
             )}
 
             {message && (
-              <p
+              <div
+                role="status"
                 style={{
-                  color: "green",
-                  marginBottom: "12px"
+                  marginBottom: "12px",
+                  padding: "11px 14px",
+                  borderRadius: "14px",
+                  background:
+                    "linear-gradient(145deg, rgba(240,253,244,0.82), rgba(220,252,231,0.62))",
+                  border: "1px solid rgba(34,197,94,0.28)",
+                  color: "#15803d",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  textAlign: "center",
+                  boxShadow:
+                    "inset 0 1px 0 rgba(255,255,255,0.9), 0 6px 18px rgba(21,128,61,0.10)",
+                  backdropFilter: "blur(18px) saturate(160%)",
+                  WebkitBackdropFilter: "blur(18px) saturate(160%)",
+                  animation: "authValidationIn 0.25s ease-out both"
                 }}
               >
                 {message}
-              </p>
+              </div>
             )}
 
             <button
               type="submit"
               disabled={loading}
               style={{
-                width: "100%",
-                padding: "12px",
+                ...glassPrimaryButtonStyle,
                 cursor: loading
                   ? "not-allowed"
                   : "pointer"
@@ -263,10 +385,8 @@ function Login({ onLogin, onRegister }) {
               }
               required
               style={{
-                width: "100%",
-                padding: "12px",
-                marginBottom: "12px",
-                boxSizing: "border-box"
+                ...glassInputStyle,
+                marginBottom: "12px"
               }}
             />
 
@@ -279,10 +399,8 @@ function Login({ onLogin, onRegister }) {
               }
               required
               style={{
-                width: "100%",
-                padding: "12px",
-                marginBottom: "8px",
-                boxSizing: "border-box"
+                ...glassInputStyle,
+                marginBottom: "8px"
               }}
             />
 
@@ -297,11 +415,8 @@ function Login({ onLogin, onRegister }) {
                 onClick={handleForgotPassword}
                 disabled={loading}
                 style={{
-                  border: "none",
-                  background: "none",
-                  padding: 0,
-                  cursor: "pointer",
-                  textDecoration: "underline"
+                  ...glassLinkButtonStyle,
+                  cursor: loading ? "not-allowed" : "pointer"
                 }}
               >
                 Forgot Password?
@@ -309,41 +424,32 @@ function Login({ onLogin, onRegister }) {
             </div>
 
             {error && (
-              <p
-                style={{
-                  color: "red",
-                  marginBottom: "12px"
-                }}
-              >
-                {error}
-              </p>
+              <div className="premium-auth-message premium-auth-error" role="alert">
+                <span className="premium-auth-message-icon">!</span>
+                <span>{error}</span>
+              </div>
             )}
 
             {message && (
-              <p
-                style={{
-                  color: "green",
-                  marginBottom: "12px"
-                }}
-              >
-                {message}
-              </p>
+              <div className="premium-auth-message premium-auth-success" role="status">
+                <span className="premium-auth-message-icon">✓</span>
+                <span>{message}</span>
+              </div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              style={{
-                width: "100%",
-                padding: "12px",
-                cursor: loading
-                  ? "not-allowed"
-                  : "pointer"
-              }}
+              className={loading ? "premium-auth-submit premium-auth-submit-loading" : "premium-auth-submit"}
             >
-              {loading
-                ? "Logging in..."
-                : "Login"}
+              {loading ? (
+                <span className="premium-auth-loading-content">
+                  <span className="premium-auth-spinner" />
+                  <span>Logging in...</span>
+                </span>
+              ) : (
+                "Login"
+              )}
             </button>
 
             {onRegister && (
@@ -352,16 +458,10 @@ function Login({ onLogin, onRegister }) {
                 onClick={onRegister}
                 disabled={loading}
                 style={{
-                  width: "100%",
-                  padding: "12px",
-                  marginTop: "10px",
-                  background: "transparent",
-                  border: "none",
-                  textDecoration: "underline",
-                  cursor: loading
-                    ? "not-allowed"
-                    : "pointer"
-                }}
+                    ...glassSecondaryButtonStyle,
+                    marginTop: "10px",
+                    cursor: loading ? "not-allowed" : "pointer"
+                  }}
               >
                 New user? Create account
               </button>

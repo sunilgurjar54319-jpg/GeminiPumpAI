@@ -1,6 +1,40 @@
 import { useEffect, useState } from "react";
 import { authFetch } from "../api";
 import { Html5Qrcode } from "html5-qrcode";
+import Icon from "./Icon";
+
+const deviceGlassStyle = `
+@keyframes devicePremiumSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes deviceGlassFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes deviceGlassModalIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0) scale(0.985);
+  }
+  60% {
+    opacity: 1;
+    transform: translate3d(0, 1px, 0) scale(0.998);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+`;
+
 
 function DeviceSelector({
   selectedDeviceId,
@@ -12,12 +46,24 @@ function DeviceSelector({
   const [loading, setLoading] = useState(true);
 
   const [showAddModal, setShowAddModal] = useState(false);
+  const [closingAddModal, setClosingAddModal] = useState(false);
   const [newDeviceId, setNewDeviceId] = useState("");
   const [newDeviceName, setNewDeviceName] = useState("");
   const [message, setMessage] = useState("");
   const [adding, setAdding] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [scanner, setScanner] = useState(null);
+
+  function closeAddModal() {
+    if (adding || closingAddModal) return;
+
+    setClosingAddModal(true);
+
+    window.setTimeout(() => {
+      setShowAddModal(false);
+      setClosingAddModal(false);
+    }, 320);
+  }
 
   async function loadDevices() {
     try {
@@ -186,13 +232,20 @@ function DeviceSelector({
 
   return (
     <>
+      <style>{deviceGlassStyle}</style>
       <div
+        className="device-selector-liquid"
         style={{
-          border: "1px solid #ddd",
-          borderRadius: "15px",
+          border: "1px solid rgba(255,255,255,0.72)",
+          borderRadius: "22px",
           padding: "14px",
           marginTop: "20px",
-          background: "#fff"
+          background:
+            "linear-gradient(145deg, rgba(255,255,255,0.72), rgba(255,255,255,0.38))",
+          boxShadow:
+            "0 8px 32px rgba(31,38,135,0.12), inset 0 1px 0 rgba(255,255,255,0.9)",
+          backdropFilter: "blur(22px) saturate(180%)",
+          WebkitBackdropFilter: "blur(22px) saturate(180%)"
         }}
       >
         {/* ONE-TAP DEVICE TABS */}
@@ -205,6 +258,7 @@ function DeviceSelector({
         >
           {/* SCROLLABLE DEVICE ROW */}
           <div
+            className="device-tabs-scroll"
             style={{
               display: "flex",
               gap: "8px",
@@ -216,13 +270,34 @@ function DeviceSelector({
           >
             {loading && devices.length === 0 && (
               <div
+                aria-label="Loading devices"
                 style={{
-                  padding: "10px 15px",
-                  color: "#666",
-                  whiteSpace: "nowrap"
+                  width: "120px",
+                  height: "42px",
+                  flexShrink: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: "16px",
+                  background: "rgba(255,255,255,0.55)",
+                  border: "1px solid rgba(255,255,255,0.75)",
+                  boxShadow:
+                    "inset 0 1px 0 rgba(255,255,255,0.9), 0 4px 14px rgba(31,38,135,0.06)",
+                  boxSizing: "border-box"
                 }}
               >
-                Loading devices...
+                <div
+                  style={{
+                    width: "24px",
+                    height: "24px",
+                    borderRadius: "50%",
+                    border: "3px solid rgba(25,118,210,0.16)",
+                    borderTopColor: "#1976d2",
+                    borderRightColor: "#2456A6",
+                    animation: "devicePremiumSpin 0.9s linear infinite",
+                    boxSizing: "border-box"
+                  }}
+                />
               </div>
             )}
 
@@ -247,24 +322,25 @@ function DeviceSelector({
                   }
                   style={{
                     flexShrink: 0,
-                    padding: "10px 18px",
-                    borderRadius: "10px",
+                    padding: "11px 18px",
+                    borderRadius: "16px",
                     border: active
-                      ? "1px solid #1976d2"
-                      : "1px solid #d0d0d0",
+                      ? "1px solid rgba(255,255,255,0.92)"
+                      : "1px solid rgba(255,255,255,0.62)",
                     background: active
-                      ? "#1976d2"
-                      : "#f8f9fa",
-                    color: active
-                      ? "#fff"
-                      : "#333",
+                      ? "linear-gradient(145deg, #163A70, #2456A6)"
+                      : "rgba(255,255,255,0.46)",
+                    color: active ? "#ffffff" : "#374151",
                     fontSize: "15px",
-                    fontWeight: active
-                      ? "700"
-                      : "500",
+                    fontWeight: active ? "700" : "500",
                     cursor: "pointer",
                     whiteSpace: "nowrap",
-                    transition: "all 0.2s ease"
+                    boxShadow: active
+                      ? "0 8px 24px rgba(15,45,110,0.28), inset 0 1px 0 rgba(255,255,255,0.32)"
+                      : "0 3px 12px rgba(31,38,135,0.06), inset 0 1px 0 rgba(255,255,255,0.8)",
+                    backdropFilter: "blur(18px) saturate(180%)",
+                    WebkitBackdropFilter: "blur(18px) saturate(180%)",
+                    transition: "all 0.22s ease"
                   }}
                 >
                   {name}
@@ -339,32 +415,47 @@ function DeviceSelector({
       {/* ADD DEVICE MODAL */}
       {showAddModal && (
         <div
+          className={closingAddModal ? "device-add-overlay-closing" : ""}
           onClick={() => {
-            if (!adding) {
-              setShowAddModal(false);
-            }
+            closeAddModal();
           }}
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(0,0,0,0.45)",
+            background: "rgba(15,23,42,0.30)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             padding: "20px",
-            zIndex: 9999
+            zIndex: 9999,
+            backdropFilter: "blur(8px) saturate(120%)",
+            WebkitBackdropFilter: "blur(8px) saturate(120%)",
+            animation: "none",
+            willChange: "auto",
+            transform: "translateZ(0)"
           }}
         >
           <div
+            className={closingAddModal ? "device-add-modal-closing" : ""}
             onClick={e => e.stopPropagation()}
             style={{
               width: "100%",
               maxWidth: "420px",
-              background: "#fff",
-              borderRadius: "16px",
-              padding: "22px",
+              boxSizing: "border-box",
+              background:
+                "linear-gradient(145deg, rgba(255,255,255,0.82), rgba(235,242,255,0.62))",
+              border: "1px solid rgba(255,255,255,0.78)",
+              borderRadius: "28px",
+              padding: "24px",
               boxShadow:
-                "0 15px 40px rgba(0,0,0,0.25)"
+                "0 24px 70px rgba(15,23,42,0.24), inset 0 1px 0 rgba(255,255,255,0.95)",
+              backdropFilter: "blur(24px) saturate(170%)",
+              WebkitBackdropFilter: "blur(24px) saturate(170%)",
+              animation: "deviceGlassModalIn 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both",
+              willChange: "transform, opacity",
+              transform: "translate3d(0, 0, 0)",
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden"
             }}
           >
             <div
@@ -372,33 +463,67 @@ function DeviceSelector({
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                marginBottom: "20px"
+                marginBottom: "22px"
               }}
             >
-              <h2
+              <div
                 style={{
-                  margin: 0,
-                  fontSize: "21px"
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "11px"
                 }}
               >
-                ➕ Add Device
-              </h2>
+                <div
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "14px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "rgba(255,255,255,0.58)",
+                    border: "1px solid rgba(255,255,255,0.72)",
+                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.9)"
+                  }}
+                >
+                  <Icon name="add" size={21} strokeWidth={2.2} />
+                </div>
+
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: "21px",
+                    fontWeight: "700",
+                    letterSpacing: "-0.02em",
+                    color: "#111827"
+                  }}
+                >
+                  Add Device
+                </h2>
+              </div>
 
               <button
                 onClick={() => {
-                  if (!adding) {
-                    setShowAddModal(false);
-                  }
+                  closeAddModal();
                 }}
+                aria-label="Close"
                 style={{
-                  border: "none",
-                  background: "transparent",
-                  fontSize: "24px",
-                  cursor: "pointer",
-                  color: "#666"
+                  width: "38px",
+                  height: "38px",
+                  padding: 0,
+                  borderRadius: "50%",
+                  border: "1px solid rgba(255,255,255,0.72)",
+                  background: "rgba(255,255,255,0.58)",
+                  color: "#374151",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: adding ? "default" : "pointer",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.9)",
+                  transition: "transform 0.18s ease, background 0.18s ease"
                 }}
               >
-                ×
+                <Icon name="close" size={18} strokeWidth={2.2} />
               </button>
             </div>
 
@@ -418,15 +543,23 @@ function DeviceSelector({
                 setNewDeviceId(e.target.value)
               }
               placeholder="Example: PUMP001"
-              autoFocus
               style={{
                 width: "100%",
                 boxSizing: "border-box",
-                padding: "12px",
-                borderRadius: "9px",
-                border: "1px solid #bbb",
+                padding: "14px 16px",
+                borderRadius: "16px",
+                border: "1px solid rgba(255,255,255,0.78)",
+                background: "rgba(255,255,255,0.58)",
+                color: "#111827",
                 fontSize: "16px",
-                marginBottom: "15px"
+                fontWeight: "500",
+                outline: "none",
+                marginBottom: "15px",
+                boxShadow:
+                  "inset 0 1px 0 rgba(255,255,255,0.9), 0 4px 18px rgba(15,23,42,0.06)",
+                backdropFilter: "blur(18px) saturate(150%)",
+                WebkitBackdropFilter: "blur(18px) saturate(150%)",
+                transition: "box-shadow 0.2s ease, transform 0.2s ease"
               }}
             />
 
@@ -436,18 +569,30 @@ function DeviceSelector({
               disabled={adding}
               style={{
                 width: "100%",
-                padding: "11px",
-                borderRadius: "9px",
-                border: "1px solid #1976d2",
-                background: "#fff",
-                color: "#1976d2",
+                minHeight: "50px",
+                padding: "12px 16px",
+                borderRadius: "16px",
+                border: "1px solid rgba(255,255,255,0.78)",
+                background:
+                  "linear-gradient(135deg, rgba(255,255,255,0.72), rgba(225,235,255,0.52))",
+                color: "#1d4ed8",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "9px",
                 fontSize: "15px",
-                fontWeight: "600",
-                cursor: "pointer",
-                marginBottom: "18px"
+                fontWeight: "650",
+                cursor: adding ? "default" : "pointer",
+                marginBottom: "18px",
+                boxShadow:
+                  "inset 0 1px 0 rgba(255,255,255,0.95), 0 6px 20px rgba(37,99,235,0.08)",
+                backdropFilter: "blur(18px) saturate(160%)",
+                WebkitBackdropFilter: "blur(18px) saturate(160%)",
+                transition: "transform 0.18s ease, box-shadow 0.18s ease"
               }}
             >
-              📷 Scan Device ID
+              <Icon name="camera" size={20} strokeWidth={2.1} />
+              <span>Scan Device ID</span>
             </button>
 
             {showScanner && (
@@ -455,16 +600,24 @@ function DeviceSelector({
                 style={{
                   marginBottom: "18px",
                   padding: "12px",
-                  border: "1px solid #ddd",
-                  borderRadius: "12px",
-                  background: "#f8f9fa"
+                  border: "1px solid rgba(255,255,255,0.78)",
+                  borderRadius: "20px",
+                  background:
+                    "linear-gradient(145deg, rgba(255,255,255,0.58), rgba(225,235,255,0.38))",
+                  boxShadow:
+                    "inset 0 1px 0 rgba(255,255,255,0.9), 0 10px 30px rgba(15,23,42,0.08)",
+                  backdropFilter: "blur(24px) saturate(160%)",
+                  WebkitBackdropFilter: "blur(24px) saturate(160%)",
+                  animation: "deviceGlassScannerIn 0.28s ease-out"
                 }}
               >
                 <div
                   id="device-id-scanner"
                   style={{
                     width: "100%",
-                    minHeight: "260px"
+                    minHeight: "260px",
+                    overflow: "hidden",
+                    borderRadius: "16px"
                   }}
                 />
 
@@ -473,18 +626,30 @@ function DeviceSelector({
                   onClick={stopScanner}
                   style={{
                     width: "100%",
+                    minHeight: "48px",
                     marginTop: "10px",
-                    padding: "11px",
-                    borderRadius: "9px",
-                    border: "1px solid #dc2626",
-                    background: "#fff",
+                    padding: "11px 16px",
+                    borderRadius: "15px",
+                    border: "1px solid rgba(255,255,255,0.72)",
+                    background:
+                      "rgba(255,255,255,0.58)",
                     color: "#dc2626",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
                     fontSize: "15px",
-                    fontWeight: "600",
-                    cursor: "pointer"
+                    fontWeight: "650",
+                    cursor: "pointer",
+                    boxShadow:
+                      "inset 0 1px 0 rgba(255,255,255,0.9), 0 5px 16px rgba(15,23,42,0.06)",
+                    backdropFilter: "blur(18px) saturate(150%)",
+                    WebkitBackdropFilter: "blur(18px) saturate(150%)",
+                    transition: "transform 0.18s ease, box-shadow 0.18s ease"
                   }}
                 >
-                  ✕ Stop Scanner
+                  <Icon name="close" size={18} strokeWidth={2.2} />
+                  <span>Stop Scanner</span>
                 </button>
               </div>
             )}
@@ -508,11 +673,20 @@ function DeviceSelector({
               style={{
                 width: "100%",
                 boxSizing: "border-box",
-                padding: "12px",
-                borderRadius: "9px",
-                border: "1px solid #bbb",
+                padding: "14px 16px",
+                borderRadius: "16px",
+                border: "1px solid rgba(255,255,255,0.78)",
+                background: "rgba(255,255,255,0.58)",
+                color: "#111827",
                 fontSize: "16px",
-                marginBottom: "20px"
+                fontWeight: "500",
+                outline: "none",
+                marginBottom: "20px",
+                boxShadow:
+                  "inset 0 1px 0 rgba(255,255,255,0.9), 0 4px 18px rgba(15,23,42,0.06)",
+                backdropFilter: "blur(18px) saturate(150%)",
+                WebkitBackdropFilter: "blur(18px) saturate(150%)",
+                transition: "box-shadow 0.2s ease, transform 0.2s ease"
               }}
             />
 
@@ -520,9 +694,16 @@ function DeviceSelector({
               <div
                 style={{
                   marginBottom: "14px",
+                  padding: "11px 14px",
+                  borderRadius: "14px",
+                  border: "1px solid rgba(220,38,38,0.16)",
+                  background: "rgba(255,245,245,0.68)",
                   color: "#dc2626",
                   fontWeight: "600",
-                  fontSize: "14px"
+                  fontSize: "14px",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.85)",
+                  backdropFilter: "blur(14px)",
+                  WebkitBackdropFilter: "blur(14px)"
                 }}
               >
                 {message}
@@ -538,19 +719,26 @@ function DeviceSelector({
               <button
                 onClick={() => {
                   if (!adding) {
-                    setShowAddModal(false);
                     setMessage("");
+                    closeAddModal();
                   }
                 }}
                 disabled={adding}
                 style={{
                   flex: 1,
-                  padding: "12px",
-                  borderRadius: "9px",
-                  border: "1px solid #bbb",
-                  background: "#fff",
+                  padding: "13px 16px",
+                  borderRadius: "16px",
+                  border: "1px solid rgba(255,255,255,0.78)",
+                  background: "rgba(255,255,255,0.58)",
+                  color: "#374151",
                   fontSize: "15px",
-                  cursor: "pointer"
+                  fontWeight: "600",
+                  cursor: adding ? "default" : "pointer",
+                  boxShadow:
+                    "inset 0 1px 0 rgba(255,255,255,0.95), 0 6px 20px rgba(15,23,42,0.06)",
+                  backdropFilter: "blur(18px) saturate(160%)",
+                  WebkitBackdropFilter: "blur(18px) saturate(160%)",
+                  transition: "transform 0.18s ease, box-shadow 0.18s ease"
                 }}
               >
                 Cancel
@@ -561,19 +749,23 @@ function DeviceSelector({
                 disabled={adding}
                 style={{
                   flex: 1,
-                  padding: "12px",
-                  borderRadius: "9px",
-                  border: "none",
-                  background: "#1976d2",
+                  padding: "13px 16px",
+                  borderRadius: "16px",
+                  border: "1px solid rgba(255,255,255,0.30)",
+                  background:
+                    "linear-gradient(135deg, #0B2A5B 0%, #123F7A 100%)",
                   color: "#fff",
                   fontSize: "15px",
-                  fontWeight: "600",
-                  cursor: "pointer"
+                  fontWeight: "700",
+                  cursor: adding ? "default" : "pointer",
+                  boxShadow:
+                    "inset 0 1px 0 rgba(255,255,255,0.35), 0 8px 24px rgba(37,99,235,0.24)",
+                  backdropFilter: "blur(18px) saturate(160%)",
+                  WebkitBackdropFilter: "blur(18px) saturate(160%)",
+                  transition: "transform 0.18s ease, box-shadow 0.18s ease"
                 }}
               >
-                {adding
-                  ? "Adding..."
-                  : "Add Device"}
+                {adding ? "Adding..." : "Add Device"}
               </button>
             </div>
           </div>
