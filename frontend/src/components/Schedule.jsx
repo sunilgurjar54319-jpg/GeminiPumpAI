@@ -399,7 +399,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
     <div className="schedule-card">
       <button
         type="button"
-        className="accordion-header schedule-accordion-header"
+        className="accordion-header schedule-accordion-header premium-button-press"
         onClick={() => setScheduleOpen(v => !v)}
         aria-expanded={scheduleOpen}
       >
@@ -434,7 +434,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
         type="button"
         className={`schedule-command-pill ${
           command === "ON" ? "schedule-command-active-on" : ""
-        }`}
+        } premium-button-press`}
         onClick={() => setCommand("ON")}
       >
         ON
@@ -445,7 +445,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
         type="button"
         className={`schedule-command-pill ${
           command === "OFF" ? "schedule-command-active-off" : ""
-        }`}
+        } premium-button-press`}
         onClick={() => setCommand("OFF")}
       >
         OFF
@@ -520,14 +520,12 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
             key={value}
 
             type="button"
-            className={`schedule-day-pill ${selectedDays.includes(value) ? "schedule-day-selected" : ""}`}
-            onClick={() => toggleDay(value)}
-
             className={`schedule-day-button ${
               selectedDays.includes(value)
                 ? "schedule-day-selected"
                 : "schedule-day-ghost"
-            }`}
+            } premium-button-press`}
+            onClick={() => toggleDay(value)}
 
           >
 
@@ -550,6 +548,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
         <>
 
           <button
+          className="premium-button-press"
 
             disabled={loading}
 
@@ -574,6 +573,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
 
           <button
+          className="premium-button-press"
 
             onClick={() => {
 
@@ -599,6 +599,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
       ) : (
 
         <button
+          className="premium-button-press"
 
           disabled={loading}
 
@@ -706,7 +707,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
                   type="button"
                   className={`saved-schedule-toggle ${
                     item.enabled ? "is-on" : "is-off"
-                  }`}
+                  } premium-button-press`}
                   onClick={() => toggleSchedule(item)}
                   aria-label={
                     item.enabled
@@ -728,7 +729,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
                 <button
                   type="button"
-                  className="saved-schedule-icon-button"
+                  className="saved-schedule-icon-button premium-button-press"
                   onClick={() => editSchedule(item)}
                   aria-label="Edit schedule"
                   title="Edit schedule"
@@ -738,7 +739,7 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
                 <button
                   type="button"
-                  className="saved-schedule-icon-button delete"
+                  className="saved-schedule-icon-button delete premium-button-press"
                   onClick={() => {
                     if (
                       window.confirm(

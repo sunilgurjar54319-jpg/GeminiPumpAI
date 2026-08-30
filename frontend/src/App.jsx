@@ -452,18 +452,10 @@ delete pendingDeviceStates.current[deviceId];
       }
     });
 
-    const timer = setInterval(() => {
-      devices.forEach(device => {
-        const deviceId =
-          device.deviceId || device.$id;
+    // Dashboard status is loaded once when devices/user become available.
+    // Do NOT poll every 5 seconds here — this prevents unnecessary Appwrite reads.
+    // Status is refreshed again naturally when the page is manually refreshed.
 
-        if (deviceId) {
-          loadSharedDeviceState(deviceId);
-        }
-      });
-    }, 5000);
-
-    return () => clearInterval(timer);
   }, [user, devices]);
 
   function refreshStatus() {
@@ -492,14 +484,9 @@ delete pendingDeviceStates.current[deviceId];
   useEffect(() => {
     if (!user || !selectedDeviceId) return;
 
+    // Load selected device name when the device changes.
+    // No 5-second polling — device name does not need continuous reads.
     loadDeviceName(selectedDeviceId);
-
-    const timer = setInterval(
-      () => loadDeviceName(selectedDeviceId),
-      5000
-    );
-
-    return () => clearInterval(timer);
   }, [user, selectedDeviceId]);
 
   if (sessionChecking) {

@@ -349,7 +349,7 @@ function VoiceControl({ onCommandSent, deviceName, selectedDeviceId }) {
     <div className="voice-control">
       <button
         type="button"
-        className={`voice-control-button ${listening ? "voice-control-listening" : ""}`}
+        className={`voice-control-button ${listening ? "voice-control-listening" : ""} premium-button-press`}
         onClick={startListening}
         disabled={listening}
         aria-label={listening ? "Listening" : "Voice Control"}

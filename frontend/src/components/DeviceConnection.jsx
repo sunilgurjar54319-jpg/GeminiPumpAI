@@ -213,19 +213,10 @@ function DeviceConnection({ onNameChanged, selectedDeviceId }) {
     setOnline(false);
     setNameMessage("");
 
+    // Device open/change होने पर एक बार status read करें.
+    // Continuous 5-second polling नहीं — Appwrite reads कम रखने के लिए.
     fetchDeviceStatus();
     fetchPumpStatus();
-
-    const timer =
-      setInterval(() => {
-
-        fetchDeviceStatus();
-        fetchPumpStatus();
-
-      }, 5000);
-
-    return () =>
-      clearInterval(timer);
 
   }, [selectedDeviceId]);
 
@@ -285,7 +276,7 @@ function DeviceConnection({ onNameChanged, selectedDeviceId }) {
 
           <button
             type="button"
-            className="device-settings-button"
+            className="device-settings-button premium-button-press"
             onClick={() => setShowSettings(true)}
             aria-label="Device settings"
             title="Device settings"
@@ -404,7 +395,7 @@ function DeviceConnection({ onNameChanged, selectedDeviceId }) {
 
               <button
                 type="button"
-                className="device-settings-close"
+                className="device-settings-close premium-button-press"
                 onClick={() => {
                   if (!savingName) {
                     setShowSettings(false);
@@ -440,6 +431,7 @@ function DeviceConnection({ onNameChanged, selectedDeviceId }) {
                   </strong>
 
                   <button
+          className="premium-button-press"
                     type="button"
                     onClick={() => {
                       setNewDeviceName(
@@ -472,12 +464,13 @@ function DeviceConnection({ onNameChanged, selectedDeviceId }) {
                       type="button"
                       onClick={saveDeviceName}
                       disabled={savingName}
-                      className="device-settings-save"
+                      className="device-settings-save premium-button-press"
                     >
                       {savingName ? "Saving..." : "Save"}
                     </button>
 
                     <button
+          className="premium-button-press"
                       type="button"
                       onClick={() => {
                         setEditingName(false);

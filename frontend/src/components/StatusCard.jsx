@@ -191,16 +191,10 @@ function StatusCard({ refresh, deviceName, selectedDeviceId }) {
     setEspOnline(false);
     setError("");
 
+    // Load status once when dashboard opens, refresh changes,
+    // or selected device changes.
+    // No continuous polling — reduces Appwrite reads.
     refreshAll();
-
-    const timer =
-      setInterval(
-        refreshAll,
-        5000
-      );
-
-    return () =>
-      clearInterval(timer);
 
   }, [refresh, selectedDeviceId]);
 
@@ -341,6 +335,7 @@ function StatusCard({ refresh, deviceName, selectedDeviceId }) {
 
 
       <button
+          className="premium-button-press"
         onClick={refreshAll}
         disabled={loading}
       >

@@ -265,7 +265,7 @@ function QuickControls({
                 type="button"
                 className={`quick-control-switch ${
                   isOn ? "is-on" : "is-off"
-                }`}
+                } premium-button-press`}
                 onClick={() =>
                   onToggleDevice &&
                   onToggleDevice(deviceId)

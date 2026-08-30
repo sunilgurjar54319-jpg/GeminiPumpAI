@@ -324,14 +324,9 @@ function ManualControl({
       return;
     }
 
+    // Device status एक बार load करें जब app/device खुले या device बदले.
+    // Continuous 5-second polling नहीं — unnecessary Appwrite reads कम करने के लिए.
     loadDeviceStatus();
-
-    const timer = setInterval(
-      loadDeviceStatus,
-      5000
-    );
-
-    return () => clearInterval(timer);
   }, [selectedDeviceId]);
 
   // =========================================
@@ -464,7 +459,7 @@ function ManualControl({
 
           <button
             type="button"
-            className="device-settings-button"
+            className="device-settings-button premium-button-press"
             onClick={() => {
               setNewDeviceName(displayName);
               setNameMessage("");
@@ -542,7 +537,7 @@ function ManualControl({
                 loading || toggleLoading
                   ? "manual-toggle-loading"
                   : ""
-              }`}
+              } premium-button-press`}
             >
               <span
                 className={`manual-toggle-knob ${
@@ -616,7 +611,7 @@ function ManualControl({
 
                     <button
                       type="button"
-                      className="device-settings-close"
+                      className="device-settings-close premium-button-press"
                       onClick={closeSettings}
                       disabled={savingName || deletingDevice}
                       aria-label="Close settings"
@@ -639,7 +634,7 @@ function ManualControl({
 
                         <button
                           type="button"
-                          className="device-settings-edit"
+                          className="device-settings-edit premium-button-press"
                           onClick={() => {
                             setNewDeviceName(displayName);
                             setNameMessage("");
@@ -663,7 +658,7 @@ function ManualControl({
                         <div className="device-settings-edit-buttons">
                           <button
                             type="button"
-                            className="device-settings-save"
+                            className="device-settings-save premium-button-press"
                             onClick={saveDeviceName}
                             disabled={savingName}
                           >
@@ -672,7 +667,7 @@ function ManualControl({
 
                           <button
                             type="button"
-                            className="device-settings-cancel"
+                            className="device-settings-cancel premium-button-press"
                             onClick={() => {
                               setEditingName(false);
                               setNameMessage("");
@@ -700,6 +695,7 @@ function ManualControl({
                     }}
                   >
                     <button
+          className="premium-button-press"
                       type="button"
                       onClick={deleteSelectedDevice}
                       disabled={deletingDevice || savingName}

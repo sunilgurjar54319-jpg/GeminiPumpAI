@@ -39,7 +39,8 @@ function ImageCropModal({ image, onCancel, onApply }) {
       <div className={`image-crop-modal${closing ? " image-crop-closing" : ""}`}>
         <div className="image-crop-header">
           <h3>Adjust Profile Picture</h3>
-          <button type="button" onClick={handleCancel}>
+          <button
+          className="premium-button-press" type="button" onClick={handleCancel}>
             ×
           </button>
         </div>
@@ -87,11 +88,13 @@ function ImageCropModal({ image, onCancel, onApply }) {
         </div>
 
         <div className="image-crop-actions">
-          <button type="button" onClick={handleCancel}>
+          <button
+          className="premium-button-press" type="button" onClick={handleCancel}>
             Cancel
           </button>
 
-          <button type="button" onClick={createCroppedImage}>
+          <button
+          className="premium-button-press" type="button" onClick={createCroppedImage}>
             Apply
           </button>
         </div>

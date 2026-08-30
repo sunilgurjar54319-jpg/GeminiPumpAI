@@ -358,6 +358,7 @@ function Login({ onLogin, onRegister }) {
             <button
               type="submit"
               disabled={loading}
+              className="premium-button-press"
               style={{
                 ...glassPrimaryButtonStyle,
                 cursor: loading
@@ -412,6 +413,7 @@ function Login({ onLogin, onRegister }) {
             >
               <button
                 type="button"
+                className="premium-button-press"
                 onClick={handleForgotPassword}
                 disabled={loading}
                 style={{
@@ -440,7 +442,7 @@ function Login({ onLogin, onRegister }) {
             <button
               type="submit"
               disabled={loading}
-              className={loading ? "premium-auth-submit premium-auth-submit-loading" : "premium-auth-submit"}
+              className={loading ? "premium-auth-submit premium-auth-submit-loading premium-button-press" : "premium-auth-submit premium-button-press"}
             >
               {loading ? (
                 <span className="premium-auth-loading-content">
@@ -455,6 +457,7 @@ function Login({ onLogin, onRegister }) {
             {onRegister && (
               <button
                 type="button"
+                className="premium-button-press"
                 onClick={onRegister}
                 disabled={loading}
                 style={{

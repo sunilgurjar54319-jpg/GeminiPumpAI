@@ -181,7 +181,7 @@ function WelcomeHeader({ user, onLogout, onUserUpdate }) {
 
           <button
             type="button"
-            className="profile-avatar"
+            className="profile-avatar premium-button-press"
             aria-label="Account Settings"
             onClick={() => setMenuOpen(prev => !prev)}
           >
@@ -203,6 +203,7 @@ function WelcomeHeader({ user, onLogout, onUserUpdate }) {
           {menuOpen && (
             <div className="profile-menu">
               <button
+          className="premium-button-press"
                 type="button"
                 onClick={() =>
                   document.getElementById("profile-picture-input")?.click()
@@ -213,12 +214,14 @@ function WelcomeHeader({ user, onLogout, onUserUpdate }) {
                 <span>{uploadingPicture ? "Uploading..." : "Change Profile Picture"}</span>
               </button>
 
-              <button type="button" onClick={handleEditProfile}>
+              <button
+          className="premium-button-press" type="button" onClick={handleEditProfile}>
                 <Icon name="editProfile" size={19} strokeWidth={2} />
                 <span>Edit Profile</span>
               </button>
 
-              <button type="button" onClick={handleLogout}>
+              <button
+          className="premium-button-press" type="button" onClick={handleLogout}>
                 <Icon name="logout" size={19} strokeWidth={2} />
                 <span>Logout</span>
               </button>
@@ -261,6 +264,7 @@ function WelcomeHeader({ user, onLogout, onUserUpdate }) {
 
             <div className="edit-profile-actions">
               <button
+          className="premium-button-press"
                 type="button"
                 onClick={handleCancel}
                 disabled={saving}
@@ -269,6 +273,7 @@ function WelcomeHeader({ user, onLogout, onUserUpdate }) {
               </button>
 
               <button
+          className="premium-button-press"
                 type="button"
                 onClick={handleSave}
                 disabled={saving}

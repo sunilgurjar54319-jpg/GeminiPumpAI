@@ -67,9 +67,8 @@ function HistoryCard({ deviceName, selectedDeviceId }) {
     setHistory([]);
     loadHistory();
 
-    const timer = setInterval(loadHistory, 5000);
-
-    return () => clearInterval(timer);
+    // History is loaded on device change / dashboard refresh.
+    // No 5-second polling to reduce unnecessary Appwrite reads.
   }, [selectedDeviceId]);
 
   return (
@@ -77,7 +76,7 @@ function HistoryCard({ deviceName, selectedDeviceId }) {
 
         <button
           type="button"
-          className="accordion-header history-accordion-header"
+          className="accordion-header history-accordion-header premium-button-press"
           onClick={() => setHistoryOpen((v) => !v)}
           aria-expanded={historyOpen}
         >
@@ -102,6 +101,7 @@ function HistoryCard({ deviceName, selectedDeviceId }) {
 
           <div className="history-clear-action">
             <button
+          className="premium-button-press"
               type="button"
               onClick={deleteHistory}
               disabled={loading || history.length === 0}

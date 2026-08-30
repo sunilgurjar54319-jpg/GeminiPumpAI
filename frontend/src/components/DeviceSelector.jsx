@@ -315,6 +315,7 @@ function DeviceSelector({
 
               return (
                 <button
+          className={`premium-button-press device-tab-3d ${active ? "device-tab-active" : "device-tab-inactive"}`}
                   key={id}
                   onClick={() =>
                     onDeviceChange &&
@@ -350,6 +351,7 @@ function DeviceSelector({
 
             {/* ADD DEVICE TAB */}
             <button
+          className="premium-button-press device-add-3d"
               onClick={() => {
                 setMessage("");
                 setNewDeviceId("");
@@ -375,6 +377,7 @@ function DeviceSelector({
 
           {/* REFRESH BUTTON */}
           <button
+          className="premium-button-press device-refresh-3d"
             onClick={loadDevices}
             disabled={loading}
             title="Refresh devices"
@@ -503,6 +506,7 @@ function DeviceSelector({
               </div>
 
               <button
+          className="premium-button-press"
                 onClick={() => {
                   closeAddModal();
                 }}
@@ -564,6 +568,7 @@ function DeviceSelector({
             />
 
             <button
+          className="premium-button-press"
               type="button"
               onClick={startScanner}
               disabled={adding}
@@ -622,6 +627,7 @@ function DeviceSelector({
                 />
 
                 <button
+          className="premium-button-press"
                   type="button"
                   onClick={stopScanner}
                   style={{
@@ -717,6 +723,7 @@ function DeviceSelector({
               }}
             >
               <button
+          className="premium-button-press"
                 onClick={() => {
                   if (!adding) {
                     setMessage("");
@@ -745,6 +752,7 @@ function DeviceSelector({
               </button>
 
               <button
+          className="premium-button-press"
                 onClick={addDevice}
                 disabled={adding}
                 style={{

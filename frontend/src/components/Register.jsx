@@ -188,7 +188,7 @@ function Register({ onRegistered, onBackToLogin }) {
         <button
           type="submit"
           disabled={loading}
-          className={loading ? "premium-auth-submit premium-auth-submit-loading" : "premium-auth-submit"}
+          className={loading ? "premium-auth-submit premium-auth-submit-loading premium-button-press" : "premium-auth-submit premium-button-press"}
         >
           {loading ? (
             <span className="premium-auth-loading-content">
@@ -202,6 +202,7 @@ function Register({ onRegistered, onBackToLogin }) {
 
         <button
           type="button"
+          className="premium-button-press"
           onClick={onBackToLogin}
           disabled={loading}
           style={{

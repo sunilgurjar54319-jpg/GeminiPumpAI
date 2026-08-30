@@ -24,7 +24,7 @@ function StatsCard({ refresh, deviceName, selectedDeviceId }) {
     <div className="stats-card">
       <button
         type="button"
-        className="accordion-header stats-header"
+        className="accordion-header stats-header premium-button-press"
         onClick={() => setStatsOpen((v) => !v)}
         aria-expanded={statsOpen}
       >
