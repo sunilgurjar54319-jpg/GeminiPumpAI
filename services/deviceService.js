@@ -155,45 +155,10 @@ async function heartbeatDevice(
         const device = result.documents[0];
 
 
-        // =====================================
-        // Sensor capability update
-        // =====================================
-
         const updateData = {
-
             wifiStatus,
             lastSeen: new Date().toISOString()
-
         };
-
-
-        // Only update sensor configuration when
-        // ESP32 actually sends the sensors object.
-        if (
-            sensors &&
-            typeof sensors === "object" &&
-            !Array.isArray(sensors)
-        ) {
-
-            updateData.sensorEnabled =
-                sensors.enabled === true;
-
-            updateData.voltageSensor =
-                sensors.voltage === true;
-
-            updateData.currentSensor =
-                sensors.current === true;
-
-            updateData.floatSensor =
-                sensors.float === true;
-
-            updateData.pressureSensor =
-                sensors.pressure === true;
-
-            updateData.temperatureSensor =
-                sensors.temperature === true;
-
-        }
 
 
         return await databases.updateDocument(
