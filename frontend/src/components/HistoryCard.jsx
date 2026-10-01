@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getHistory, clearHistory } from "../api";
 import Icon from "./Icon";
+import { client, APPWRITE_DATABASE_ID } from "../appwrite";
 
 function HistoryCard({ deviceName, selectedDeviceId }) {
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -64,11 +65,54 @@ function HistoryCard({ deviceName, selectedDeviceId }) {
   }
 
   useEffect(() => {
+    if (!selectedDeviceId) return;
+
+    const channel =
+      `databases.${APPWRITE_DATABASE_ID}.collections.history.documents`;
+
+    const unsubscribe = client.subscribe(channel, response => {
+      const item = response.payload;
+
+      if (!item?.$id || item.deviceId !== selectedDeviceId) return;
+
+      const events = response.events || [];
+      const isDelete = events.some(event =>
+        event.endsWith(".delete")
+      );
+
+      if (isDelete) {
+        setHistory(prev =>
+          prev.filter(historyItem => historyItem.$id !== item.$id)
+        );
+        return;
+      }
+
+      setHistory(prev => {
+        const index = prev.findIndex(
+          historyItem => historyItem.$id === item.$id
+        );
+
+        if (index === -1) {
+          return [item, ...prev];
+        }
+
+        const next = [...prev];
+        next[index] = item;
+        return next;
+      });
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [selectedDeviceId]);
+
+  useEffect(() => {
     setHistory([]);
     loadHistory();
 
-    // History is loaded on device change / dashboard refresh.
-    // No 5-second polling to reduce unnecessary Appwrite reads.
+    // Initial history load only when the selected device changes.
+    // Realtime handles new history changes without polling.
   }, [selectedDeviceId]);
 
   return (

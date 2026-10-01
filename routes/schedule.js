@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const databases = require("../config/appwrite");
-const { Query } = require("node-appwrite");
+const { Query, Permission, Role } = require("node-appwrite");
 const { ID } = require("node-appwrite");
 
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID;
@@ -33,6 +33,17 @@ router.post("/", async (req, res) => {
       });
     }
 
+    const deviceResult = await databases.listDocuments(
+      DATABASE_ID,
+      "devices",
+      [
+        Query.equal("deviceId", deviceId),
+        Query.limit(1)
+      ]
+    );
+
+    const ownerId = deviceResult.documents[0]?.ownerId;
+
     const result = await databases.createDocument(
       DATABASE_ID,
       COLLECTION_ID,
@@ -45,7 +56,8 @@ router.post("/", async (req, res) => {
         enabled: enabled !== false,
         command: command || "",
         scheduledDate: scheduledDate || null
-      }
+      },
+      ownerId ? [Permission.read(Role.user(ownerId))] : []
     );
 
     res.json({

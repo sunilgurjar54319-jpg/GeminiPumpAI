@@ -1,5 +1,5 @@
 const databases = require("../config/appwrite");
-const { ID, Query } = require("node-appwrite");
+const { ID, Query, Permission, Role } = require("node-appwrite");
 
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID;
 const HISTORY_COLLECTION = "history";
@@ -25,6 +25,18 @@ async function addHistory(deviceId, command, result) {
       );
     }
 
+    const deviceResult =
+      await databases.listDocuments(
+        DATABASE_ID,
+        "devices",
+        [
+          Query.equal("deviceId", deviceId),
+          Query.limit(1)
+        ]
+      );
+
+    const ownerId = deviceResult.documents[0]?.ownerId;
+
     const document =
       await databases.createDocument(
         DATABASE_ID,
@@ -35,7 +47,8 @@ async function addHistory(deviceId, command, result) {
           command,
           result,
           createdAt: new Date().toISOString()
-        }
+        },
+        ownerId ? [Permission.read(Role.user(ownerId))] : []
       );
 
     console.log(

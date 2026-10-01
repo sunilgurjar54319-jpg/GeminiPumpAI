@@ -6,6 +6,7 @@ import {
   updateSchedule
 } from "../api";
 import Icon from "./Icon";
+import { client, APPWRITE_DATABASE_ID } from "../appwrite";
 
 const DAYS = [
   ["Mon", "Mon"],
@@ -40,6 +41,54 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
+
+
+  // =========================
+  // Appwrite Realtime
+  // =========================
+
+  useEffect(() => {
+    if (!selectedDeviceId) return;
+
+    const channel =
+      `databases.${APPWRITE_DATABASE_ID}.collections.schedules.documents`;
+
+    const unsubscribe = client.subscribe(channel, response => {
+      const item = response.payload;
+
+      if (!item?.$id || item.deviceId !== selectedDeviceId) return;
+
+      const events = response.events || [];
+      const isDelete = events.some(event =>
+        event.endsWith(".delete")
+      );
+
+      if (isDelete) {
+        setSchedules(prev =>
+          prev.filter(schedule => schedule.$id !== item.$id)
+        );
+        return;
+      }
+
+      setSchedules(prev => {
+        const index = prev.findIndex(
+          schedule => schedule.$id === item.$id
+        );
+
+        if (index === -1) {
+          return [...prev, item];
+        }
+
+        const next = [...prev];
+        next[index] = item;
+        return next;
+      });
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [selectedDeviceId]);
 
 
   // =========================
@@ -142,8 +191,6 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
         resetForm();
 
-        await loadSchedules();
-
       } else {
 
         setMessage(
@@ -178,8 +225,6 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
       if (result.success) {
 
         setMessage("🗑️ Schedule Deleted");
-
-        await loadSchedules();
 
       }
 
@@ -276,8 +321,6 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
 
         resetForm();
 
-        await loadSchedules();
-
       } else {
 
         setMessage(
@@ -333,7 +376,6 @@ function Schedule({ refresh, deviceName, selectedDeviceId }) {
       if (result.success) {
 
         setMessage("");
-        await loadSchedules();
 
       }
 

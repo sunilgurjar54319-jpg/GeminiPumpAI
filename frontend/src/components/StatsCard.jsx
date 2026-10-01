@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getStats } from "../api";
 import Icon from "./Icon";
+import { client, APPWRITE_DATABASE_ID } from "../appwrite";
 
 function StatsCard({ refresh, deviceName, selectedDeviceId }) {
   const [stats, setStats] = useState(null);
@@ -14,6 +15,76 @@ function StatsCard({ refresh, deviceName, selectedDeviceId }) {
       console.log(err);
     }
   }
+
+  useEffect(() => {
+    if (!selectedDeviceId) return;
+
+    const channel =
+      `databases.${APPWRITE_DATABASE_ID}.collections.history.documents`;
+
+    const unsubscribe = client.subscribe(channel, response => {
+      const item = response.payload;
+
+      if (!item?.$id || item.deviceId !== selectedDeviceId) return;
+
+      const events = response.events || [];
+      const isDelete = events.some(event =>
+        event.endsWith(".delete")
+      );
+
+      setStats(prev => {
+        if (!prev) return prev;
+
+        if (isDelete) {
+          if (String(item.command || "").toUpperCase() === "ON") {
+            return {
+              ...prev,
+              totalON: Math.max(0, prev.totalON - 1),
+              totalRecords: Math.max(0, prev.totalRecords - 1)
+            };
+          }
+
+          if (String(item.command || "").toUpperCase() === "OFF") {
+            return {
+              ...prev,
+              totalOFF: Math.max(0, prev.totalOFF - 1),
+              totalRecords: Math.max(0, prev.totalRecords - 1)
+            };
+          }
+
+          return prev;
+        }
+
+        const isCreate = events.some(event =>
+          event.endsWith(".create")
+        );
+
+        if (isCreate) {
+          if (String(item.command || "").toUpperCase() === "ON") {
+            return {
+              ...prev,
+              totalON: prev.totalON + 1,
+              totalRecords: prev.totalRecords + 1
+            };
+          }
+
+          if (String(item.command || "").toUpperCase() === "OFF") {
+            return {
+              ...prev,
+              totalOFF: prev.totalOFF + 1,
+              totalRecords: prev.totalRecords + 1
+            };
+          }
+        }
+
+        return prev;
+      });
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [selectedDeviceId]);
 
   useEffect(() => {
     setStats(null);
