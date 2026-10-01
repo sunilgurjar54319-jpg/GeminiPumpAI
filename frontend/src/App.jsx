@@ -55,68 +55,91 @@ function App() {
   // Keeps the desired state while a command is settling on the device.
   const pendingDeviceStates = useRef({});
 
-  // Appwrite Realtime: receive device changes only when the database changes.
-  useEffect(() => {
-    if (!user) return;
+    // Appwrite Realtime: receive device and status changes only when the database changes.
+    useEffect(() => {
+      if (!user) return;
 
-    const channel =
-      `databases.${APPWRITE_DATABASE_ID}.collections.${APPWRITE_DEVICES_COLLECTION_ID}.documents`;
+      const devicesChannel =
+        `databases.${APPWRITE_DATABASE_ID}.collections.${APPWRITE_DEVICES_COLLECTION_ID}.documents`;
 
-    const unsubscribe = client.subscribe(channel, response => {
-      const device = response.payload;
-      if (!device?.deviceId) return;
+      const statusChannel =
+        `databases.${APPWRITE_DATABASE_ID}.collections.status.documents`;
 
-      const deviceId = device.deviceId;
+      const handleDeviceChange = response => {
+        const device = response.payload;
+        if (!device?.deviceId) return;
 
-      const lastSeenTime = device.lastSeen
-        ? new Date(device.lastSeen).getTime()
-        : 0;
+        const deviceId = device.deviceId;
 
-      const age = Date.now() - lastSeenTime;
-      const wifiConnected =
-        String(device.wifiStatus || "").toUpperCase() === "CONNECTED";
+        const lastSeenTime = device.lastSeen
+          ? new Date(device.lastSeen).getTime()
+          : 0;
 
-      const online =
-        Boolean(device.lastSeen) &&
-        wifiConnected &&
-        age >= 0 &&
-        age <= 60000;
+        const age = Date.now() - lastSeenTime;
+        const wifiConnected =
+          String(device.wifiStatus || "").toUpperCase() === "CONNECTED";
 
-      setDeviceOnlineStates(prev => ({
-        ...prev,
-        [deviceId]: online
-      }));
+        const online =
+          Boolean(device.lastSeen) &&
+          wifiConnected &&
+          age >= 0 &&
+          age <= 60000;
 
-      if (device.status === "ON" || device.status === "OFF") {
+        setDeviceOnlineStates(prev => ({
+          ...prev,
+          [deviceId]: online
+        }));
+
+        if (device.deviceName) {
+          setDevices(prev =>
+            prev.map(item =>
+              (item.deviceId || item.$id) === deviceId
+                ? { ...item, deviceName: device.deviceName }
+                : item
+            )
+          );
+        }
+      };
+
+      const handleStatusChange = response => {
+        const statusDoc = response.payload;
+        if (!statusDoc?.deviceId) return;
+
+        const deviceId = statusDoc.deviceId;
+        const status = String(statusDoc.status || "").toUpperCase();
+
+        if (status !== "ON" && status !== "OFF") return;
+
         const pendingState = pendingDeviceStates.current[deviceId];
 
-        if (!pendingState || device.status === pendingState) {
-          if (pendingState === device.status) {
+        if (!pendingState || status === pendingState) {
+          if (pendingState === status) {
             delete pendingDeviceStates.current[deviceId];
           }
 
           setDeviceStates(prev => ({
             ...prev,
-            [deviceId]: device.status
+            [deviceId]: status
           }));
         }
-      }
+      };
 
-      if (device.deviceName) {
-        setDevices(prev =>
-          prev.map(item =>
-            (item.deviceId || item.$id) === deviceId
-              ? { ...item, deviceName: device.deviceName }
-              : item
-          )
-        );
-      }
-    });
+      const unsubscribeDevices = client.subscribe(
+        devicesChannel,
+        handleDeviceChange
+      );
 
-    return () => {
-      unsubscribe();
-    };
-  }, [user]);
+      const unsubscribeStatus = client.subscribe(
+        statusChannel,
+        handleStatusChange
+      );
+
+      return () => {
+        unsubscribeDevices();
+        unsubscribeStatus();
+      };
+    }, [user]);
+
 
   async function loadDeviceName(deviceId = selectedDeviceId) {
     if (!deviceId) return;
