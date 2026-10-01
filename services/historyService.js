@@ -89,6 +89,7 @@ async function getHistory(deviceId) {
             deviceId
           ),
           Query.orderDesc("$createdAt"),
+            Query.select(["command", "result", "createdAt"]),
           Query.limit(100)
         ]
       );

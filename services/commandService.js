@@ -332,6 +332,7 @@ async function sendCommand(deviceId, command, source = "MANUAL") {
         [
           Query.equal("deviceId", deviceId),
           Query.equal("executed", false),
+          Query.select(["command", "source", "createdAt"]),
           Query.orderAsc("$createdAt")
         ]
       );
@@ -391,6 +392,7 @@ const STALE_AFTER_MS = 5 * 60 * 1000;
         [
           Query.equal("deviceId", deviceId),
           Query.equal("executed", false),
+          Query.select(["command", "source", "createdAt"]),
           Query.orderAsc("$createdAt")
         ]
       );
@@ -535,6 +537,7 @@ async function getCommand(deviceId) {
         [
           Query.equal("deviceId", deviceId),
           Query.equal("executed", false),
+            Query.select(["deviceId", "command", "source", "createdAt"]),
           Query.orderAsc("$createdAt")
         ]
       );

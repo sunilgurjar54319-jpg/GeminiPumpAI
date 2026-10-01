@@ -77,7 +77,7 @@ function WelcomeHeader({ user, onLogout, onUserUpdate }) {
       );
 
       const pictureUrl =
-        `https://fra.cloud.appwrite.io/v1/storage/buckets/${PROFILE_BUCKET_ID}/files/${uploaded.$id}/view?project=6a6abdb7002586cbab5b&v=${Date.now()}`;
+        `https://fra.cloud.appwrite.io/v1/storage/buckets/${PROFILE_BUCKET_ID}/files/${uploaded.$id}/view?project=6a6abdb7002586cbab5b`;
 
       await account.updatePrefs({
         ...user?.prefs,
