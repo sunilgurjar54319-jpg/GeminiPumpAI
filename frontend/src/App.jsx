@@ -574,25 +574,6 @@ delete pendingDeviceStates.current[deviceId];
     };
   }, []);
 
-  useEffect(() => {
-    if (!user || devices.length === 0) {
-      return;
-    }
-
-    devices.forEach(device => {
-      const deviceId =
-        device.deviceId || device.$id;
-
-      if (deviceId) {
-        loadSharedDeviceState(deviceId);
-      }
-    });
-
-    // Dashboard status is loaded once when devices/user become available.
-    // Do NOT poll every 5 seconds here — this prevents unnecessary Appwrite reads.
-    // Status is refreshed again naturally when the page is manually refreshed.
-
-  }, [user, devices]);
 
   function refreshStatus() {
     setRefresh(prev => !prev);
