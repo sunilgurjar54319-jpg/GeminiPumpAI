@@ -91,6 +91,15 @@ router.get("/:deviceId", async (req, res) => {
       COLLECTION_ID,
       [
         Query.equal("deviceId", req.params.deviceId),
+        Query.select([
+          "deviceId",
+          "startTime",
+          "endTime",
+          "days",
+          "command",
+          "enabled",
+          "scheduledDate"
+        ]),
         Query.limit(100)
       ]
     );
