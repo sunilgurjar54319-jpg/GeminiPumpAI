@@ -10,7 +10,12 @@ import Register from "./components/Register";
 import "./App.css";
 
 import { authFetch, getDevice } from "./api";
-import { account } from "./appwrite";
+import {
+  account,
+  client,
+  APPWRITE_DATABASE_ID,
+  APPWRITE_DEVICES_COLLECTION_ID
+} from "./appwrite";
 import WelcomeHeader from "./components/WelcomeHeader";
 import DeviceSelector from "./components/DeviceSelector";
 import QuickControls from "./components/QuickControls";
@@ -49,6 +54,69 @@ function App() {
 
   // Keeps the desired state while a command is settling on the device.
   const pendingDeviceStates = useRef({});
+
+  // Appwrite Realtime: receive device changes only when the database changes.
+  useEffect(() => {
+    if (!user) return;
+
+    const channel =
+      `databases.${APPWRITE_DATABASE_ID}.collections.${APPWRITE_DEVICES_COLLECTION_ID}.documents`;
+
+    const unsubscribe = client.subscribe(channel, response => {
+      const device = response.payload;
+      if (!device?.deviceId) return;
+
+      const deviceId = device.deviceId;
+
+      const lastSeenTime = device.lastSeen
+        ? new Date(device.lastSeen).getTime()
+        : 0;
+
+      const age = Date.now() - lastSeenTime;
+      const wifiConnected =
+        String(device.wifiStatus || "").toUpperCase() === "CONNECTED";
+
+      const online =
+        Boolean(device.lastSeen) &&
+        wifiConnected &&
+        age >= 0 &&
+        age <= 60000;
+
+      setDeviceOnlineStates(prev => ({
+        ...prev,
+        [deviceId]: online
+      }));
+
+      if (device.status === "ON" || device.status === "OFF") {
+        const pendingState = pendingDeviceStates.current[deviceId];
+
+        if (!pendingState || device.status === pendingState) {
+          if (pendingState === device.status) {
+            delete pendingDeviceStates.current[deviceId];
+          }
+
+          setDeviceStates(prev => ({
+            ...prev,
+            [deviceId]: device.status
+          }));
+        }
+      }
+
+      if (device.deviceName) {
+        setDevices(prev =>
+          prev.map(item =>
+            (item.deviceId || item.$id) === deviceId
+              ? { ...item, deviceName: device.deviceName }
+              : item
+          )
+        );
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [user]);
 
   async function loadDeviceName(deviceId = selectedDeviceId) {
     if (!deviceId) return;
@@ -365,20 +433,14 @@ delete pendingDeviceStates.current[deviceId];
           [deviceId]: nextCommand
         }));
 
-        // Confirm the real device state shortly after.
-        setTimeout(() => {
-          loadSharedDeviceState(deviceId);
-        }, 3000);
-
-        // Safety timeout: never keep a pending state forever.
+        // Appwrite Realtime confirms the actual device state.
+        // Keep only a local safety timeout; it performs no network read.
         setTimeout(() => {
           if (pendingDeviceStates.current[deviceId] === nextCommand) {
             delete pendingDeviceStates.current[deviceId];
-            loadSharedDeviceState(deviceId);
           }
         }, 10000);
 
-        setRefresh(prev => !prev);
       }
     } catch (err) {
       console.error(
