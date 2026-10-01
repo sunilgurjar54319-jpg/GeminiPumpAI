@@ -101,6 +101,13 @@ async function listDevices(ownerId) {
             DEVICES_COLLECTION,
             [
                 Query.equal("ownerId", ownerId),
+                Query.select([
+                    "deviceId",
+                    "deviceName",
+                    "name",
+                    "lastSeen",
+                    "wifiStatus"
+                ]),
                 Query.limit(100)
             ]
         );
