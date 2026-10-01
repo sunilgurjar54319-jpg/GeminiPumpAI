@@ -104,7 +104,6 @@ async function listDevices(ownerId) {
                 Query.select([
                     "deviceId",
                     "deviceName",
-                    "name",
                     "lastSeen",
                     "wifiStatus"
                 ]),

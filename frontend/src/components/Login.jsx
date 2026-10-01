@@ -126,13 +126,6 @@ function Login({ onLogin, onRegister }) {
       // Get the newly authenticated user.
       const user = await account.get();
 
-      // Create fresh JWT for backend authentication
-      const jwtResult = await account.createJWT();
-
-      sessionStorage.setItem(
-        "geminiPumpJWT",
-        jwtResult.jwt
-      );
 
       setMessage("Login successful! Welcome back.");
       setTimeout(() => {
