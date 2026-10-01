@@ -39,7 +39,6 @@ const deviceGlassStyle = `
 function DeviceSelector({
   selectedDeviceId,
   onDeviceChange,
-  refresh,
   onDevicesLoaded
 }) {
   const [devices, setDevices] = useState([]);
@@ -228,7 +227,7 @@ function DeviceSelector({
 
   useEffect(() => {
     loadDevices();
-  }, [refresh]);
+  }, []);
 
   return (
     <>

@@ -659,7 +659,6 @@ delete pendingDeviceStates.current[deviceId];
       <DeviceSelector
         selectedDeviceId={selectedDeviceId}
         onDeviceChange={handleDeviceChange}
-        refresh={refresh}
         onDevicesLoaded={(list) => {
           setDevices(list);
           setDeviceLoading(false);

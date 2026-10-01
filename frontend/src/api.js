@@ -6,14 +6,25 @@ export async function authFetch(path, options = {}) {
   try {
     // Appwrite session से नया JWT बनाएं.
     // JWT की default validity 15 minutes होती है.
-    const jwtResult = await account.createJWT();
+    const JWT_KEY = "geminiPumpJWT";
+    const JWT_TIME_KEY = "geminiPumpJWTCreatedAt";
+    const JWT_CACHE_MS = 14 * 60 * 1000;
 
-    const jwt = jwtResult.jwt;
-
-    sessionStorage.setItem(
-      "geminiPumpJWT",
-      jwt
+    let jwt = sessionStorage.getItem(JWT_KEY);
+    const createdAt = Number(
+      sessionStorage.getItem(JWT_TIME_KEY) || 0
     );
+
+    if (!jwt || !createdAt || Date.now() - createdAt >= JWT_CACHE_MS) {
+      const jwtResult = await account.createJWT();
+      jwt = jwtResult.jwt;
+
+      sessionStorage.setItem(JWT_KEY, jwt);
+      sessionStorage.setItem(
+        JWT_TIME_KEY,
+        String(Date.now())
+      );
+    }
 
     const headers = {
       ...(options.headers || {}),
