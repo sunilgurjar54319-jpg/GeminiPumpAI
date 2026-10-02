@@ -9,6 +9,8 @@ const scheduleRoutes = require("./routes/schedule");
 const recoveryRoutes = require("./routes/recovery");
 const authRoutes = require("./routes/auth");
 const express = require("express");
+const http = require("http");
+const { setupWebSocket } = require("./websocketServer");
 const cors = require("cors");
 const statusRoutes = require("./routes/status");
 const statsRoutes = require("./routes/stats");
@@ -67,6 +69,9 @@ app.use((req, res, next) => {
 // Server Port
 const PORT = process.env.PORT || 5001;
 
-app.listen(PORT, () => {
-    console.log(`🚀 Server Running on Port ${PORT}`);
+const httpServer = http.createServer(app);
+setupWebSocket(httpServer);
+
+httpServer.listen(PORT, () => {
+  console.log(`🚀 Server Running on Port ${PORT}`);
 });

@@ -2,6 +2,7 @@ const databases = require("../config/appwrite");
 const { ID, Query } = require("node-appwrite");
 const { addHistory } = require("./historyService");
 const { updateStatus, getStatus } = require("./statusService");
+const { sendCommandToDevice } = require("../websocketServer");
 
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID;
 const COMMAND_COLLECTION = "commands";
@@ -497,6 +498,34 @@ const STALE_AFTER_MS = 5 * 60 * 1000;
     console.log(
       `Command Queued: ${command} -> ${deviceId} | source=${source}`
     );
+
+    // ==================================
+    // WEBSOCKET COMMAND PUSH
+    // ==================================
+    // If ESP32 is connected through WebSocket,
+    // push the command immediately.
+    // HTTP polling remains the fallback.
+    try {
+      const wsSent = sendCommandToDevice(
+        deviceId,
+        command,
+        result.$id
+      );
+
+      if (wsSent) {
+        console.log(
+          `[WS] Command pushed: ${command} -> ${deviceId}`
+        );
+      } else {
+        console.log(
+          `[WS] Device not connected: ${deviceId} | HTTP fallback remains active`
+        );
+      }
+    } catch (wsError) {
+      console.error(
+        `[WS] Command push failed: ${deviceId} | ${wsError.message}`
+      );
+    }
 
     if (String(command).toUpperCase() === "ON") {
       console.log(
