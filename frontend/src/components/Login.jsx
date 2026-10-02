@@ -147,9 +147,28 @@ function Login({ onLogin, onRegister }) {
 
       console.log("APPWRITE SESSION CREATED:", session?.$id);
 
-      // STEP 2: Verify authenticated session
+      // STEP 2: Persist and apply the newly created session.
       try {
-        // Verify that the newly created session is actually available.
+        if (!session?.secret) {
+          throw new Error("Appwrite ने session secret नहीं लौटाया।");
+        }
+
+        // Use the returned session immediately so account.get()
+        // does not depend on a third-party browser cookie.
+        client.setSession(session.secret);
+
+        // Appwrite's own Web SDK fallback format.
+        const fallback = JSON.parse(
+          window.localStorage.getItem("cookieFallback") || "{}"
+        );
+
+        fallback["a_session_6a6abdb7002586cbab5b"] = session.secret;
+
+        window.localStorage.setItem(
+          "cookieFallback",
+          JSON.stringify(fallback)
+        );
+
         const currentSession = await account.getSession("current");
 
         console.log("APPWRITE CURRENT SESSION:", currentSession?.$id);
