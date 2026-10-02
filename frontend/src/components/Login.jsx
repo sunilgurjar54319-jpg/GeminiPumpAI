@@ -95,38 +95,88 @@ function Login({ onLogin, onRegister }) {
     setMessage("");
 
     if (!email.trim()) {
-      setError("Email डालना जरूरी है।");
+      setError("❌ Email खाली है। अपना registered email डालें।");
       return;
     }
 
     if (!password) {
-      setError("Password डालना जरूरी है।");
+      setError("❌ Password खाली है। अपना password डालें।");
       return;
     }
 
     setLoading(true);
 
     try {
-      // Create Appwrite email/password session.
-      await account.createEmailPasswordSession({
-        email: email.trim(),
-        password
-      });
+      // STEP 1: Create Appwrite login session
+      let session;
 
-      // Get the authenticated user after session creation.
-      const user = await account.get();
+      try {
+        session = await account.createEmailPasswordSession({
+          email: email.trim(),
+          password
+        });
+      } catch (loginErr) {
+        console.error("APPWRITE LOGIN ERROR:", loginErr);
 
-      setMessage("Login successful! Welcome back.");
+        const code = loginErr?.code;
+        const type = loginErr?.type;
+        const message = loginErr?.message || "Unknown Appwrite error";
 
-      setTimeout(() => {
-        onLogin(user);
-      }, 900);
+        if (code === 401) {
+          throw new Error(
+            `❌ Email या Password गलत है।\n\nAppwrite: ${message}`
+          );
+        }
+
+        if (code === 404) {
+          throw new Error(
+            `❌ यह account नहीं मिला।\n\nAppwrite: ${message}`
+          );
+        }
+
+        if (code === 429) {
+          throw new Error(
+            `⏳ बहुत ज्यादा login attempts हुए हैं। थोड़ी देर बाद फिर कोशिश करें।\n\nAppwrite: ${message}`
+          );
+        }
+
+        throw new Error(
+          `❌ Login session नहीं बन सकी।\n\nCode: ${code || "N/A"}\nType: ${type || "N/A"}\nAppwrite: ${message}`
+        );
+      }
+
+      console.log("APPWRITE SESSION CREATED:", session?.$id);
+
+      // STEP 2: Verify authenticated session
+      try {
+        const user = await account.get();
+
+        console.log("APPWRITE USER:", user);
+
+        setMessage("✅ Login successful! Welcome back.");
+
+        setTimeout(() => {
+          onLogin(user);
+        }, 900);
+
+      } catch (userErr) {
+        console.error("APPWRITE ACCOUNT.GET ERROR:", userErr);
+
+        const code = userErr?.code;
+        const type = userErr?.type;
+        const message = userErr?.message || "Unknown Appwrite error";
+
+        throw new Error(
+          `⚠️ Login session बन गई, लेकिन user session verify नहीं हो सकी।\n\nCode: ${code || "N/A"}\nType: ${type || "N/A"}\nAppwrite: ${message}\n\nसंभावित कारण: browser session/cookie या Appwrite Web Platform configuration.`
+        );
+      }
 
     } catch (err) {
-      console.error("Login Error:", err);
+      console.error("LOGIN FINAL ERROR:", err);
 
       setError(
-        err?.message || "Login failed"
+        err?.message ||
+        "❌ Login failed. Unknown error."
       );
 
     } finally {
