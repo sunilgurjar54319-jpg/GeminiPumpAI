@@ -145,7 +145,13 @@ function Login({ onLogin, onRegister }) {
         );
       }
 
-      console.log("APPWRITE SESSION CREATED:", session?.$id);
+      console.log("APPWRITE SESSION CREATED:", {
+  id: session?.$id,
+  keys: Object.keys(session || {}),
+  hasSecret: Boolean(session?.secret),
+  type: session?.type,
+  userId: session?.userId
+});
 
       // STEP 2: Persist and apply the newly created session.
       try {
