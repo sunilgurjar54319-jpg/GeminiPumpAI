@@ -107,27 +107,17 @@ function Login({ onLogin, onRegister }) {
     setLoading(true);
 
     try {
-      // IMPORTANT:
-      // Remove any previous Appwrite session first.
-      // Otherwise a previous user's session can be reused and
-      // the email/password entered in this login form is ignored.
-      try {
-        await account.deleteSession("current");
-      } catch {
-        // No active session — continue normally.
-      }
-
-      // Always authenticate using the credentials entered here.
-      await account.createEmailPasswordSession(
-        email.trim(),
+      // Create Appwrite email/password session.
+      await account.createEmailPasswordSession({
+        email: email.trim(),
         password
-      );
+      });
 
-      // Get the newly authenticated user.
+      // Get the authenticated user after session creation.
       const user = await account.get();
 
-
       setMessage("Login successful! Welcome back.");
+
       setTimeout(() => {
         onLogin(user);
       }, 900);
