@@ -661,6 +661,30 @@ delete pendingDeviceStates.current[deviceId];
         onDeviceChange={handleDeviceChange}
         onDevicesLoaded={(list) => {
           setDevices(list);
+
+          const now = Date.now();
+          const initialOnlineStates = {};
+
+          list.forEach(device => {
+            const deviceId = device.deviceId || device.$id;
+            if (!deviceId) return;
+
+            const lastSeenTime = device.lastSeen
+              ? new Date(device.lastSeen).getTime()
+              : 0;
+
+            const age = now - lastSeenTime;
+            const wifiConnected =
+              String(device.wifiStatus || "").toUpperCase() === "CONNECTED";
+
+            initialOnlineStates[deviceId] =
+              Boolean(device.lastSeen) &&
+              wifiConnected &&
+              age >= 0 &&
+              age <= 75000;
+          });
+
+          setDeviceOnlineStates(initialOnlineStates);
           setDeviceLoading(false);
         }}
       />
