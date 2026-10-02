@@ -147,30 +147,6 @@ function Login({ onLogin, onRegister }) {
 
       console.log("APPWRITE SESSION CREATED:", session?.$id);
 
-      // STEP 1.5: Verify that the newly-created session
-      // is actually available to the browser.
-      try {
-        const currentSession = await account.getSession("current");
-
-        console.log("APPWRITE CURRENT SESSION:", currentSession);
-
-        if (!currentSession?.$id) {
-          throw new Error(
-            "Session create हुई, लेकिन browser में current session नहीं मिली।"
-          );
-        }
-      } catch (sessionErr) {
-        console.error("APPWRITE GET SESSION ERROR:", sessionErr);
-
-        const code = sessionErr?.code;
-        const type = sessionErr?.type;
-        const message = sessionErr?.message || "Unknown Appwrite error";
-
-        throw new Error(
-          `⚠️ Login session create हुई, लेकिन browser current session नहीं पढ़ सका.\\n\\nCode: ${code || "N/A"}\\nType: ${type || "N/A"}\\nAppwrite: ${message}\\n\\nइससे पता चलेगा कि समस्या session/cookie transport में है।`
-        );
-      }
-
       // STEP 2: Verify authenticated session
       try {
         const user = await account.get();
