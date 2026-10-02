@@ -149,6 +149,11 @@ function Login({ onLogin, onRegister }) {
 
       // STEP 2: Verify authenticated session
       try {
+        // Verify that the newly created session is actually available.
+        const currentSession = await account.getSession("current");
+
+        console.log("APPWRITE CURRENT SESSION:", currentSession?.$id);
+
         const user = await account.get();
 
         console.log("APPWRITE USER:", user);
