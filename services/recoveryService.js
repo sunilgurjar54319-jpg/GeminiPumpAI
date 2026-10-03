@@ -1,9 +1,5 @@
-const express = require("express");
-const router = express.Router();
-
 const databases = require("../config/appwrite");
 const { Query } = require("node-appwrite");
-const { getRecoveryState } = require("../services/recoveryService");
 
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID;
 const SCHEDULE_COLLECTION = "schedules";
@@ -196,18 +192,190 @@ async function clearPendingCommands(deviceId) {
 // Recovery API
 // =========================================
 
-router.get("/:deviceId", async (req, res) => {
+async function getRecoveryState(deviceId) {
+
   try {
-    const result = await getRecoveryState(req.params.deviceId);
-    res.json(result);
+
+    const now = getIndiaDate();
+
+    const currentDate =
+      getIndiaDateString(now);
+
+    const currentTime =
+      getTimeString(now);
+
+
+    console.log(
+      `Recovery Check: ${deviceId} | ${currentDate} ${currentTime}`
+    );
+
+
+    // =====================================
+    // Get schedules
+    // =====================================
+
+    const result = await databases.listDocuments(
+      DATABASE_ID,
+      SCHEDULE_COLLECTION,
+      [
+        Query.equal("deviceId", deviceId)
+      ]
+    );
+
+
+    let shouldBeON = false;
+
+
+    // =====================================
+    // Determine required state
+    // =====================================
+
+    for (const schedule of result.documents) {
+
+      if (!schedule.enabled) {
+        continue;
+      }
+
+
+      // One-time schedule
+      if (schedule.scheduledDate) {
+
+        if (
+          isOneTimeActive(
+            schedule,
+            now,
+            currentTime
+          )
+        ) {
+          shouldBeON = true;
+          break;
+        }
+
+        continue;
+      }
+
+
+      // Recurring schedule
+      if (
+        isRecurringActive(
+          schedule,
+          now,
+          currentTime
+        )
+      ) {
+        shouldBeON = true;
+        break;
+      }
+
+    }
+
+
+    // =====================================
+    // MANUAL OFF SAFETY LOCK
+    // =====================================
+    // If the latest manual command is OFF,
+    // recovery must NEVER return ON.
+    // =====================================
+
+    let manualOffActive = false;
+
+    try {
+
+      const latestManual =
+        await databases.listDocuments(
+          DATABASE_ID,
+          COMMAND_COLLECTION,
+          [
+            Query.equal("deviceId", deviceId),
+            Query.equal("source", "MANUAL"),
+            Query.orderDesc("$createdAt"),
+            Query.limit(1)
+          ]
+        );
+
+      if (
+        latestManual.documents.length > 0 &&
+        String(
+          latestManual.documents[0].command || ""
+        ).toUpperCase() === "OFF"
+      ) {
+        manualOffActive = true;
+      }
+
+    } catch (error) {
+
+      console.log(
+        `⚠️ Recovery manual OFF check failed: ${deviceId} | ${error.message}`
+      );
+
+      // Safety-first:
+      // If manual state cannot be verified,
+      // recovery must not turn the pump ON.
+      manualOffActive = true;
+    }
+
+    const command =
+      manualOffActive
+        ? "OFF"
+        : (shouldBeON ? "ON" : "OFF");
+
+    if (manualOffActive) {
+
+      console.log(
+        `🛑 RECOVERY MANUAL OFF LOCK: ${deviceId} → OFF`
+      );
+
+    }
+
+
+    // =====================================
+    // Clear old pending commands
+    // =====================================
+
+    const clearedCommands =
+      await clearPendingCommands(deviceId);
+
+
+    // =====================================
+    // IMPORTANT:
+    // Recovery does NOT create History.
+    //
+    // History is created only when
+    // completeCommand() records a real
+    // ON/OFF command completion.
+    // =====================================
+
+
+    console.log(
+      `Recovery Result: ${deviceId} -> ${command}`
+    );
+
+
+    return {
+      success: true,
+      deviceId,
+      command,
+      date: currentDate,
+      time: currentTime,
+      recovery: true,
+      clearedCommands
+    };
+
+
   } catch (error) {
-    console.error("Recovery Error:", error.message);
 
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
+    console.error(
+      "Recovery Error:",
+      error.message
+    );
+
+
+    throw error;
+
   }
-});
 
-module.exports = router;
+}
+
+module.exports = {
+  getRecoveryState
+};

@@ -1,5 +1,7 @@
 const WebSocket = require("ws");
 const { heartbeatDevice } = require("./services/deviceService");
+const { updateStatus } = require("./services/statusService");
+const { getRecoveryState } = require("./services/recoveryService");
 
 const deviceConnections = new Map();
 
@@ -46,6 +48,66 @@ function setupWebSocket(server) {
           return;
         }
 
+        if (message.action === "recoveryComplete") {
+          const deviceId = message.deviceId;
+          const status = String(message.status || "").toUpperCase();
+
+          if (!deviceId || (status !== "ON" && status !== "OFF")) {
+            console.error("[WS] Invalid recoveryComplete message");
+            return;
+          }
+
+          if (deviceConnections.get(deviceId) !== ws) {
+            console.error(`[WS] Unauthorized recoveryComplete: ${deviceId}`);
+            return;
+          }
+
+          updateStatus(deviceId, status)
+            .then(() => {
+              console.log(
+                `[WS] Recovery completed: ${deviceId} -> ${status}`
+              );
+            })
+            .catch((error) => {
+              console.error(
+                `[WS] Recovery status failed: ${deviceId} | ${error.message}`
+              );
+            });
+
+          return;
+        }
+
+        if (message.action === "commandComplete") {
+          const deviceId = message.deviceId;
+          const commandId = message.commandId;
+
+          if (!deviceId || !commandId) {
+            console.error("[WS] Invalid commandComplete message");
+            return;
+          }
+
+          if (deviceConnections.get(deviceId) !== ws) {
+            console.error(`[WS] Unauthorized commandComplete: ${deviceId}`);
+            return;
+          }
+
+          const { completeCommand } = require("./services/commandService");
+
+          completeCommand(commandId)
+            .then(() => {
+              console.log(
+                `[WS] Command completed: ${commandId} -> ${deviceId}`
+              );
+            })
+            .catch((error) => {
+              console.error(
+                `[WS] Command completion failed: ${commandId} | ${error.message}`
+              );
+            });
+
+          return;
+        }
+
         if (message.action === "register") {
           const devices = Array.isArray(message.devices)
             ? message.devices
@@ -66,6 +128,26 @@ function setupWebSocket(server) {
               .catch((error) => {
                 console.error(
                   `[WS] Presence ONLINE failed: ${deviceId} | ${error.message}`
+                );
+              });
+
+            getRecoveryState(deviceId)
+              .then((recovery) => {
+                if (ws.readyState !== WebSocket.OPEN) return;
+
+                ws.send(JSON.stringify({
+                  type: "recovery",
+                  deviceId,
+                  command: recovery.command
+                }));
+
+                console.log(
+                  `[WS] Recovery sent: ${recovery.command} -> ${deviceId}`
+                );
+              })
+              .catch((error) => {
+                console.error(
+                  `[WS] Recovery failed: ${deviceId} | ${error.message}`
                 );
               });
           }
