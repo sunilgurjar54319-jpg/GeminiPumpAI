@@ -10,7 +10,6 @@ const {
 
 const {
     registerDevice,
-    heartbeatDevice,
     getDevice,
     updateDeviceName,
     deleteDevice,
@@ -101,93 +100,6 @@ router.get("/list", requireAuth, async (req, res) => {
         });
     }
 });
-
-// =========================================
-// ESP32 Heartbeat
-// =========================================
-
-router.post("/heartbeat", async (req, res) => {
-
-    try {
-
-        const {
-            deviceId,
-            wifiStatus,
-            sensors
-        } = req.body;
-
-
-        const result =
-            await heartbeatDevice(
-                deviceId,
-                wifiStatus,
-                sensors
-            );
-
-
-        res.json({
-
-            success: true,
-
-            deviceId:
-                result.deviceId,
-
-            deviceName:
-                result.deviceName ||
-                result.deviceId,
-
-            deviceType:
-                result.deviceType ||
-                "GENERIC",
-
-            sensorEnabled:
-                result.sensorEnabled === true,
-
-            sensors: {
-
-                voltage:
-                    result.voltageSensor === true,
-
-                current:
-                    result.currentSensor === true,
-
-                float:
-                    result.floatSensor === true,
-
-                pressure:
-                    result.pressureSensor === true,
-
-                temperature:
-                    result.temperatureSensor === true
-
-            },
-
-            wifiStatus:
-                result.wifiStatus,
-
-            lastSeen:
-                result.lastSeen
-
-        });
-
-    } catch (err) {
-
-        console.error(
-            "Heartbeat Error:",
-            err.message
-        );
-
-        res.status(500).json({
-
-            success: false,
-            error: err.message
-
-        });
-
-    }
-
-});
-
 
 // =========================================
 // Update Device Name

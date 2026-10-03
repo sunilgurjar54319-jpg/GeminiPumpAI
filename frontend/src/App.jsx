@@ -71,23 +71,14 @@ function App() {
 
         const deviceId = device.deviceId;
 
-        const lastSeenTime = device.lastSeen
-          ? new Date(device.lastSeen).getTime()
-          : 0;
-
-        const age = Date.now() - lastSeenTime;
         const wifiConnected =
           String(device.wifiStatus || "").toUpperCase() === "CONNECTED";
 
-        // ESP32 heartbeat is sent every 30 seconds.
-        // Allow network/Render delay without falsely going OFFLINE.
-        const online =
-          Boolean(device.lastSeen) &&
-          wifiConnected &&
-          age >= 0 &&
-          age <= 75000;
+        // Presence changes only on WebSocket connect/disconnect.
+        // Do not expire ONLINE based on lastSeen age.
+        const online = Boolean(device.lastSeen) && wifiConnected;
 
-        // Realtime heartbeat = immediate ONLINE/OFFLINE update.
+        // Realtime presence = immediate ONLINE/OFFLINE update.
         setDeviceOnlineStates(prev => ({
           ...prev,
           [deviceId]: online
@@ -155,41 +146,21 @@ function App() {
   // Realtime events mark the device ONLINE immediately.
   // If heartbeats stop, this watchdog marks it OFFLINE.
   useEffect(() => {
-    const updateOnlineStates = () => {
-      const now = Date.now();
+    setDeviceOnlineStates(prev => {
+      const next = { ...prev };
 
-      setDeviceOnlineStates(prev => {
-        const next = { ...prev };
+      devices.forEach(device => {
+        const deviceId = device.deviceId || device.$id;
+        if (!deviceId) return;
 
-        devices.forEach(device => {
-          const deviceId = device.deviceId || device.$id;
-          if (!deviceId) return;
+        const wifiConnected =
+          String(device.wifiStatus || "").toUpperCase() === "CONNECTED";
 
-          const lastSeenTime = device.lastSeen
-            ? new Date(device.lastSeen).getTime()
-            : 0;
-
-          const age = now - lastSeenTime;
-
-          const wifiConnected =
-            String(device.wifiStatus || "").toUpperCase() === "CONNECTED";
-
-          next[deviceId] =
-            Boolean(device.lastSeen) &&
-            wifiConnected &&
-            age >= 0 &&
-            age <= 75000;
-        });
-
-        return next;
+        next[deviceId] = Boolean(device.lastSeen) && wifiConnected;
       });
-    };
 
-    updateOnlineStates();
-
-    const timer = setInterval(updateOnlineStates, 5000);
-
-    return () => clearInterval(timer);
+      return next;
+    });
   }, [devices]);
 
   async function loadDeviceName(deviceId = selectedDeviceId) {
@@ -673,15 +644,11 @@ delete pendingDeviceStates.current[deviceId];
               ? new Date(device.lastSeen).getTime()
               : 0;
 
-            const age = now - lastSeenTime;
             const wifiConnected =
               String(device.wifiStatus || "").toUpperCase() === "CONNECTED";
 
             initialOnlineStates[deviceId] =
-              Boolean(device.lastSeen) &&
-              wifiConnected &&
-              age >= 0 &&
-              age <= 75000;
+              Boolean(device.lastSeen) && wifiConnected;
           });
 
           setDeviceOnlineStates(initialOnlineStates);

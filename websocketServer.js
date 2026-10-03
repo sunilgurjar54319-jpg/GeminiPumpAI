@@ -21,30 +21,8 @@ function setupWebSocket(server) {
         const message = JSON.parse(data.toString());
 
         if (message.action === "heartbeat") {
-          const devices = Array.isArray(message.devices)
-            ? message.devices
-            : message.deviceId
-              ? [message.deviceId]
-              : [];
-
-          for (const deviceId of devices) {
-            if (!deviceId) continue;
-
-            if (deviceConnections.get(deviceId) !== ws) {
-              continue;
-            }
-
-            heartbeatDevice(deviceId, "CONNECTED")
-              .then(() => {
-                console.log(`[WS] Heartbeat ONLINE: ${deviceId}`);
-              })
-              .catch((error) => {
-                console.error(
-                  `[WS] Heartbeat failed: ${deviceId} | ${error.message}`
-                );
-              });
-          }
-
+          // WebSocket library heartbeat already keeps the connection alive.
+          // Do NOT write heartbeat data to Appwrite on every interval.
           return;
         }
 
