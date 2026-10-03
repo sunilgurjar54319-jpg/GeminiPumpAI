@@ -4,6 +4,7 @@ const router = express.Router();
 const databases = require("../config/appwrite");
 const { Query, Permission, Role } = require("node-appwrite");
 const { ID } = require("node-appwrite");
+const { refreshSchedule, removeSchedule } = require("../services/scheduler");
 
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID;
 const COLLECTION_ID = "schedules";
@@ -59,6 +60,8 @@ router.post("/", async (req, res) => {
       },
       ownerId ? [Permission.read(Role.user(ownerId))] : []
     );
+
+    await refreshSchedule(result.$id);
 
     res.json({
       success: true,
@@ -155,6 +158,8 @@ router.put("/:id", async (req, res) => {
       }
     );
 
+    await refreshSchedule(result.$id);
+
     res.json({
       success: true,
       schedule: result
@@ -180,6 +185,8 @@ router.put("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
 
   try {
+
+    await removeSchedule(req.params.id);
 
     await databases.deleteDocument(
       DATABASE_ID,

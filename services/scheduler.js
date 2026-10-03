@@ -88,52 +88,15 @@ async function executeCommand(deviceId, command, source = "SCHEDULED") {
       `📤 Scheduled Command Sent: ${command} → ${deviceId}`
     );
 
+    // WebSocket command completion handles the device result.
+    // Do not poll Appwrite status after every scheduled command.
     console.log(
-      `⏳ Waiting for device to complete: ${command} → ${deviceId}`
-    );
-
-    // Device simulator may take a few seconds
-    for (let i = 0; i < 15; i++) {
-
-      await new Promise(resolve =>
-        setTimeout(resolve, 1000)
-      );
-
-      try {
-
-        const status = await getStatus(deviceId);
-
-        if (status && status.status) {
-
-          console.log(
-            `${status.status === "ON" ? "🟢" : "🔴"} ${deviceId} STATUS: ${status.status}`
-          );
-
-          if (status.status === command) {
-
-            console.log(
-              `✅ Scheduled ${command} confirmed: ${deviceId}`
-            );
-
-            return status;
-          }
-        }
-
-      } catch (statusError) {
-
-        console.log(
-          `⚠️ Status check failed: ${statusError.message}`
-        );
-
-      }
-
-    }
-
-    console.log(
-      `⚠️ Scheduled ${command} confirmation timeout: ${deviceId}`
+      `📡 Scheduled ${command} handed off to command system: ${deviceId}`
     );
 
     return result;
+
+return result;
 
   } catch (error) {
 
@@ -1313,36 +1276,367 @@ async function checkSchedules() {
 
 
 // =========================================
-// Run Every Minute
-// =========================================
 
-cron.schedule(
-  "* * * * *",
-  checkSchedules,
-  {
-    timezone: "Asia/Kolkata"
+
+// ========================================================
+// EVENT-BASED SCHEDULER
+// No global every-minute Appwrite polling.
+// Schedules are loaded once at startup and refreshed when
+// a schedule is created, updated, enabled/disabled, deleted.
+// ========================================================
+
+const scheduleTasks = new Map();
+
+function destroyScheduleTasks(scheduleId) {
+  const tasks = scheduleTasks.get(scheduleId);
+  if (!tasks) return;
+
+  for (const task of tasks) {
+    try {
+      if (task && typeof task.destroy === "function") {
+        task.destroy();
+      } else if (task) {
+        clearTimeout(task);
+      }
+    } catch (error) {
+      console.error(
+        `[SCHEDULER] Task cleanup failed: ${scheduleId} | ${error.message}`
+      );
+    }
   }
-);
 
+  scheduleTasks.delete(scheduleId);
+}
 
-// =========================================
-// Cleanup Old One-Time Schedules
-// Run once every hour
-// =========================================
-
-cron.schedule(
-  "0 * * * *",
-  cleanupOldOneTimeSchedules,
-  {
-    timezone: "Asia/Kolkata"
+function addScheduleTask(scheduleId, task) {
+  if (!scheduleTasks.has(scheduleId)) {
+    scheduleTasks.set(scheduleId, []);
   }
-);
 
+  scheduleTasks.get(scheduleId).push(task);
+}
 
-// =========================================
-// Export
-// =========================================
+async function runScheduledEvent(scheduleId, eventType) {
+  try {
+    const schedule = await databases.getDocument(
+      DATABASE_ID,
+      SCHEDULE_COLLECTION,
+      scheduleId
+    );
+
+    if (!schedule || schedule.enabled !== true) {
+      return;
+    }
+
+    const now = getIndiaDate();
+    const currentDate = getIndiaDateString(now);
+    const currentTime = getTimeString(now);
+
+    const isOneTime = Boolean(schedule.scheduledDate);
+
+    if (isOneTime && schedule.scheduledDate !== currentDate) {
+      return;
+    }
+
+    const executionKey =
+      `${currentDate}_${eventType}_${schedule.startTime || ""}_${schedule.endTime || ""}`;
+
+    if (schedule.lastExecuted === executionKey) {
+      return;
+    }
+
+    if (eventType === "START") {
+      const manualOff = await isManualOffActive(schedule.deviceId);
+
+      if (manualOff) {
+        console.log(
+          `[SCHEDULER] START blocked by manual OFF: ${schedule.deviceId}`
+        );
+        return;
+      }
+
+      await executeCommand(
+        schedule.deviceId,
+        "ON",
+        "SCHEDULED"
+      );
+
+      await databases.updateDocument(
+        DATABASE_ID,
+        SCHEDULE_COLLECTION,
+        schedule.$id,
+        {
+          lastExecuted: executionKey
+        }
+      );
+
+      console.log(
+        `[SCHEDULER] START executed: ${schedule.deviceId} | ${currentDate} ${currentTime}`
+      );
+
+      // One-time schedule without an end time is finished after START.
+      if (isOneTime && !schedule.endTime) {
+        await databases.updateDocument(
+          DATABASE_ID,
+          SCHEDULE_COLLECTION,
+          schedule.$id,
+          {
+            enabled: false
+          }
+        );
+
+        destroyScheduleTasks(schedule.$id);
+      }
+
+      return;
+    }
+
+    if (eventType === "END") {
+      const anotherScheduleActive = await hasOtherActiveSchedule(
+        schedule.deviceId,
+        schedule.$id,
+        currentDate,
+        currentTime,
+        [
+          "Sun",
+          "Mon",
+          "Tue",
+          "Wed",
+          "Thu",
+          "Fri",
+          "Sat"
+        ][now.getDay()]
+      );
+
+      if (!anotherScheduleActive) {
+        await executeCommand(
+          schedule.deviceId,
+          "OFF",
+          "SCHEDULED"
+        );
+      } else {
+        console.log(
+          `[SCHEDULER] OFF skipped; another schedule is active: ${schedule.deviceId}`
+        );
+      }
+
+      await databases.updateDocument(
+        DATABASE_ID,
+        SCHEDULE_COLLECTION,
+        schedule.$id,
+        {
+          lastExecuted: executionKey,
+          ...(isOneTime ? { enabled: false } : {})
+        }
+      );
+
+      await clearManualOverride(schedule.deviceId);
+
+      if (isOneTime) {
+        destroyScheduleTasks(schedule.$id);
+      }
+
+      console.log(
+        `[SCHEDULER] END processed: ${schedule.deviceId} | ${currentDate} ${currentTime}`
+      );
+    }
+
+  } catch (error) {
+    console.error(
+      `[SCHEDULER] Event failed: ${scheduleId} ${eventType} | ${error.message}`
+    );
+  }
+}
+
+function scheduleOneTimeEvent(schedule, eventType, time) {
+  if (!schedule.scheduledDate || !time) return;
+
+  const target = new Date(
+    `${schedule.scheduledDate}T${time}:00+05:30`
+  );
+
+  const delay = target.getTime() - Date.now();
+
+  // Already passed: do not create a continuous polling loop.
+  if (delay <= 0) return;
+
+  const timer = setTimeout(() => {
+    runScheduledEvent(schedule.$id, eventType);
+  }, delay);
+
+  addScheduleTask(schedule.$id, timer);
+
+  console.log(
+    `[SCHEDULER] One-time ${eventType} scheduled: ${schedule.$id} -> ${target.toISOString()}`
+  );
+}
+
+function scheduleRecurringEvent(schedule, eventType, time) {
+  if (!time || !schedule.days) return;
+
+  const [hour, minute] = time.split(":").map(Number);
+
+  if (
+    !Number.isInteger(hour) ||
+    !Number.isInteger(minute) ||
+    hour < 0 ||
+    hour > 23 ||
+    minute < 0 ||
+    minute > 59
+  ) {
+    console.error(
+      `[SCHEDULER] Invalid time: ${schedule.$id} | ${time}`
+    );
+    return;
+  }
+
+  const dayMap = {
+    Sun: "0",
+    Mon: "1",
+    Tue: "2",
+    Wed: "3",
+    Thu: "4",
+    Fri: "5",
+    Sat: "6"
+  };
+
+  const cronDays = schedule.days
+    .split(",")
+    .map(day => day.trim())
+    .filter(day => dayMap[day])
+    .map(day => dayMap[day])
+    .join(",");
+
+  if (!cronDays) return;
+
+  const expression = `${minute} ${hour} * * ${cronDays}`;
+
+  const task = cron.schedule(
+    expression,
+    () => {
+      runScheduledEvent(schedule.$id, eventType);
+    },
+    {
+      timezone: "Asia/Kolkata",
+      noOverlap: true
+    }
+  );
+
+  addScheduleTask(schedule.$id, task);
+
+  console.log(
+    `[SCHEDULER] Recurring ${eventType} scheduled: ${schedule.$id} -> ${expression}`
+  );
+}
+
+function scheduleDocument(schedule) {
+  if (!schedule || !schedule.$id || schedule.enabled !== true) {
+    return;
+  }
+
+  destroyScheduleTasks(schedule.$id);
+
+  if (schedule.scheduledDate) {
+    scheduleOneTimeEvent(
+      schedule,
+      "START",
+      schedule.startTime
+    );
+
+    scheduleOneTimeEvent(
+      schedule,
+      "END",
+      schedule.endTime
+    );
+
+    return;
+  }
+
+  scheduleRecurringEvent(
+    schedule,
+    "START",
+    schedule.startTime
+  );
+
+  scheduleRecurringEvent(
+    schedule,
+    "END",
+    schedule.endTime
+  );
+}
+
+async function refreshSchedule(scheduleId) {
+  try {
+    destroyScheduleTasks(scheduleId);
+
+    const schedule = await databases.getDocument(
+      DATABASE_ID,
+      SCHEDULE_COLLECTION,
+      scheduleId
+    );
+
+    if (schedule.enabled === true) {
+      scheduleDocument(schedule);
+    }
+
+    console.log(
+      `[SCHEDULER] Schedule refreshed: ${scheduleId}`
+    );
+
+    return schedule;
+  } catch (error) {
+    console.error(
+      `[SCHEDULER] Refresh failed: ${scheduleId} | ${error.message}`
+    );
+    return null;
+  }
+}
+
+async function removeSchedule(scheduleId) {
+  destroyScheduleTasks(scheduleId);
+
+  console.log(
+    `[SCHEDULER] Schedule removed: ${scheduleId}`
+  );
+}
+
+async function initializeScheduler() {
+  try {
+    console.log("[SCHEDULER] Initializing event-based scheduler...");
+
+    const result = await databases.listDocuments(
+      DATABASE_ID,
+      SCHEDULE_COLLECTION,
+      [
+        Query.equal("enabled", true),
+        Query.limit(100)
+      ]
+    );
+
+    for (const schedule of result.documents) {
+      scheduleDocument(schedule);
+    }
+
+    // Cleanup happens once at startup, not every hour.
+    await cleanupOldOneTimeSchedules();
+
+    console.log(
+      `[SCHEDULER] Ready: ${result.documents.length} active schedule(s)`
+    );
+
+  } catch (error) {
+    console.error(
+      `[SCHEDULER] Initialization failed: ${error.message}`
+    );
+  }
+}
+
+// Start once when the backend starts.
+setImmediate(initializeScheduler);
 
 module.exports = {
-  checkSchedules
+  checkSchedules,
+  initializeScheduler,
+  refreshSchedule,
+  removeSchedule
 };
