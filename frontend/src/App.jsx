@@ -202,21 +202,15 @@ function App() {
         return;
       }
 
-      const lastSeenTime = device.lastSeen
-        ? new Date(device.lastSeen).getTime()
-        : 0;
-
-      const age = Date.now() - lastSeenTime;
-
       const wifiConnected =
         String(device.wifiStatus || "").toUpperCase() ===
         "CONNECTED";
 
+      // WebSocket presence is authoritative.
+      // Do not expire ONLINE based on lastSeen time.
       const online =
         Boolean(device.lastSeen) &&
-        wifiConnected &&
-        age >= 0 &&
-        age <= 60000;
+        wifiConnected;
 
       setDeviceOnlineStates(prev => ({
         ...prev,
@@ -348,20 +342,14 @@ delete pendingDeviceStates.current[deviceId];
         return;
       }
 
-      const lastSeenTime =
-        new Date(device.lastSeen).getTime();
-
-      const age =
-        Date.now() - lastSeenTime;
-
       const wifiConnected =
         String(device.wifiStatus || "").toUpperCase() ===
         "CONNECTED";
 
+      // WebSocket presence is authoritative.
       const online =
-        wifiConnected &&
-        age >= 0 &&
-        age <= 60000;
+        Boolean(device.lastSeen) &&
+        wifiConnected;
 
       if (!online) {
         console.log(
@@ -639,10 +627,6 @@ delete pendingDeviceStates.current[deviceId];
           list.forEach(device => {
             const deviceId = device.deviceId || device.$id;
             if (!deviceId) return;
-
-            const lastSeenTime = device.lastSeen
-              ? new Date(device.lastSeen).getTime()
-              : 0;
 
             const wifiConnected =
               String(device.wifiStatus || "").toUpperCase() === "CONNECTED";

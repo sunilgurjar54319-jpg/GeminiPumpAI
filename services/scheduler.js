@@ -96,8 +96,6 @@ async function executeCommand(deviceId, command, source = "SCHEDULED") {
 
     return result;
 
-return result;
-
   } catch (error) {
 
     console.log(
@@ -1355,11 +1353,18 @@ async function runScheduledEvent(scheduleId, eventType) {
         return;
       }
 
-      await executeCommand(
+      const commandResult = await executeCommand(
         schedule.deviceId,
         "ON",
         "SCHEDULED"
       );
+
+      if (!commandResult?.websocketDelivered) {
+        console.log(
+          `[SCHEDULER] START not delivered via WebSocket: ${schedule.deviceId}`
+        );
+        return;
+      }
 
       await databases.updateDocument(
         DATABASE_ID,
@@ -1408,12 +1413,23 @@ async function runScheduledEvent(scheduleId, eventType) {
         ][now.getDay()]
       );
 
+      let endDelivered = true;
+
       if (!anotherScheduleActive) {
-        await executeCommand(
+        const commandResult = await executeCommand(
           schedule.deviceId,
           "OFF",
           "SCHEDULED"
         );
+
+        endDelivered = Boolean(commandResult?.websocketDelivered);
+
+        if (!endDelivered) {
+          console.log(
+            `[SCHEDULER] END OFF not delivered via WebSocket: ${schedule.deviceId}`
+          );
+          return;
+        }
       } else {
         console.log(
           `[SCHEDULER] OFF skipped; another schedule is active: ${schedule.deviceId}`

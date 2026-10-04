@@ -8,7 +8,30 @@ const deviceConnections = new Map();
 function setupWebSocket(server) {
   const wss = new WebSocket.Server({ server });
 
+  // Detect dead ESP32 WebSocket connections without Appwrite polling.
+  const heartbeatInterval = setInterval(() => {
+    wss.clients.forEach((ws) => {
+      if (ws.isAlive === false) {
+        console.log("[WS] Dead connection detected - terminating");
+        ws.terminate();
+        return;
+      }
+
+      ws.isAlive = false;
+      ws.ping();
+    });
+  }, 30000);
+
+  wss.on("close", () => {
+    clearInterval(heartbeatInterval);
+  });
+
   wss.on("connection", (ws) => {
+    ws.isAlive = true;
+
+    ws.on("pong", () => {
+      ws.isAlive = true;
+    });
     console.log("[WS] ESP32 connected");
 
     ws.send(JSON.stringify({

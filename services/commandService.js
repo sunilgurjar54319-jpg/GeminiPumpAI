@@ -505,14 +505,16 @@ const STALE_AFTER_MS = 5 * 60 * 1000;
     // If ESP32 is connected through WebSocket,
     // push the command immediately.
     // HTTP polling remains the fallback.
+    let websocketDelivered = false;
+
     try {
-      const wsSent = sendCommandToDevice(
+      websocketDelivered = sendCommandToDevice(
         deviceId,
         command,
         result.$id
       );
 
-      if (wsSent) {
+      if (websocketDelivered) {
         console.log(
           `[WS] Command pushed: ${command} -> ${deviceId}`
         );
@@ -535,7 +537,10 @@ const STALE_AFTER_MS = 5 * 60 * 1000;
     }
 
 
-    return result;
+    return {
+      ...result,
+      websocketDelivered
+    };
 
 
   } catch (err) {
